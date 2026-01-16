@@ -4,16 +4,11 @@ import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/lib/redux/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { LandingPageHeader } from '@/components/LandingPageHeader';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const router = useRouter();
-
-
-
+// Redireciona para a página de login se o usuário não estiver autenticado
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');

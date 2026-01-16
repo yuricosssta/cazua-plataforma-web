@@ -1,15 +1,9 @@
-// "use client";
+import { PageClient } from "./page-client";
 
-import { UserList } from '@/components/UserList';
-import { UserProfile } from '@/components/UserProfile';
+export const metadata = {
+  title: "Dashboard - Stack Template",
+};
 
-export default async function DashboardPage() {
-
-  return (
-
-    <div className="container mx-auto px-5 mb-10">
-      <UserProfile />
-      <UserList /> 
-    </div>
-  );
+export default function Dashboard() {
+  return <PageClient />;
 }

@@ -20,5 +20,6 @@ export interface IUser {
   rule: UserRule;
   created_at?: Date;
   modified_at?: Date;
+  defaultOrganizationId?: string; 
 }
 

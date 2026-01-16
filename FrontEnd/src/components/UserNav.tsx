@@ -44,6 +44,7 @@ export const UserNav = () => {
       {/* Botão de Login */}
       <button
         type="button"
+        onClick={() => router.push(`/dashboard`)}
         className="md:flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm"
       >
         <Lock size={14} />

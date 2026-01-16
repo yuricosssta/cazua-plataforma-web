@@ -20,6 +20,9 @@ export class User {
 
   @Prop({ required: true, enum: UserRule })
   rule: UserRule;
+
+  @Prop({ required: false, type: Object, default: null })
+  defaultOrganizationId?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
