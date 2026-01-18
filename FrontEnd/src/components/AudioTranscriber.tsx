@@ -127,8 +127,10 @@ export const AudioTranscriber = () => {
         <button
           onClick={handleTranscribe}
           disabled={!file || isLoading}
-          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md
-                     hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          type="button"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2"            
+          // className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md
+          //            hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Transcrevendo...' : 'Transcrever Áudio'}
         </button>

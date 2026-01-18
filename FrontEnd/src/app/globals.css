@@ -123,6 +123,9 @@
   }
 }
 
+.bottom-0 {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2;
+}
 /* --- Loader e Tipografia --- */
 .loader {
   top: 0; left: 0; right: 0; height: 3px;

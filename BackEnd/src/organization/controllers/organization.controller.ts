@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
-import { AuthGuard } from '../../auth/auth.guard';//'../auth/jwt-auth.guard'; 
+import { AuthGuard } from '../../auth/auth.guard';
 
 @Controller('organizations')
 @UseGuards(AuthGuard) 

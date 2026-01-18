@@ -1,5 +1,5 @@
-export default function markdownExample() {
-  return `# Exemplo de Markdown
+export const markdownExample = () => {
+  const example = `# Exemplo de Markdown
 
 Este é um exemplo de como você pode usar **Markdown** para formatar seu conteúdo.
 
@@ -63,5 +63,7 @@ function exemplo() {
 
 ---
 
-Sinta-se à vontade para experimentar e criar seu próprio conteúdo usando Markdown!`;
+Sinta-se à vontade para experimentar e criar seu próprio conteúdo usando Markdown!
+`;
+  return example;
 };

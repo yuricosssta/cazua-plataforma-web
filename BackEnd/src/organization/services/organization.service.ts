@@ -46,7 +46,10 @@ export class OrganizationService {
     // Busca na tabela de MEMBROS, filtrando pelo usuário
     const memberships = await this.memberModel
       .find({ userId: new Types.ObjectId(userId) })
-      .populate('organizationId') // <--- Traz os dados da empresa (nome, slug)
+      .populate({
+        path: 'organizationId',
+        select: 'name slug ownerId status createdAt', // Campos que deseja na organização
+      })
       .exec();
 
     // Retorna a lista de vínculos (que contém a empresa dentro)
