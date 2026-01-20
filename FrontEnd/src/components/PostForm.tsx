@@ -151,7 +151,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
         </div>
 
         {/* <div data-color-mode="light"> */}
-        <div>
+        {/* <div> */}
           <MDEditor
             className={`${inputClass} `}
             value={post.content}
@@ -162,15 +162,15 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
               placeholder: 'Escreva seu conteúdo aqui...'
             }}
           />
-        </div>
+        {/* </div> */}
 
-        {/* Botão Organizar */}
+        {/* Botão Organizar */} 
         <div className="flex flex-col gap-2">
           <button
             type="button"
             disabled={isLoadingText}
             onClick={organizaTexto}
-            className="button-0"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2"
           >
             <Wand2 size={16} />
             {isLoadingText ? 'Organizando...' : 'Organizar conteúdo com IA'}
