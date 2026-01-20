@@ -1,8 +1,9 @@
 'use client';
 
 import SidebarLayout, { SidebarItem } from  "@/components/sidebar-layout";
+import { UserProfile } from "@/components/UserProfile";
 import { selectCurrentUser } from "@/lib/redux/slices/authSlice";
- import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
+//  import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
 import { BadgePercent, BarChart4, Columns3, Globe, Locate, Settings2, ShoppingBag, ShoppingCart, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
@@ -89,19 +90,20 @@ export default function Layout(props: { children: React.ReactNode }) {
   // }
 
   return (
-    <SidebarLayout 
-      items={navigationItems}
-      basePath={`/dashboard/${team.id}`}
-      sidebarTop={<SelectedTeamSwitcher 
-        selectedTeam={team}
-        urlMap={(team) => `/dashboard/${team.id}`}
-      />}
-      baseBreadcrumb={[{
-        title: team.displayName,
-        href: `/dashboard/${team.id}`,
-      }]}
-    >
-      {props.children}
-    </SidebarLayout>
+    // <SidebarLayout 
+    //   items={navigationItems}
+    //   basePath={`/dashboard/${team.id}`}
+    //   sidebarTop={<SelectedTeamSwitcher 
+    //     selectedTeam={team}
+    //     urlMap={(team) => `/dashboard/${team.id}`}
+    //   />}
+    //   baseBreadcrumb={[{
+    //     title: team.displayName,
+    //     href: `/dashboard/${team.id}`,
+    //   }]}
+    // >
+      // {props.children}
+    // </SidebarLayout>
+    <UserProfile />
   );
 }
