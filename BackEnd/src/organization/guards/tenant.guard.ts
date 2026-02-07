@@ -41,8 +41,8 @@ export class TenantGuard implements CanActivate {
     // 3. Verificar no Banco
     // "Existe um registro onde o usuário X está na empresa Y?"
     const membership = await this.memberModel.findOne({
-      userId: new Types.ObjectId(user.sub), // Ajuste conforme seu payload do JWT (sub, id, userId)
-      organizationId: new Types.ObjectId(orgIdHeader),
+      userId: new Types.ObjectId('${user.sub}'),
+      organizationId: new Types.ObjectId('${orgIdHeader}'),
     }).exec();
 
     if (!membership) {

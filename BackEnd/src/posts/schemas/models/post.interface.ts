@@ -8,4 +8,5 @@ export interface IPost {
   image?: string;
   author?: string;
   published?: boolean;
+  organizationId?: string;
 }
