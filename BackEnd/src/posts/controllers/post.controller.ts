@@ -13,31 +13,39 @@ import {
   Put,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { PostService } from '../services/post.service';
 import { LoggingInterceptor } from '../../shared/interceptors/logging.interceptor';
-import { AuthGuard } from '../../auth/auth.guard'; // Verifique se o caminho está correto
+import { AuthGuard } from '../../auth/auth.guard';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
+import { TenantGuard } from 'src/organization/guards/tenant.guard';
 
 @UseInterceptors(LoggingInterceptor)
 @Controller('posts')
+// @UseGuards(AuthGuard, TenantGuard) // Ativar mais tarde
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
+  // @UseGuards(AuthGuard, TenantGuard)
   @Get()
   async getAllPosts(
   @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
   @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  @Query('organizationId') organizationId?: string, 
+  // @Query('organizationId') organizationId?: string, 
+  @Req() req: any,
   ) {
     if (limit > 100) {
       limit = 100;
     }
-    console.log(`Buscando posts -> Page: ${page}, Limit: ${limit}, Org: ${organizationId}`);
-    return this.postService.getAllPosts(page, limit, organizationId);
+    // Pega o organizationId quando existente
+    const orgId = req.organizationId || ''; 
+    console.log(`Buscando posts blindados para a Organização: ${orgId}`);
+    // console.log(`Buscando posts -> Page: ${page}, Limit: ${limit}, Org: ${organizationId}`);
+    return this.postService.getAllPosts(page, limit, orgId);
   }
 
   @Get('search')
@@ -55,11 +63,13 @@ export class PostController {
   async createPost(
     @Body() createPostDto: CreatePostDto, 
     @Req() req: any
-  ) {    
+  ) {
+    const orgId = req.organizationId;    
     console.log('Dados recebidos (DTO):', createPostDto);
 
     return this.postService.createPost({
-      ...createPostDto,      
+      ...createPostDto,
+      organizationId: orgId,      
       created_at: new Date(),
       modified_at: new Date(),
       
@@ -74,17 +84,42 @@ export class PostController {
   @Put(':postId')
   async updatePost(
     @Param('postId') postId: string,
-    @Body() updatePostDto: UpdatePostDto, // Uso do DTO limpo
+    @Body() updatePostDto: UpdatePostDto,
+    @Req() req: any
   ) {
+    const orgId = req.organizationId;
+    // Atualiza apenas se for o autor ou um ADMIN
+     if (updatePostDto.author !== 'ADMIN') {
+      const post = await this.postService.getPost(postId);
+      if (post.author !== updatePostDto.author) {
+        throw new UnauthorizedException('Você não tem permissão para editar esta postagem.');
+      }
+    }
     return this.postService.updatePost(postId, {
       ...updatePostDto,
+      organizationId: orgId,
       modified_at: new Date(), // Atualiza a data de modificação automaticamente
     });
   }
 
   @UseGuards(AuthGuard)
   @Delete(':postId')
-  async deletePost(@Param('postId') postId: string) {
+  async deletePost(@Param('postId') postId: string, @Req() req: any) {
+    // Apaga ser for ADMIN da organização
+    const orgId = req.organizationId;
+    const post = await this.postService.getPost(postId);
+    
+    if (post.organizationId !== orgId) {
+      throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+    };
+    // Apaga apenas se for o autor ou um ADMIN
+    if (req.user?.role !== 'ADMIN') {
+      
+      if (post.author !== req.user.name) {
+        throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+      }
+    }
+    
     return this.postService.deletePost(postId);
   }
 }

@@ -17,7 +17,6 @@ export interface PaginatedPostsResult {
 export class PostService {
   constructor(private readonly postRepository: PostRepository) { }
 
-  // --- ATUALIZAÇÃO SPRINT 2 (Soft Migration) ---
   // Adicionado o parâmetro opcional organizationId
   async getAllPosts(page: number, limit: number, organizationId?: string): Promise<PaginatedPostsResult> {
     const skip = (page - 1) * limit;
@@ -65,7 +64,7 @@ export class PostService {
     return updatedPost;
   }
 
-  async deletePost(postId: string) {
+  async deletePost(postId: string, orgId?: any) {
     const deletedPost = await this.postRepository.deletePost(postId);
     if (!deletedPost) throw new NotFoundException('Post não encontrado');
     return { message: `Post com id ${postId} deletado com sucesso.` };
