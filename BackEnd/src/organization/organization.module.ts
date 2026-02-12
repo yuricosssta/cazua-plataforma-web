@@ -15,8 +15,8 @@ import { OrganizationMemberSchema } from './schemas/organization-member.schema';
   controllers: [OrganizationController],
   providers: [OrganizationService],
   exports: [
-    OrganizationService, // Útil se outros módulos precisarem usar o Service
-    MongooseModule,       // CRUCIAL: Exporta os Models (OrganizationMember) para fora
+    OrganizationService,
+    MongooseModule,
   ],
 })
 export class OrganizationModule { }

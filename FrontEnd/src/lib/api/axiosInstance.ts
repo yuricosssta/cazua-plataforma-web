@@ -1,5 +1,5 @@
+// src/lib/api/axiosInstance.ts
 import axios from 'axios';
-// import { store } from '@/lib/redux/store'; // Importa a store para pegar o estado
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -10,11 +10,19 @@ axiosInstance.interceptors.request.use(
   async (config) => {
     // Pega o estado mais recente do token da store do Redux
     const { store } = await import('@/lib/redux/store'); // Importa a store dinamicamente
-    const token = store.getState().auth.token;
+    const state = store.getState();
+    const token = state.auth.token;
+    const currentOrg = state.organizations.currentOrganization;
 
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+
+    if (currentOrg && currentOrg.organizationId) {
+      // O ID da empresa está dentro do objeto populado
+      config.headers['x-org-id'] = currentOrg.organizationId._id;
+    }
+
     return config;
   },
   (error) => {
@@ -28,6 +36,8 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       const { store } = await import('@/lib/redux/store');
       const { sessionExpired } = await import('@/lib/redux/slices/authSlice');
+      const { clearOrganizationState } = await import('@/lib/redux/slices/organizationSlice');
+      store.dispatch(clearOrganizationState());
       store.dispatch(sessionExpired());
     }
     return Promise.reject(error);

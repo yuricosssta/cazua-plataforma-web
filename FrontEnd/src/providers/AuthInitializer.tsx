@@ -1,41 +1,27 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setAuthState } from '../lib/redux/slices/authSlice';
 import { fetchUserProfile } from '../lib/redux/slices/userSlice';
-import { AppDispatch, RootState } from '../lib/redux/store';
+import { AppDispatch } from '../lib/redux/store';
+import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
 
 export default function AuthInitializer({ children }: { children: React.ReactNode }) {
-  // const dispatch = useDispatch();
-
   const dispatch = useDispatch<AppDispatch>();
-  const { profile, status, error } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
-    // Este código só roda no navegador 
     const token = localStorage.getItem('token');
+
     if (token) {
-      // dispatch(setAuthState({ token, isAuthenticated: true }));
+      //Restaura o estado de Autenticação no Redux
       dispatch(setAuthState({ token }));
+
+      //Dispara as buscas de dados iniciais
+      dispatch(fetchUserProfile());
+      dispatch(fetchMyOrganizations());
     }
   }, [dispatch]);
 
-  useEffect(() => {
-    dispatch(fetchUserProfile());
-  }, [dispatch]);
-
-  // if (status === 'loading') {
-  //   return <div>Carregando perfil...</div>;
-  // }
-
-  // if (status === 'failed') {
-  //   return <div className="text-red-500">Erro ao carregar perfil: {error}</div>;
-  // }
-
-  // if (!profile) {
-  //   return <div>Nenhum perfil encontrado.</div>;
-  // }
-
-  return <>{children}</>; // Este componente não renderiza nada na tela
+  return <>{children}</>; 
 }
