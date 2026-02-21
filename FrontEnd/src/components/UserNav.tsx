@@ -21,7 +21,7 @@ export const UserNav = () => {
 
   return (
     <div className="flex items-center gap-4">
-      {/* {isAuthenticated && user ? (
+      {isAuthenticated && user ? ( 
         <>
           <span className="text-sm text-gray-600">
             Olá, <Link href="/profile" className="font-bold hover:underline">{user.email}</Link>
@@ -40,7 +40,7 @@ export const UserNav = () => {
         >
           Login
         </Link>
-      )} */}
+      )}
       {/* Botão de Login */}
       <button
         type="button"

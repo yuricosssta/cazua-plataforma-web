@@ -23,8 +23,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // router.push('/posts'); // Redireciona para a lista de posts após o login
-      router.back();
+      router.push('/dashboard'); // Redireciona para a lista de posts após o login
+      // router.back();
     }
   }, [isAuthenticated, router]);
 

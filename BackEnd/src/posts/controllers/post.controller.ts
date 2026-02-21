@@ -25,12 +25,12 @@ import { UpdatePostDto } from '../dto/update-post.dto';
 import { TenantGuard } from 'src/organization/guards/tenant.guard';
 
 @UseInterceptors(LoggingInterceptor)
-@Controller('posts')
 // @UseGuards(AuthGuard, TenantGuard) // Ativar mais tarde
+@Controller('posts')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  // @UseGuards(AuthGuard, TenantGuard)
+  @UseGuards(AuthGuard, TenantGuard)
   @Get()
   async getAllPosts(
   @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -53,12 +53,13 @@ export class PostController {
     return this.postService.searchPost(term);
   }
 
+  @UseGuards(AuthGuard, TenantGuard)
   @Get(':postId')
   async getPost(@Param('postId') postId: string) {
     return this.postService.getPost(postId);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TenantGuard)
   @Post()
   async createPost(
     @Body() createPostDto: CreatePostDto, 
@@ -80,7 +81,7 @@ export class PostController {
     });
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TenantGuard)
   @Put(':postId')
   async updatePost(
     @Param('postId') postId: string,
@@ -102,7 +103,7 @@ export class PostController {
     });
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TenantGuard)
   @Delete(':postId')
   async deletePost(@Param('postId') postId: string, @Req() req: any) {
     // Apaga ser for ADMIN da organização

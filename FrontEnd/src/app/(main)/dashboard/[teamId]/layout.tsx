@@ -1,6 +1,6 @@
 'use client';
 
-import SidebarLayout, { SidebarItem } from  "@/components/sidebar-layout";
+import { Sidebar } from  "@/components/layout/Sidebar";
 import { UserProfile } from "@/components/UserProfile";
 import { selectCurrentUser } from "@/lib/redux/slices/authSlice";
 //  import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";

@@ -13,3 +13,16 @@ export const apiFetchMyOrganizations = async (token: string) => {
     throw err.response?.data || 'Erro ao conectar com o servidor';
   }
 };
+
+export const apiCreateOrganization = async (token: string, name: string) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/organizations`, 
+      { name }, // Body
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || 'Erro ao criar organização';
+  }
+};

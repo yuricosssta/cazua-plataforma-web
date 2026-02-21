@@ -1,3 +1,4 @@
+//src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -15,8 +16,8 @@ import AuthProvider from "@/providers/AuthProvider";
 // const fontSans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Cazuá Tech | Gestão Inteligente de Obras",
-  description: "Gerencie suas obras com eficiência, garantindo qualidade e segurança em cada etapa do processo construtivo.",
+  title: "Cazuá Tech | Gestão Inteligente de Projetos",
+  description: "Gerencie seus projetos com eficiência, garantindo qualidade e segurança em cada etapa do processo.",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
@@ -40,7 +41,7 @@ export default function RootLayout({
               <AuthInitializer>
                 {/* <SessionExpiredModal /> */}
                 {/* <Navbar /> */}
-                <LandingPageHeader
+                {/* <LandingPageHeader
                   items={[
                     { title: "Home", href: "/" },
                     { title: "Criar (provisório)", href: "/posts/new" },
@@ -48,9 +49,8 @@ export default function RootLayout({
                     // { title: "Pricing", href: "/#pricing" },
                     // { title: "Github", href: "https://github.com/stack-auth/stack-template", external: true },
                   ]}
-                />
+                /> */}
                 {children}
-                <Footer />
               </AuthInitializer>
             {/* </AuthProvider> */}
           </ReduxProvider>
