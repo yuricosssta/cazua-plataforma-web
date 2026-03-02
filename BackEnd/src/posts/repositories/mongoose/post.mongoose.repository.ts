@@ -15,7 +15,7 @@ export class PostMongooseRepository implements PostRepository {
 
     // Se o organizationId vier, adicionamos ao filtro.
     // Se não vier, o filtro continua vazio {} e busca tudo (comportamento antigo)
-    if (options.organizationId) {
+    if (options.organizationId && options.organizationId == 'undefined') {
       filter.organizationId = options.organizationId;
     }
 
@@ -31,7 +31,7 @@ export class PostMongooseRepository implements PostRepository {
   getTotalPostsCount(organizationId?: string): Promise<number> {
     const filter: FilterQuery<Post> = {};
 
-    if (organizationId) {
+    if (organizationId && organizationId == 'undefined') {
       filter.organizationId = organizationId;
     }
 

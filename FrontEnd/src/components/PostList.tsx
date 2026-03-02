@@ -42,12 +42,9 @@ export const PostList = () => {
   }
 
   return (
-    /* CORREÇÃO 1: Substituímos 'bg-stone-50' por 'bg-background' 
-       e 'text-stone-800' por 'text-foreground'.
-    */
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-cazua-primary selection:text-white transition-colors duration-300">
       <div
-        className={`relative pt-30 pb-24 px-4 overflow-hidden grid grid-cols-1 gap-16 md:grid-cols-2 transition-opacity duration-300 ${status === 'loading' ? 'opacity-50' : 'opacity-100'}`}
+        className={`relative pt-4 pb-24 px-4 overflow-hidden grid grid-cols-1 gap-16 md:grid-cols-2 transition-opacity duration-300 ${status === 'loading' ? 'opacity-50' : 'opacity-100'}`}
       >
         {posts.map((post) => (
           <div className="break-words" key={post._id}>

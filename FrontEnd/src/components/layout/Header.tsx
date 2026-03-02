@@ -97,7 +97,7 @@ export function Header() {
             {/* Links de Ação */}
             <div className="flex flex-col space-y-0.5 px-1">
               <Link
-                href="/dashboard/settings"
+                href="/account/profile"
                 onClick={() => setIsProfileOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-sm transition-colors"
               >

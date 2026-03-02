@@ -7,7 +7,7 @@ import Link from 'next/link'; // CORREÇÃO: Usar Link do Next para navegação 
 export default function LogoBloco() {
     return (
         <div>
-            <Link href="/" className="group">
+            <Link href="/dashboard" className="group">
                 {/* Bloco do Logo */}
                 <div className="flex items-center gap-3">
                     
