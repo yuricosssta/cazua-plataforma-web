@@ -12,7 +12,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { TranscriptionModule } from './transcription/transcription.module';
 import { SummaryModule } from './summary/summary.module';
 import { OrganizationModule } from './organization/organization.module';
-import { ProjectsModule } from './projects/projects.module';
+import { ProjectsModule } from './projects/project.module';
 
 @Module({
   imports: [

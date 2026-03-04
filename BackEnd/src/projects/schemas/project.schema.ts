@@ -14,7 +14,6 @@ export enum ProjectStatus {
 
 @Schema({ timestamps: true })
 export class Project {
-  // A trava de segurança: A qual construtora/prefeitura pertence
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Organization', required: true, index: true })
   organizationId: MongooseSchema.Types.ObjectId;
 
@@ -36,12 +35,16 @@ export class Project {
   @Prop({ type: Date })
   endDate?: Date;
 
-  // Preparando o terreno para as fotos e PDFs (S3)
+  @Prop({ type: Number, min: 1, max: 125 })
+  priorityScore?: number;
+
+  // Guarda as respostas exatas que geraram o score (Ex: { gravidade: 5, urgencia: 5, tendencia: 5 })
+  @Prop({ type: MongooseSchema.Types.Mixed })
+  priorityDetails?: Record<string, number>;
+
   @Prop({ type: [String], default: [] })
   attachments: string[];
 
-  // Denormalização inteligente: Guardamos o ID do último evento para a listagem ficar super rápida, 
-  // sem precisar fazer JOIN complexo na hora de renderizar os Cards.
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'TimelineEvent' })
   lastEventId?: MongooseSchema.Types.ObjectId;
 

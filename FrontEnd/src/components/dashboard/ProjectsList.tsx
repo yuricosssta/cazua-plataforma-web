@@ -1,3 +1,5 @@
+//src/components/dashboard/ProjectsList.tsx
+
 "use client";
 
 import React, { useState } from "react";
@@ -10,10 +12,10 @@ import {
   HardHat, 
   CheckCircle, 
   FileText,
-  MessageSquare
+  Flame,
+  Activity
 } from "lucide-react";
 
-// Tipagem baseada na nossa arquitetura de 4 Fases
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
 
 interface ProjectTimelineEvent {
@@ -28,22 +30,40 @@ interface Project {
   id: string;
   title: string;
   status: ProjectStatus;
-  progress: number; // 0 a 100
+  progress: number;
   location: string;
   startDate?: string;
   endDate?: string;
+  priorityScore?: number; // <-- NOVO: Nossa Matriz GUT (1 a 125)
   lastUpdate: ProjectTimelineEvent;
-  attachments: string[]; // Preparado para o futuro (AWS S3)
+  attachments: string[];
 }
 
-// DADOS MOCKADOS: Refletindo a realidade do campo e gestão
+// DADOS MOCKADOS: Agora com pontuação de prioridade
 const MOCK_PROJECTS: Project[] = [
+  {
+    id: "proj-003",
+    title: "Infiltração na Escola Municipal",
+    status: "DEMAND",
+    progress: 0,
+    location: "Zona Rural",
+    priorityScore: 125, // Máxima urgência (5x5x5)
+    attachments: [],
+    lastUpdate: {
+      id: "ev-03",
+      date: "02/03/2026",
+      author: "Yuri (Engenharia)",
+      description: "Parecer emitido: Risco de desabamento do teto. Prioridade Crítica.",
+      type: "COMMENT"
+    }
+  },
   {
     id: "proj-001",
     title: "Recapeamento Av. Bias Fortes",
     status: "EXECUTION",
     progress: 45,
     location: "Centro, Barbacena - MG",
+    priorityScore: 80, // Prioridade Alta
     startDate: "10/02/2026",
     endDate: "30/04/2026",
     attachments: [],
@@ -61,6 +81,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "PLANNING",
     progress: 0,
     location: "Bairro São José",
+    priorityScore: 45, // Prioridade Média
     startDate: "Previsto: Mai/2026",
     attachments: [],
     lastUpdate: {
@@ -72,26 +93,12 @@ const MOCK_PROJECTS: Project[] = [
     }
   },
   {
-    id: "proj-003",
-    title: "Infiltração na Escola Municipal",
-    status: "DEMAND",
-    progress: 0,
-    location: "Zona Rural",
-    attachments: [],
-    lastUpdate: {
-      id: "ev-03",
-      date: "02/03/2026",
-      author: "Diretoria",
-      description: "Abertura de chamado: Infiltração grave no teto do refeitório.",
-      type: "COMMENT"
-    }
-  },
-  {
     id: "proj-004",
     title: "Reforma da Guarita Principal",
     status: "COMPLETED",
     progress: 100,
     location: "Sede Administrativa",
+    priorityScore: 15, // Prioridade Baixa
     startDate: "15/01/2026",
     endDate: "28/02/2026",
     attachments: ["termo_recebimento.pdf"],
@@ -106,14 +113,13 @@ const MOCK_PROJECTS: Project[] = [
 ];
 
 export function ProjectsList() {
-  const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("EXECUTION");
+  const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("ALL");
 
-  // Filtro inteligente
+  // Filtro inteligente + ORDENAÇÃO POR PRIORIDADE (Maior para Menor)
   const filteredProjects = MOCK_PROJECTS.filter(
     (p) => activeTab === "ALL" || p.status === activeTab
-  );
+  ).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
-  // Helper para renderizar o ícone e cor corretos baseado no status
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
       case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-orange-500", bg: "bg-orange-500/10" };
@@ -121,6 +127,15 @@ export function ProjectsList() {
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
     }
+  };
+
+  // Termômetro Visual da Matriz GUT
+  const getPriorityConfig = (score?: number) => {
+    if (!score) return null;
+    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600", bg: "bg-red-600/10 border-red-200" };
+    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-orange-600", bg: "bg-orange-600/10 border-orange-200" };
+    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-600/10 border-blue-200" };
+    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200" };
   };
 
   return (
@@ -134,7 +149,7 @@ export function ProjectsList() {
         </p>
       </div>
 
-      {/* Navegação por Abas (Scrollável no Mobile) */}
+      {/* Navegação por Abas */}
       <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
         {[
           { id: "ALL", label: "Todas" },
@@ -165,27 +180,40 @@ export function ProjectsList() {
           </div>
         ) : (
           filteredProjects.map((project) => {
-            const config = getStatusConfig(project.status);
-            const StatusIcon = config.icon;
+            const statusConfig = getStatusConfig(project.status);
+            const StatusIcon = statusConfig.icon;
+            const priorityConfig = getPriorityConfig(project.priorityScore);
+            const PriorityIcon = priorityConfig?.icon;
 
             return (
               <div 
                 key={project.id} 
                 className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
               >
-                {/* Header do Card */}
+                {/* Header do Card (Título na Esquerda, Badges na Direita) */}
                 <div className="flex justify-between items-start gap-3">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-base leading-tight">{project.title}</h3>
                     <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs">
-                      <MapPin className="w-3.5 h-3.5" />
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
                   </div>
-                  <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.color}`}>
-                    <StatusIcon className="w-3 h-3" />
-                    {config.label}
-                  </span>
+                  
+                  {/* Container de Badges (Status + Prioridade) */}
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {statusConfig.label}
+                    </span>
+                    
+                    {priorityConfig && PriorityIcon && (
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold ${priorityConfig.bg} ${priorityConfig.color}`}>
+                        <PriorityIcon className="w-3 h-3" />
+                        {priorityConfig.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Progresso (Visível apenas em Execução/Concluída) */}
@@ -204,7 +232,7 @@ export function ProjectsList() {
                   </div>
                 )}
 
-                {/* Timeline Snippet (A "Galinha dos Ovos de Ouro") */}
+                {/* Timeline Snippet */}
                 <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -239,13 +267,12 @@ export function ProjectsList() {
         )}
       </div>
 
-      {/* Floating Action Button (Mobile-First) */}
+      {/* Floating Action Button */}
       <button 
         className="fixed bottom-6 right-6 md:absolute md:bottom-0 md:right-0 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform hover:scale-105 flex items-center justify-center z-50 group"
         title="Nova Demanda / Obra"
       >
         <Plus className="w-6 h-6" />
-        {/* Texto aparece apenas no Desktop no hover */}
         <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out md:group-hover:ml-2 md:group-hover:mr-1 font-medium text-sm">
           Nova Demanda
         </span>

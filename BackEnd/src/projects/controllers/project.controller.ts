@@ -1,0 +1,61 @@
+// BackEnd/src/projects/controllers/project.controller.ts
+
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ProjectsService } from '../services/project.service';
+import { AuthGuard } from '../../auth/auth.guard';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
+import {
+  CreateProjectDto,
+  createProjectSchema,
+  EmitParecerDto,
+  emitParecerSchema,
+} from '../validations/project.zod';//'../validations/projects.zod';
+
+// A rota raiz fica aninhada na organização: /organizations/:orgId/projects
+@Controller('organizations/:orgId/projects')
+@UseGuards(AuthGuard)
+export class ProjectsController {
+  constructor(private readonly projectsService: ProjectsService) {}
+
+  // 1. CRIAR NOVA DEMANDA/OBRA
+  // Rota: POST /organizations/:orgId/projects
+  @Post()
+  async createProject(
+    @Param('orgId') orgId: string,
+    @Body(new ZodValidationPipe(createProjectSchema)) data: CreateProjectDto,
+    @Req() req: any,
+  ) {
+    // Extrai o ID do usuário logado (O autor da demanda)
+    const userId = req.user.sub || req.user.id;
+    return this.projectsService.createProject(orgId, userId, data);
+  }
+
+  // 2. LISTAR TODOS PROJETOS DA EMPRESA
+  // Rota: GET /organizations/:orgId/projects
+  @Get()
+  async getProjects(@Param('orgId') orgId: string) {
+    return this.projectsService.findAllByOrganization(orgId);
+  }
+
+  // 3. EMITIR PARECER TÉCNICO (E GERAR A PRIORIDADE)
+  // Rota: POST /organizations/:orgId/projects/:projectId/parecer
+  @Post(':projectId/parecer')
+  async emitParecer(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Body(new ZodValidationPipe(emitParecerSchema)) data: EmitParecerDto,
+    @Req() req: any,
+  ) {
+    // Extrai o ID do engenheiro que está dando o parecer
+    const userId = req.user.sub || req.user.id;
+    return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data);
+  }
+}
