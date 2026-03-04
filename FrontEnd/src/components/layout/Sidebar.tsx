@@ -11,7 +11,8 @@ import {
   BarChart3,
   ShoppingCart,
   Tag,
-  Settings
+  Settings,
+  BookOpenText
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { usePathname } from "next/navigation";
@@ -28,6 +29,7 @@ export function Sidebar() {
   const managementLinks = [
     // { name: "Products", href: "/dashboard/products", icon: <Box className="w-4 h-4" /> },
     { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
+    { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
     // { name: "Segmentos", href: "/dashboard/segments", icon: <PieChart className="w-4 h-4" /> },
     // { name: "Regiões", href: "/dashboard/regions", icon: <Globe className="w-4 h-4" /> },
   ];

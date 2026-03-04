@@ -1,4 +1,3 @@
-// BackEnd/src/auth/auth.service.ts
 import * as bcrypt from 'bcryptjs';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/services/user.service';
@@ -16,22 +15,28 @@ export class AuthService {
     pass: string
   ): Promise<{ access_token: string }> {
     const user = await this.usersService.findOne(email);
+    
     if (!user) {
       console.log('Usuário não encontrado');
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
+    
     const passwordMatch = await bcrypt.compare(pass, user.password);
+    
     if (!passwordMatch) {
       console.log('Senha incorreta');
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
+    
+    // Payload limpo: Apenas a Identidade Global. 
+    // Removemos o 'memberships' daqui definitivamente.
     const payload = { 
-      sub: user.id,
+      sub: user._id,
       name: user.name, 
-      email: user.email,
-      role: user.rule // substituir esse no 'rule' pelo 'role' no futuro
+      email: user.email 
     };
-    console.log('Payload:', payload);
+    
+    console.log('Payload gerado para o JWT:', payload);
 
     return {
       access_token: await this.jwtService.signAsync(payload),

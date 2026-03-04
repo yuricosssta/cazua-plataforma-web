@@ -11,8 +11,8 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-muted-foreground">
         <p className="text-lg">Página não encontrada</p>
-        <Link href="/posts" className="mt-4 text-primary hover:underline">
-          Voltar para o blog
+        <Link href="/dashboard/posts" className="mt-4 text-primary hover:underline">
+          Voltar para todas as publicações
         </Link>
       </div>
     );
@@ -26,11 +26,11 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
         
         {/* Botão Voltar */}
         <Link 
-          href="/posts" 
+          href="/dashboard/posts" 
           className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-8 group"
         >
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
-          Voltar para todos
+          Voltar para todas as publicações
         </Link>
 
         {/* Cabeçalho do Post */}

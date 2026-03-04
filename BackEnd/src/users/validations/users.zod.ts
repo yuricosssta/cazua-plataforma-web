@@ -1,19 +1,26 @@
 import { z } from 'zod';
-import { USER_ROLES } from '../constants/user.roles';
-import { UserRule } from '../schemas/models/user.interface';
 
 export const createUserSchema = z.object({
-  email: z.string(),
-  name: z.string(),
-  password: z.string(),
-  isAdmin: z.boolean(),
-  rule: z.nativeEnum(UserRule),
+  email: z.string().email('E-mail inválido'),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
+  role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional().default('MEMBER'),
+  memberships: z.array(
+    z.object({
+      organizationId: z.string(),
+      role: z.string(),
+    })
+  ).optional(),
 });
 
 export const updateUserSchema = z.object({
   name: z.string().optional(),
-  isAdmin: z.boolean().optional(),
-  rule: z.nativeEnum(UserRule),//.optional(),
+  memberships: z.array(
+    z.object({
+      organizationId: z.string(),
+      role: z.string(),
+    })
+  ).optional(),
 });
 
 export type CreateUser = z.infer<typeof createUserSchema>;

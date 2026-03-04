@@ -12,8 +12,7 @@ async function bootstrap() {
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    // ADICIONEI 'x-org-id' AQUI. Sem isso, o navegador bloqueia o envio do ID da empresa.
-    allowedHeaders: 'Content-Type, Accept, Authorization, x-org-id', 
+    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-org-id, x-organization-id', 
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });

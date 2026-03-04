@@ -4,6 +4,7 @@ import { OrganizationService } from './services/organization.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrganizationSchema } from './schemas/organization.schema';
 import { OrganizationMemberSchema } from './schemas/organization-member.schema';
+import { UsersModule } from 'src/users/user.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { OrganizationMemberSchema } from './schemas/organization-member.schema';
       { name: 'Organization', schema: OrganizationSchema },
       { name: 'OrganizationMember', schema: OrganizationMemberSchema },
     ]),
+    UsersModule,
   ],
   controllers: [OrganizationController],
   providers: [OrganizationService],

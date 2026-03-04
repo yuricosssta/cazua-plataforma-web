@@ -21,7 +21,6 @@ export default function DashboardOverviewPage() {
           {/* <p className="text-sm text-muted-foreground text-center px-4">
             Espaço reservado para os Cards de Métricas e Gráfico de Faturamento <br/> (Implementação Futura)
           </p> */}
-          <PostList />
         </div>
 
         {/* O nosso Activity Log (col-span-1) */}

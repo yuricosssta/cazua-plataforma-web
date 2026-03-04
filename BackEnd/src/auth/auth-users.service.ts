@@ -1,12 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from '../users/schemas/user.schema';
+import { User } from '../users/schemas/user.schema';
 import { hash } from 'bcryptjs';
 
 @Injectable()
 export class AuthUsersService implements OnModuleInit {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async onModuleInit() {
     const adminExists = await this.userModel.findOne({ email: 'admin@admin.com' });
@@ -19,17 +19,16 @@ export class AuthUsersService implements OnModuleInit {
         email: 'admin@admin.com',
         password: hashedPassword,
         name: 'Admin User',
-        rule: 0,
+        memberships: [] // Nasce sem empresa. Cria a primeira ao logar.
       });
 
       await adminUser.save();
-      console.log('Usuário admin criado com sucesso');
+      console.log('Usuário inicial (admin) criado com sucesso');
     }
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ email });
-    return user;
+    return await this.userModel.findOne({ email });
   }
 
   async findAll(): Promise<User[]> {

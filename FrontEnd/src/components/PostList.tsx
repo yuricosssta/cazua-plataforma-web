@@ -48,7 +48,7 @@ export const PostList = () => {
       >
         {posts.map((post) => (
           <div className="break-words" key={post._id}>
-            <Link href={`/posts/${post._id}`}>
+            <Link href={`posts/${post._id}`}>
               {/* CORREÇÃO 2: 'bg-gray-200' virou 'bg-muted'. 
                  No modo escuro, o cinza fica mais escuro automaticamente.
               */}
@@ -64,9 +64,8 @@ export const PostList = () => {
             </Link>
             <div className="grid grid-cols-1 gap-3 md:col-span-2 mt-4">
               <h2 className="font-sans font-semibold tracking-tighter text-primary text-2xl md:text-3xl hover:text-primary/80 transition-colors">
-                <Link href={`/posts/${post._id}`}>{post.title}</Link>
+                <Link href={`posts/${post._id}`}>{post.title}</Link>
               </h2>
-              {/* text-muted-foreground já estava correto aqui */}
               <div className="prose lg:prose-lg leading-relaxed md:text-lg line-clamp-4 text-muted-foreground">
                 {post.content}
               </div>
@@ -78,7 +77,7 @@ export const PostList = () => {
                 </div>
               </div>
               <Link 
-                href={`/posts/${post._id}/edit`} 
+                href={`posts/${post._id}/edit`} 
                 /* CORREÇÃO 3: Classes de botão padronizadas */
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3 w-fit"
               >
@@ -90,7 +89,6 @@ export const PostList = () => {
       </div>
 
       {/* Controles de Paginação */}
-      {/* CORREÇÃO 4: Removido bg fixo e usado classes do tema */}
       <div className="flex justify-center items-center gap-4 mt-16 pb-10 text-foreground">
         <button
           onClick={() => handlePageChange(currentPage - 1)}

@@ -12,4 +12,5 @@ export abstract class UsersRepository {
     userId: string,
     user: Partial<IUser>,
   ): Promise<IUser | null>;
+  abstract getUsersByOrganization(orgId: string): Promise<IUser[]>
 }
