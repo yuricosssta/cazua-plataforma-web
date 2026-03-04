@@ -12,6 +12,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { TranscriptionModule } from './transcription/transcription.module';
 import { SummaryModule } from './summary/summary.module';
 import { OrganizationModule } from './organization/organization.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { OrganizationModule } from './organization/organization.module';
     PostModule,
     TranscriptionModule,
     SummaryModule,
-    OrganizationModule, 
+    OrganizationModule,
+    ProjectsModule, 
   ],
   controllers: [AppController],
   providers: [AppService],// { provide: APP_GUARD, useClass: AuthGuard }],

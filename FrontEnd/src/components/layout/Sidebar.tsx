@@ -30,6 +30,7 @@ export function Sidebar() {
     // { name: "Products", href: "/dashboard/products", icon: <Box className="w-4 h-4" /> },
     { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
     { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
+    { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
     // { name: "Segmentos", href: "/dashboard/segments", icon: <PieChart className="w-4 h-4" /> },
     // { name: "Regiões", href: "/dashboard/regions", icon: <Globe className="w-4 h-4" /> },
   ];
