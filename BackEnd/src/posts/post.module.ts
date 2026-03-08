@@ -6,7 +6,7 @@ import { PostMongooseRepository } from './repositories/mongoose/post.mongoose.re
 import { PostService } from './services/post.service';
 import { PostController } from './controllers/post.controller';
 import { AuthModule } from '../auth/auth.module';
-import { OrganizationModule } from 'src/organization/organization.module';
+import { OrganizationModule } from '../organization/organization.module';
 
 @Module({
   imports: [
