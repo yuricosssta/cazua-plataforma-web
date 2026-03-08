@@ -1,38 +1,34 @@
 // components/SidebarLayout.tsx
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  Box,
   Users,
-  PieChart,
   Globe,
   BarChart3,
   ShoppingCart,
   Tag,
   Settings,
-  BookOpenText
+  BookOpenText,
+  Menu,
+  X
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
 import { usePathname } from "next/navigation";
 
 export function Sidebar() {
+  const [isOpen, setIsOpen] = useState(false);
+
   const dashboardLinks = [
-    {
-      name: "Visão Geral", href: "/dashboard", icon:
-        <Globe className="w-4 h-4" />
-      // <LayoutDashboard className="w-4 h-4" />
-    },
+    { name: "Visão Geral", href: "/dashboard", icon: <Globe className="w-4 h-4" /> },
   ];
 
   const managementLinks = [
-    // { name: "Products", href: "/dashboard/products", icon: <Box className="w-4 h-4" /> },
     { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
     { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
     { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
-    // { name: "Segmentos", href: "/dashboard/segments", icon: <PieChart className="w-4 h-4" /> },
-    // { name: "Regiões", href: "/dashboard/regions", icon: <Globe className="w-4 h-4" /> },
   ];
 
   const monetizationLinks = [
@@ -42,98 +38,82 @@ export function Sidebar() {
   ];
 
   const settingsLinks = [
-    { name: "Configuration", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
+    { name: "Configurações", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (
-    <aside className="w-[260px] border-r border-border bg-background flex flex-col h-full flex-shrink-0">
+    <>
+      {/* Botão Hamburger (Mobile apenas) */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background border border-border rounded-md shadow-sm text-muted-foreground hover:text-foreground"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
 
-      <div className="p-4 border-b border-border">
-        <OrgSwitcher />
-      </div>
+      {/* Backdrop escuro (Mobile apenas) */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
-      {/* Navegação Principal */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
-
-        {/* Seção Principal */}
-        <div className="space-y-1">
-          {dashboardLinks.map((link) => (
-            <NavItem
-              key={link.name}
-              href={link.href}
-              icon={link.icon}
-              label={link.name}
-            />
-          ))}
+      {/* Sidebar (Gaveta no Mobile / Fixa no Desktop) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        
+        <div className="p-4 border-b border-border flex justify-between items-center">
+          <div className="flex-1">
+            <OrgSwitcher />
+          </div>
+          {/* Botão Fechar (Mobile apenas) */}
+          <button onClick={() => setIsOpen(false)} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Seção: Management */}
-        <div>
-          <p className="px-3 text-xs font-medium text-muted-foreground mb-2">
-            Gerenciamento
-          </p>
+        <nav className="flex-1 overflow-y-auto p-3 space-y-6">
           <div className="space-y-1">
-            {managementLinks.map((link) => (
-              <NavItem
-                key={link.name}
-                href={link.href}
-                icon={link.icon}
-                label={link.name}
-              />
+            {dashboardLinks.map((link) => (
+              <NavItem key={link.name} href={link.href} icon={link.icon} label={link.name} onClick={() => setIsOpen(false)} />
             ))}
           </div>
-        </div>
 
-        {/* Seção: Monetization */}
-        {/* <div>
-          <p className="px-3 text-xs font-medium text-muted-foreground mb-2">
-            Monetization
-          </p>
-          <div className="space-y-1">
-            {monetizationLinks.map((link) => (
-              <NavItem
-                key={link.name}
-                href={link.href}
-                icon={link.icon}
-                label={link.name}
-              />
-            ))}
+          <div>
+            <p className="px-3 text-xs font-medium text-muted-foreground mb-2">Gerenciamento</p>
+            <div className="space-y-1">
+              {managementLinks.map((link) => (
+                <NavItem key={link.name} href={link.href} icon={link.icon} label={link.name} onClick={() => setIsOpen(false)} />
+              ))}
+            </div>
           </div>
-        </div> */}
 
-        {/* Seção: Settings */}
-        <div>
-          <p className="px-3 text-xs font-medium text-muted-foreground mb-2">
-            Configurações
-          </p>
-          <div className="space-y-1">
-            {settingsLinks.map((link) => (
-              <NavItem
-                key={link.name}
-                href={link.href}
-                icon={link.icon}
-                label={link.name}
-              />
-            ))}
+          <div>
+            <p className="px-3 text-xs font-medium text-muted-foreground mb-2">Configurações</p>
+            <div className="space-y-1">
+              {settingsLinks.map((link) => (
+                <NavItem key={link.name} href={link.href} icon={link.icon} label={link.name} onClick={() => setIsOpen(false)} />
+              ))}
+            </div>
           </div>
-        </div>
-
-      </nav>
-    </aside>
+        </nav>
+      </aside>
+    </>
   );
 }
 
-function NavItem({ href, icon, label, className }: { href: string; icon: React.ReactNode; label: string; className?: string }) {
+function NavItem({ href, icon, label, onClick }: { href: string; icon: React.ReactNode; label: string; onClick?: () => void }) {
   const pathname = usePathname();
   const isActive = pathname === href;
+  
   return (
     <Link
       href={href}
-      // className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${className || "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`}
+      onClick={onClick}
       className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive
         ? "bg-accent text-accent-foreground"
         : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-        }`}
+      }`}
     >
       {icon}
       {label}

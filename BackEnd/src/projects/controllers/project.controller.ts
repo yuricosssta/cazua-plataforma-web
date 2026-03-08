@@ -23,7 +23,7 @@ import {
 @Controller('organizations/:orgId/projects')
 @UseGuards(AuthGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) { }
 
   // 1. CRIAR NOVA DEMANDA/OBRA
   // Rota: POST /organizations/:orgId/projects
@@ -57,5 +57,15 @@ export class ProjectsController {
     // Extrai o ID do engenheiro que está dando o parecer
     const userId = req.user.sub || req.user.id;
     return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data);
+  }
+
+  // 4. DETALHES DA OBRA E TIMELINE COMPLETA
+  // Rota: GET /organizations/:orgId/projects/:projectId
+  @Get(':projectId')
+  async getProjectDetails(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.projectsService.findOneWithTimeline(orgId, projectId);
   }
 }

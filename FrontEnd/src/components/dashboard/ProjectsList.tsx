@@ -11,6 +11,7 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axios from "axios";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
+import { useRouter } from "next/navigation";
 
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
 
@@ -36,6 +37,7 @@ interface Project {
 }
 
 export function ProjectsList() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<{id: string, title: string, status: string} | null>(null);
@@ -198,7 +200,8 @@ export function ProjectsList() {
 
             return (
               <div 
-                key={project.id} 
+                key={project.id}
+                onClick={() => router.push(`/dashboard/projects/${project.id}`)} 
                 className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
               >
                 {/* Header do Card */}

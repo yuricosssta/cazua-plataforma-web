@@ -12,7 +12,7 @@ export class ProjectsService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @InjectModel(TimelineEvent.name) private timelineEventModel: Model<TimelineEventDocument>,
-  ) {}
+  ) { }
 
   // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
   private calculatePriorityScore(details: Record<string, number>): number {
@@ -73,12 +73,16 @@ export class ProjectsService {
 
     // Calcula o score máximo de 125 baseado nas respostas
     const score = this.calculatePriorityScore(data.priorityDetails);
+    // Gerar um código de referência único para este parecer
+    const year = new Date().getFullYear();
+    const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const referenceCode = `PRC-${year}-${randomHex}`;
 
     try {
       // Atualiza a Obra com os novos dados de prioridade e possivelmente novo status
       project.priorityScore = score;
       project.priorityDetails = data.priorityDetails;
-      
+
       let statusChanged = false;
       if (data.newStatus && data.newStatus !== project.status) {
         project.status = data.newStatus as ProjectStatus;
@@ -92,6 +96,7 @@ export class ProjectsService {
         authorId: new Types.ObjectId(String(userId)),
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
+        referenceCode: referenceCode,
         metadata: {
           priorityScore: score,
           priorityDetails: data.priorityDetails,
@@ -117,11 +122,34 @@ export class ProjectsService {
     return this.projectModel
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
       .populate({
-        path: 'lastEventId', 
+        path: 'lastEventId',
         select: 'description date authorId type metadata',
       })
       // Ordenação primária pela Prioridade (do mais crítico para o menor), secundária pela criação
-      .sort({ priorityScore: -1, createdAt: -1 }) 
+      .sort({ priorityScore: -1, createdAt: -1 })
       .exec();
   }
+
+  // 4. VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
+  async findOneWithTimeline(orgId: string, projectId: string) {
+    const project = await this.projectModel.findOne({
+      _id: new Types.ObjectId(String(projectId)),
+      organizationId: new Types.ObjectId(String(orgId))
+    }).exec();
+
+    if (!project) {
+      throw new NotFoundException('Projeto não encontrado.');
+    }
+    // Busca TODOS os eventos dessa obra, ordenados do mais recente para o mais antigo
+    const timeline = await this.timelineEventModel.find({
+      projectId: new Types.ObjectId(String(projectId)),
+      organizationId: new Types.ObjectId(String(orgId))
+    })
+    .populate('authorId', 'name')
+    .sort({ createdAt: -1 })
+    .exec();
+
+    return { project, timeline };
+  }
+
 }

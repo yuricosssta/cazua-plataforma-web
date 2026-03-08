@@ -17,7 +17,6 @@ export class TimelineEvent {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true, index: true })
   projectId: MongooseSchema.Types.ObjectId;
 
-  // Duplicamos o organizationId aqui por segurança e performance em relatórios globais
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Organization', required: true })
   organizationId: MongooseSchema.Types.ObjectId;
 
@@ -29,6 +28,9 @@ export class TimelineEvent {
 
   @Prop({ required: true })
   description: string;
+
+  @Prop({ type: String, unique: true, sparse: true })
+  referenceCode?: string;
 
   // Campo flexível para guardar dados extras. 
   // Ex: Se o tipo for STATUS_CHANGE, podemos guardar { oldStatus: 'DEMAND', newStatus: 'PLANNING' }
