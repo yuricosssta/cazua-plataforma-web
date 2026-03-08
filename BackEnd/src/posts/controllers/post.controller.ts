@@ -22,7 +22,7 @@ import { LoggingInterceptor } from '../../shared/interceptors/logging.intercepto
 import { AuthGuard } from '../../auth/auth.guard';
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
-import { TenantGuard } from 'src/organization/guards/tenant.guard';
+import { TenantGuard } from '../../organization/guards/tenant.guard';
 
 @UseInterceptors(LoggingInterceptor)
 // @UseGuards(AuthGuard, TenantGuard) // Ativar mais tarde
