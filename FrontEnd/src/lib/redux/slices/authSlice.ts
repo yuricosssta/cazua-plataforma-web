@@ -38,11 +38,8 @@ const initialState: AuthState = {
 const safeDecode = (token: string): UserPayload | null => {
   try {
     const decoded = jwtDecode<UserPayload>(token);
-
-    // DEBUG: Veja no console o que realmente tem no seu token
     console.log("Token Decodificado (Payload):", decoded);
 
-    // FALLBACK: Se o backend não mandou 'name', usa a parte do email antes do @
     if (!decoded.name && decoded.email) {
       decoded.name = decoded.email.split('@')[0];
     }
@@ -66,10 +63,9 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // setAuthState: (state, action: PayloadAction<{ token: string | null; isAuthenticated: boolean }>) => {
     setAuthState: (state, action: PayloadAction<{ token: string | null }>) => {
       const token = action.payload.token;
-      // state.isAuthenticated = action.payload.isAuthenticated;
+
       if (token) {
         state.token = token;
         state.isAuthenticated = true;
@@ -105,7 +101,6 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         localStorage.setItem('token', token); // Armazena o token no localStorage
         state.user = safeDecode(token);
-        // state.user = jwtDecode<UserPayload>(token);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';

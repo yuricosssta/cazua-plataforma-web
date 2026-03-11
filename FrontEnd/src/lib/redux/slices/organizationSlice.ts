@@ -40,7 +40,7 @@ export const fetchMyOrganizations = createAsyncThunk(
         return rejectWithValue('Usuário não autenticado');
       }
 
-      const data = await apiFetchMyOrganizations(token);
+      const data = await apiFetchMyOrganizations(token); 
       return data;
     } catch (err: any) {
       return rejectWithValue(err);
