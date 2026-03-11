@@ -27,17 +27,19 @@ export default function LoginPage() {
     dispatch(loginUser({ email, password }));
   };
 
-  useEffect(() => {
-    dispatch(fetchMyOrganizations())
-        .unwrap() // O unwrap() nos permite usar o .then() para saber exatamente quando o thunk terminou
+ useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchMyOrganizations())
+        .unwrap()
         .then(() => {
-          // As organizações chegaram e o Slice já auto-selecionou a primeira (ou a do localStorage)!
-          // Agora sim, o caminho está livre para ir para o Dashboard com os dados preenchidos.
           router.push('/dashboard');
-        }).catch((err) => {
-          console.error("Erro ao carregar organizações no login", err);
-          // alert("Login bem-sucedido, mas houve um erro ao carregar suas organizações. Tente recarregar a página ou entrar em contato com o suporte.");
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar organizações pós-login:", err);
+          // Vai pro dashboard mesmo assim para não travar o fluxo
+          router.push('/dashboard'); 
         });
+    }
   }, [isAuthenticated, dispatch, router]);
 
   return (
