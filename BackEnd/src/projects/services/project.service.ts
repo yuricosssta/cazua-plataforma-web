@@ -1,6 +1,6 @@
 // BackEnd/src/projects/services/project.service.ts
 
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
@@ -61,7 +61,7 @@ export class ProjectsService {
   }
 
   // 2. EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE
-  async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: EmitParecerDto) {
+  async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: EmitParecerDto, userRole?: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
@@ -69,6 +69,13 @@ export class ProjectsService {
 
     if (!project) {
       throw new NotFoundException('Demanda/Projeto não encontrada.');
+    }
+
+    const isAssigned = project.assignedMembers.some(memberId => memberId.toString() === userId.toString());
+    const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+
+    if (!isAssigned && !isAdmin) {
+      throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
     }
 
     // Calcula o score máximo de 125 baseado nas respostas
@@ -150,6 +157,64 @@ export class ProjectsService {
     .exec();
 
     return { project, timeline };
+  }
+
+  // 5. ALOCAÇÃO DE EQUIPE
+  async assignMember(orgId: string, projectId: string, memberId: string) {
+    const project = await this.projectModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(String(projectId)),
+        organizationId: new Types.ObjectId(String(orgId))
+      },
+      // $addToSet adiciona o ID apenas se ele já não estiver na lista (evita duplicidade)
+      { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
+      { new: true }
+    ).exec();
+
+    if (!project) {
+      throw new NotFoundException('Projeto não encontrado nesta organização.');
+    }
+
+    // Registrar isso na Timeline como evento de sistema!
+    const timelineEvent = new this.timelineEventModel({
+      projectId: project._id,
+      organizationId: new Types.ObjectId(String(orgId)),
+      authorId: new Types.ObjectId(String(memberId)),
+      type: 'STATUS_CHANGE', 
+      description: 'Novo membro alocado à equipe.',
+    });
+    await timelineEvent.save();
+
+    return project;
+  }
+
+  // 6. DESALOCAÇÃO DE EQUIPE
+  async removeMember(orgId: string, projectId: string, memberId: string) {
+    const project = await this.projectModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(String(projectId)),
+        organizationId: new Types.ObjectId(String(orgId))
+      },
+      // $pull arranca o ID de dentro do array
+      { $pull: { assignedMembers: new Types.ObjectId(String(memberId)) } },
+      { new: true }
+    ).exec();
+
+    if (!project) {
+      throw new NotFoundException('Projeto não encontrado nesta organização.');
+    }
+
+    // Registrar isso na Timeline como evento de sistema!
+    const timelineEvent = new this.timelineEventModel({
+      projectId: project._id,
+      organizationId: new Types.ObjectId(String(orgId)),
+      authorId: new Types.ObjectId(String(memberId)),
+      type: 'STATUS_CHANGE', 
+      description: 'Membro removido da equipe.',
+    });
+    await timelineEvent.save();
+
+    return project;
   }
 
 }

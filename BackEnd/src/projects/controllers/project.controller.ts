@@ -3,6 +3,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -54,9 +55,10 @@ export class ProjectsController {
     @Body(new ZodValidationPipe(emitParecerSchema)) data: EmitParecerDto,
     @Req() req: any,
   ) {
-    // Extrai o ID do engenheiro que está dando o parecer
+    // Extrai o ID do usuário que está dando o parecer
     const userId = req.user.sub || req.user.id;
-    return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data);
+    const userRole = req.membership?.role || req.user?.role || 'MEMBER';
+    return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data, userRole);
   }
 
   // 4. DETALHES DA OBRA E TIMELINE COMPLETA
@@ -68,4 +70,27 @@ export class ProjectsController {
   ) {
     return this.projectsService.findOneWithTimeline(orgId, projectId);
   }
+
+  // 5. ALOCAR MEMBRO NA OBRA
+  // Rota: POST /organizations/:orgId/projects/:projectId/members
+  @Post(':projectId/members')
+  async assignMemberToProject(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.projectsService.assignMember(orgId, projectId, userId);
+  }
+
+  // 6. REMOVER MEMBRO DA OBRA
+  // Rota: DELETE /organizations/:orgId/projects/:projectId/members/:userId
+  @Delete(':projectId/members/:userId')
+  async removeMemberFromProject(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.projectsService.removeMember(orgId, projectId, userId);
+  }
+
 }

@@ -8,10 +8,11 @@ import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axios from "axios";
 import {
-  ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText,
-  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network
+  ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
+  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network, Users
 } from "lucide-react";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
+import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
 
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
 type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
@@ -39,6 +40,7 @@ interface Project {
   endDate?: string;
   priorityScore?: number;
   priorityDetails?: Record<string, number>;
+  assignedMembers?: any[];
   createdAt: string;
 }
 
@@ -49,6 +51,7 @@ export default function ProjectDetailsPage() {
 
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -65,30 +68,32 @@ export default function ProjectDetailsPage() {
   const [isParecerOpen, setIsParecerOpen] = useState(false);
   const [isDiarioOpen, setIsDiarioOpen] = useState(false);
   const [isEapOpen, setIsEapOpen] = useState(false);
+  const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
+
+  const fetchProjectDetails = async (showFullLoader = true) => {
+    if (!orgId || !token || !projectId) return;
+
+    try {
+      if (showFullLoader) setIsLoading(true);
+
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${projectId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setProject(response.data.project);
+      setTimeline(response.data.timeline);
+    } catch (error) {
+      console.error("Erro ao buscar detalhes:", error);
+      alert("Não foi possível carregar os detalhes do projeto.");
+      router.push("/dashboard/projects");
+    } finally {
+      if (showFullLoader) setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProjectDetails = async () => {
-      if (!orgId || !token || !projectId) return;
-
-      try {
-        setIsLoading(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${projectId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        setProject(response.data.project);
-        setTimeline(response.data.timeline);
-      } catch (error) {
-        console.error("Erro ao buscar detalhes:", error);
-        alert("Não foi possível carregar os detalhes da obra.");
-        router.push("/dashboard/projects");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProjectDetails();
+    fetchProjectDetails(true); // 'true' porque é o primeiro carregamento da tela
   }, [orgId, token, projectId, router]);
 
   const getStatusConfig = (status: ProjectStatus) => {
@@ -134,6 +139,13 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
+  const isAssigned = project.assignedMembers?.some((m: any) => {
+    const memberId = typeof m === 'string' ? m : m._id;
+    return memberId === user?._id;
+  });
+  const hasPermission = isOrgAdmin || isAssigned;
+
   const statusConfig = getStatusConfig(project.status);
   const priorityConfig = getPriorityConfig(project.priorityScore);
   const StatusIcon = statusConfig.icon;
@@ -171,33 +183,53 @@ export default function ProjectDetailsPage() {
             </div>
           </div>
 
-          {/* PAINEL DE AÇÕES (Os botões que substituem o FAB escondido) */}
+          {/* PAINEL DE AÇÕES */}
           <div className="flex flex-wrap items-center gap-2 ml-14 md:ml-0">
+            {isOrgAdmin && (
+              <button
+                onClick={() => setIsTeamDrawerOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold transition-colors border border-border"
+              >
+                <Users className="w-4 h-4" />
+                Equipe
+              </button>
+            )}
+
             <button
+              disabled={!hasPermission}
               onClick={() => setIsParecerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-semibold transition-colors border border-primary/20"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
+                ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-primary/20'
+                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
+                }`}
+              title={!hasPermission ? "Você não está alocado neste projeto." : ""}
             >
-              <Activity className="w-4 h-4" />
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
               Parecer Técnico
             </button>
 
-            {/* O botão de Diário só faz sentido se a obra já estiver em Execução, 
-                mas vamos deixá-lo visível para planejamento também */}
             <button
-              onClick={() => setIsDiarioOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white rounded-md text-sm font-semibold transition-colors border border-amber-200"
+              disabled={!hasPermission}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
+                ? 'bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white border-amber-200'
+                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
+                }`}
             >
-              <HardHat className="w-4 h-4" />
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />}
               Diário de Obra
             </button>
 
             <button
-              onClick={() => setIsEapOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-sm font-semibold transition-colors border border-blue-200"
+              disabled={!hasPermission}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-200'
+                  : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
+                }`}
             >
-              <Network className="w-4 h-4" />
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <Network className="w-4 h-4" />}
               EAP / Orçamento
             </button>
+
           </div>
         </div>
 
@@ -325,7 +357,19 @@ export default function ProjectDetailsPage() {
         onClose={() => setIsParecerOpen(false)}
         project={{ id: project._id, title: project.title, status: project.status }}
         onSuccess={() => {
-          window.location.reload(); // Ou extraia o fetchProjectDetails para uma função reutilizável
+          fetchProjectDetails(false);
+        }}
+      />
+
+      {/* A GAVETA DE EQUIPE */}
+      <ManageTeamDrawer
+        isOpen={isTeamDrawerOpen}
+        onClose={() => setIsTeamDrawerOpen(false)}
+        orgId={orgId}
+        projectId={project._id}
+        currentAssignedMembers={project.assignedMembers || []}
+        onSuccess={() => {
+          fetchProjectDetails(false);
         }}
       />
 

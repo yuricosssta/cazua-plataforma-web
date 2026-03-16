@@ -1,7 +1,7 @@
 // BackEnd/src/projects/schemas/project.schema.ts
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 
 export type ProjectDocument = Project & Document;
 
@@ -41,6 +41,9 @@ export class Project {
   // Guarda as respostas exatas que geraram o score (Ex: { gravidade: 5, urgencia: 5, tendencia: 5 })
   @Prop({ type: MongooseSchema.Types.Mixed })
   priorityDetails?: Record<string, number>;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  assignedMembers: Types.ObjectId[];
 
   @Prop({ type: [String], default: [] })
   attachments: string[];
