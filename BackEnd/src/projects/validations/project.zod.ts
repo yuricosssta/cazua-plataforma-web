@@ -17,7 +17,7 @@ export type CreateProjectDto = z.infer<typeof createProjectSchema>;
 export const emitParecerSchema = z.object({
   // Notas de 1 a 5
   // Ex: { gravidade: 5, urgencia: 4, tendencia: 2 }
-  priorityDetails: z.record(z.string(), z.number().min(1).max(5)),
+  priorityDetails: z.record(z.string(), z.number().min(1).max(5)).optional(),
   
   // O texto descritivo do parecer do engenheiro
   parecerText: z.string().min(1, 'O texto do parecer é obrigatório.'),

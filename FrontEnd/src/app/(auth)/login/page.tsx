@@ -45,7 +45,7 @@ export default function LoginPage() {
       {/* LADO ESQUERDO: O Formulário Focado */}
       <div className="flex flex-col p-6 sm:p-12 lg:p-24 min-h-[100dvh] lg:min-h-screen">
         
-        {/* Logo Mobile (Agora dentro do fluxo natural, empurra o resto pra baixo) */}
+        {/* Logo Mobile  */}
         <div className="flex-none lg:hidden mb-8">
            <LogoBloco />
         </div>
@@ -112,7 +112,8 @@ export default function LoginPage() {
 
             {error && (
               <div className="p-3 mt-4 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-                {error}
+                {/* {error} */}
+                Algo deu errado. Verifique suas credenciais e tente novamente.
               </div>
             )}
           </form>

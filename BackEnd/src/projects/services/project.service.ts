@@ -60,7 +60,7 @@ export class ProjectsService {
     }
   }
 
-  // 2. EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE
+  // 2. EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE (COM GUT OPCIONAL)
   async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: EmitParecerDto, userRole?: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
@@ -78,22 +78,36 @@ export class ProjectsService {
       throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
     }
 
-    // Calcula o score máximo de 125 baseado nas respostas
-    const score = this.calculatePriorityScore(data.priorityDetails);
     // Gerar um código de referência único para este parecer
     const year = new Date().getFullYear();
-    const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const referenceCode = `PRC-${year}-${randomHex}`;
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const day = String(new Date().getDate()).padStart(2, '0');
+    const milliseconds = String(new Date().getTime()).slice(-4);
+    // const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const referenceCode = `${year}${month}${day}-${milliseconds}`;
 
     try {
-      // Atualiza a Obra com os novos dados de prioridade e possivelmente novo status
-      project.priorityScore = score;
-      project.priorityDetails = data.priorityDetails;
-
+      // Verifica e atualiza o Status (se foi enviado um novo)
       let statusChanged = false;
       if (data.newStatus && data.newStatus !== project.status) {
         project.status = data.newStatus as ProjectStatus;
         statusChanged = true;
+      }
+
+      // Base dos metadados da Timeline
+      const metadata: any = {
+        statusChanged: statusChanged ? project.status : null
+      };
+
+      // Só recalcula e atualiza o banco se o Front-end mandou os dados da matriz
+      if (data.priorityDetails && Object.keys(data.priorityDetails).length > 0) {
+        const score = this.calculatePriorityScore(data.priorityDetails);
+        project.priorityScore = score;
+        project.priorityDetails = data.priorityDetails;
+        
+        // Injeta a nota no metadado para a Timeline saber que a nota mudou neste evento
+        metadata.priorityScore = score;
+        metadata.priorityDetails = data.priorityDetails;
       }
 
       // Regista o Parecer na Timeline
@@ -104,11 +118,7 @@ export class ProjectsService {
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
         referenceCode: referenceCode,
-        metadata: {
-          priorityScore: score,
-          priorityDetails: data.priorityDetails,
-          statusChanged: statusChanged ? project.status : null
-        }
+        metadata: metadata // Salva os metadados dinâmicos construídos acima
       });
 
       const savedEvent = await parecerEvent.save();
