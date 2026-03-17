@@ -5,11 +5,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { clearOrganizationState, selectCurrentOrg, selectOrgStatus } from "@/lib/redux/slices/organizationSlice";
+import { selectCurrentOrg, selectOrgStatus } from "@/lib/redux/slices/organizationSlice";
 import { ChevronRight, Settings, LogOut, User } from "lucide-react";
 import { ColorModeSwitcher } from "../color-mode-switcher";
-import { AppDispatch } from "@/lib/redux/store";
-import { logout } from "@/lib/redux/slices/authSlice";
+import { AppDispatch, RootState } from "@/lib/redux/store";
+import { logout, setAuthState } from "@/lib/redux/slices/authSlice";
 
 export function Header() {
   const dispatch = useDispatch<AppDispatch>();
@@ -19,17 +19,21 @@ export function Header() {
   const currentOrg = useSelector(selectCurrentOrg);
   const orgStatus = useSelector(selectOrgStatus);
 
-  // Dados do Usuário
-  const profile = useSelector((state: any) => state.user?.profile);
+  // 1. Puxa o usuário que foi decodificado instantaneamente no authSlice
+  const authUser = useSelector((state: RootState) => state.auth.user);
+  // 2. Mantem a busca pelo profile completo (que pode conter mais detalhes do que o token decodificado)
+  const profile = useSelector((state: any) => state.user?.profile);  
+  // 3. Mescla: Se tiver profile completo, usa ele. Se não, usa os dados vitais do Token instantaneamente.
+  const displayUser = profile || authUser;
 
   // Controle do Dropdown de Perfil
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Lógica para montar o Breadcrumb dinâmico baseado na URL
+  // Lógica para montar o Breadcrumb dinâmico
   const pathSegments = pathname.split('/').filter(Boolean);
   const currentPageRaw = pathSegments.length > 1 ? pathSegments[pathSegments.length - 1] : 'Visão Geral';
-  const currentPage = currentPageRaw.charAt(0).toUpperCase() + currentPageRaw.slice(1); // Capitaliza a 1ª letra
+  const currentPage = currentPageRaw.charAt(0).toUpperCase() + currentPageRaw.slice(1);
 
   // Fecha o dropdown ao clicar fora
   useEffect(() => {
@@ -41,6 +45,18 @@ export function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // --- AUTO-RECOVERY DO USUÁRIO (Prevenção contra o F5) ---
+  useEffect(() => {
+    // Se o Redux estiver vazio (ex: após um F5), procuramos o token salvo no navegador
+    if (!displayUser) {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
+        // Dispara a action que decodifica o token e reconstrói o authUser
+        dispatch(setAuthState({ token: savedToken }));
+      }
+    }
+  }, [displayUser, dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -73,10 +89,12 @@ export function Header() {
           onClick={() => setIsProfileOpen(!isProfileOpen)}
           className="flex items-center justify-center w-8 h-8 rounded-full bg-accent border border-border hover:ring-2 hover:ring-muted transition-all overflow-hidden focus:outline-none"
         >
-          {profile?.avatarUrl ? (
-            <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+          {displayUser?.avatarUrl ? (
+            <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
-            <User className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center justify-center w-full h-full bg-primary/10 text-primary font-bold text-xs uppercase">
+              {displayUser?.name ? displayUser.name.charAt(0) : <User className="w-4 h-4" />}
+            </div>
           )}
         </button>
 
@@ -87,10 +105,10 @@ export function Header() {
             {/* Cabeçalho do Dropdown (Nome e Email) */}
             <div className="px-4 py-3 border-b border-border mb-1">
               <p className="text-sm font-semibold truncate">
-                {profile?.name || 'Carregando...'}
+                {displayUser?.name || 'Carregando...'}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {profile?.email || 'Carregando...'}
+                {displayUser?.email || 'Carregando...'}
               </p>
             </div>
 
