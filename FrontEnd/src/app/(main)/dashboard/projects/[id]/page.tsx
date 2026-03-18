@@ -9,7 +9,8 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axios from "axios";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
-  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network, Users
+  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network, Users,
+  LinkIcon
 } from "lucide-react";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
@@ -222,8 +223,8 @@ export default function ProjectDetailsPage() {
             <button
               disabled={!hasPermission}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-200'
-                  : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-200'
+                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
                 }`}
             >
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Network className="w-4 h-4" />}
@@ -342,7 +343,28 @@ export default function ProjectDetailsPage() {
                           <ArrowRightCircle className="w-4 h-4" /> Status Avançado
                         </span>
                       )}
+
+                      {event.metadata.attachments && event.metadata.attachments.length > 0 && (
+                        <div className="w-full mb-2 flex gap-2 flex-wrap">
+                          {event.metadata.attachments.map((link: string, idx: number) => (
+                            <a
+                              key={idx} href={link} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
+                            >
+                              <LinkIcon className="w-3.5 h-3.5" /> Acessar Anexos da Demanda
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      {event.metadata.isInitialDemand && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-md border border-zinc-200">
+                          <FileText className="w-4 h-4" /> Demanda Original
+                        </span>
+                      )}
+
                     </div>
+
                   )}
                 </div>
 

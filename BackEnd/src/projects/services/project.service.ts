@@ -34,18 +34,23 @@ export class ProjectsService {
         status: data.status as ProjectStatus,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
+        attachments: data.attachments || [],
       });
 
       const savedProject = await newProject.save();
 
-      // Regista o nascimento na Timeline
+      // Regista o nascimento na Timeline (AGORA COMO UM DOCUMENTO OFICIAL)
       const firstEvent = new this.timelineEventModel({
         projectId: savedProject._id,
         organizationId: new Types.ObjectId(String(orgId)),
         authorId: new Types.ObjectId(String(userId)),
-        type: TimelineEventType.STATUS_CHANGE,
-        description: 'Registro inicial de demanda criado no sistema.',
-        metadata: { newStatus: savedProject.status }
+        type: TimelineEventType.DOCUMENT, // CORREÇÃO: Usando a enumeração oficial
+        description: data.description, // O corpo do documento é a descrição real
+        metadata: { 
+          newStatus: savedProject.status,
+          isInitialDemand: true, // Tag para identificar que é a abertura
+          attachments: data.attachments || [] 
+        }
       });
 
       const savedEvent = await firstEvent.save();
@@ -72,10 +77,12 @@ export class ProjectsService {
       throw new NotFoundException('Demanda/Projeto não encontrada.');
     }
 
-    const isAssigned = project.assignedMembers.some(memberId => memberId.toString() === userId.toString());
+    const isAssigned = project.assignedMembers?.some(memberId => memberId.toString() === userId.toString()) || false;
     const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+    // Nova trava: Verifica se o usuário logado foi quem criou a demanda
+    const isCreator = project.createdBy && project.createdBy.toString() === userId.toString();
 
-    if (!isAssigned && !isAdmin) {
+    if (!isAssigned && !isAdmin && !isCreator) {
       throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
     }
 
@@ -84,7 +91,6 @@ export class ProjectsService {
     const month = String(new Date().getMonth() + 1).padStart(2, '0');
     const day = String(new Date().getDate()).padStart(2, '0');
     const milliseconds = String(new Date().getTime()).slice(-4);
-    // const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
     const referenceCode = `${year}${month}${day}-${milliseconds}`;
 
     try {
@@ -94,6 +100,11 @@ export class ProjectsService {
         project.status = data.newStatus as ProjectStatus;
         statusChanged = true;
       }
+
+      if (data.technicalTitle) project.title = data.technicalTitle;
+      if (data.startDate) project.startDate = new Date(data.startDate);
+      if (data.endDate) project.endDate = new Date(data.endDate);
+      if (data.location) project.location = data.location;
 
       // Base dos metadados da Timeline
       const metadata: any = {
@@ -106,7 +117,6 @@ export class ProjectsService {
         project.priorityScore = score;
         project.priorityDetails = data.priorityDetails;
         
-        // Injeta a nota no metadado para a Timeline saber que a nota mudou neste evento
         metadata.priorityScore = score;
         metadata.priorityDetails = data.priorityDetails;
       }
@@ -119,7 +129,7 @@ export class ProjectsService {
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
         referenceCode: referenceCode,
-        metadata: metadata // Salva os metadados dinâmicos construídos acima
+        metadata: metadata 
       });
 
       const savedEvent = await parecerEvent.save();
@@ -144,7 +154,6 @@ export class ProjectsService {
         select: 'description date authorId type metadata createdAt',
         populate: { path: 'authorId', select: 'name' } 
       })
-      // Ordenação primária pela Prioridade (do mais crítico para o menor), secundária pela criação
       .sort({ priorityScore: -1, createdAt: -1 })
       .exec();
   }
@@ -159,7 +168,7 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException('Projeto não encontrado.');
     }
-    // Busca TODOS os eventos dessa obra, ordenados do mais recente para o mais antigo
+    
     const timeline = await this.timelineEventModel.find({
       projectId: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
@@ -178,7 +187,6 @@ export class ProjectsService {
         _id: new Types.ObjectId(String(projectId)),
         organizationId: new Types.ObjectId(String(orgId))
       },
-      // $addToSet adiciona o ID apenas se ele já não estiver na lista (evita duplicidade)
       { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
       { new: true }
     ).exec();
@@ -187,12 +195,11 @@ export class ProjectsService {
       throw new NotFoundException('Projeto não encontrado nesta organização.');
     }
 
-    // Registrar isso na Timeline como evento de sistema!
     const timelineEvent = new this.timelineEventModel({
       projectId: project._id,
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
-      type: 'STATUS_CHANGE', 
+      type: TimelineEventType.STATUS_CHANGE, // CORREÇÃO: Usando a enumeração oficial
       description: 'Novo membro alocado à equipe.',
     });
     await timelineEvent.save();
@@ -207,7 +214,6 @@ export class ProjectsService {
         _id: new Types.ObjectId(String(projectId)),
         organizationId: new Types.ObjectId(String(orgId))
       },
-      // $pull arranca o ID de dentro do array
       { $pull: { assignedMembers: new Types.ObjectId(String(memberId)) } },
       { new: true }
     ).exec();
@@ -216,12 +222,11 @@ export class ProjectsService {
       throw new NotFoundException('Projeto não encontrado nesta organização.');
     }
 
-    // Registrar isso na Timeline como evento de sistema!
     const timelineEvent = new this.timelineEventModel({
       projectId: project._id,
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
-      type: 'STATUS_CHANGE', 
+      type: TimelineEventType.STATUS_CHANGE, 
       description: 'Membro removido da equipe.',
     });
     await timelineEvent.save();

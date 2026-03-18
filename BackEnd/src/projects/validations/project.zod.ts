@@ -10,6 +10,7 @@ export const createProjectSchema = z.object({
   status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional().default('DEMAND'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  attachments: z.array(z.string()).optional(),
 });
 
 export type CreateProjectDto = z.infer<typeof createProjectSchema>;
@@ -25,6 +26,12 @@ export const emitParecerSchema = z.object({
   
   // O engenheiro pode decidir avançar a demanda para PLANEJAMENTO ou mantê-la como DEMANDA
   newStatus: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional(),
+
+  // Campos adicionais para atualização do projeto
+  technicalTitle: z.string().optional(), // Título técnico específico para o parecer
+  startDate: z.string().optional(), // Nova data de início, se aplicável
+  endDate: z.string().optional(), // Nova data de término, se aplicável
+  location: z.string().optional(), // Nova localização, se aplicável
 });
 
 export type EmitParecerDto = z.infer<typeof emitParecerSchema>;

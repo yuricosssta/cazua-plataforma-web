@@ -12,7 +12,7 @@ async function bootstrap() {
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-org-id, x-organization-id', 
+    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-org-id, x-organization-id, x-org-role',
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });

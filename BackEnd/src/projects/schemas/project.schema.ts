@@ -20,6 +20,9 @@ export class Project {
   @Prop({ required: true })
   title: string;
 
+  @Prop({ type: String })
+  technicalTitle?: string;
+
   @Prop({ required: true })
   description: string;
 

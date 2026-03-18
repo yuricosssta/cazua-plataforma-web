@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as MapIcon, Check } from "lucide-react";
+import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as MapIcon, Check, Link as LinkIcon } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
@@ -31,14 +31,14 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
 
-  const orgId = typeof currentOrg?.organizationId === "object" 
-    ? (currentOrg.organizationId as any)._id 
+  const orgId = typeof currentOrg?.organizationId === "object"
+    ? (currentOrg.organizationId as any)._id
     : currentOrg?.organizationId;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false); // Controla a alternância de telas
-  
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const vectorSource = useRef<VectorSource | null>(null);
@@ -49,6 +49,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
     location: "",
     startDate: "",
     endDate: "",
+    attachments: "",
   });
 
   // Inicialização do OpenLayers (Roda apenas quando showMap for true)
@@ -89,7 +90,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         const coords = toLonLat(event.coordinate);
         const lat = coords[1].toFixed(6);
         const lng = coords[0].toFixed(6);
-        
+
         vectorSource.current?.clear();
         vectorSource.current?.addFeature(new Feature({ geometry: new Point(event.coordinate) }));
 
@@ -97,7 +98,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           const addressPart = prev.location.split(' | ')[0];
           return {
             ...prev,
-            location: addressPart && !addressPart.startsWith('Lat:') 
+            location: addressPart && !addressPart.startsWith('Lat:')
               ? `${addressPart} | Lat: ${lat}, Lng: ${lng}`
               : `Lat: ${lat}, Lng: ${lng}`
           }
@@ -141,6 +142,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         title: formData.title,
         description: formData.description,
         location: formData.location,
+        ...(formData.attachments && { attachments: [formData.attachments] }),
         ...(formData.startDate && { startDate: formData.startDate }),
         ...(formData.endDate && { endDate: formData.endDate }),
       };
@@ -151,7 +153,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setFormData({ title: "", description: "", location: "", startDate: "", endDate: "" });
+      setFormData({ title: "", description: "", location: "", startDate: "", endDate: "", attachments: "" });
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -166,7 +168,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-6">
       <div className={`bg-background w-full rounded-xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden transition-all ${showMap ? 'max-w-5xl h-[95vh]' : 'max-w-5xl max-h-[95vh]'}`}>
-        
+
         {/* Cabeçalho Dinâmico */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30 flex-shrink-0">
           <div>
@@ -186,14 +188,14 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         {showMap ? (
           <div className="flex-1 flex flex-col relative bg-muted">
             <div ref={mapRef} className="w-full h-full cursor-crosshair" />
-            
+
             {/* Overlay com a coordenada selecionada e botão Confirmar */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-border rounded-lg p-3 flex items-center gap-4 w-11/12 max-w-md">
               <div className="flex-1 overflow-hidden">
                 <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider block mb-0.5">Coordenada Marcada</span>
                 <p className="text-sm font-semibold truncate text-foreground">{formData.location || "Nenhum ponto selecionado"}</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowMap(false)}
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-primary/90 shadow-sm flex-shrink-0"
               >
@@ -218,6 +220,21 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
                 Descrição Breve <span className="text-red-500">*</span>
               </label>
               <textarea required rows={3} placeholder="Descreva o problema estrutural de forma sucinta..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none" />
+            </div>
+
+            {/* ANEXOS (LINK) */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                Pasta de Anexos (link)
+              </label>
+              <input
+                type="url"
+                placeholder="Cole aqui o link com as fotos do problema..."
+                value={formData.attachments}
+                onChange={(e) => setFormData({ ...formData, attachments: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -248,7 +265,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
                 <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary" />
               </div>
             </div>
-            
+
             <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-border">
               <button type="button" onClick={onClose} disabled={isSubmitting} className="px-4 py-2 text-sm font-medium rounded-md border border-transparent hover:bg-accent transition-colors disabled:opacity-50">Cancelar</button>
               <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50 shadow-sm">

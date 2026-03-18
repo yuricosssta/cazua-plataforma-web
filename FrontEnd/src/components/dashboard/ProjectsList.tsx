@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -33,6 +33,7 @@ interface Project {
   startDate?: string;
   endDate?: string;
   priorityScore?: number;
+  assignedMembers?: any[]; // <-- NOVO: Precisamos da lista de membros para travar o botão
   lastUpdate: ProjectTimelineEvent;
   attachments: string[];
 }
@@ -48,6 +49,8 @@ export function ProjectsList() {
 
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
+  // <-- NOVO: Pegamos o usuário logado para validar permissões
+  const user = useSelector((state: RootState) => state.auth.user); 
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -57,6 +60,9 @@ export function ProjectsList() {
     return currentOrg.organizationId as string;
   };
   const orgId = getOrgId();
+
+  // <-- NOVO: Verifica se o usuário tem privilégios de Admin na Org
+  const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
 
   const fetchProjects = async () => {
     if (!orgId || !token) return;
@@ -84,13 +90,13 @@ export function ProjectsList() {
           startDate: formatDate(p.startDate),
           endDate: formatDate(p.endDate),
           priorityScore: p.priorityScore,
+          assignedMembers: p.assignedMembers || [], // <-- NOVO: Mapeia os membros
           attachments: p.attachments || [],
           lastUpdate: p.lastEventId ? {
             id: p.lastEventId._id,
             date: new Date(p.lastEventId.createdAt || p.updatedAt).toLocaleString('pt-BR', {
               day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
             }),
-            // A MÁGICA DO POPULATE AQUI: Tenta pegar o nome. Se não vier populado, usa "Sistema"
             author: p.lastEventId.authorId?.name || "Sistema",
             description: p.lastEventId.description,
             type: p.lastEventId.type
@@ -199,6 +205,14 @@ export function ProjectsList() {
             const priorityConfig = getPriorityConfig(project.priorityScore);
             const PriorityIcon = priorityConfig?.icon;
 
+            // <-- NOVO: Verifica se o usuário logado está na equipe desta obra
+            const isAssigned = project.assignedMembers?.some((m: any) => {
+              const memberId = typeof m === 'string' ? m : m._id;
+              // user.sub ou user._id depende de como o JWT é montado no seu sistema
+              return memberId === user?.sub || memberId === user?._id || memberId === (user as any)?.id;
+            });
+            const hasPermission = isOrgAdmin || isAssigned;
+
             return (
               <div
                 key={project.id}
@@ -214,7 +228,7 @@ export function ProjectsList() {
                       </p>
                     )}
 
-                    <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs">
+                    <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium">
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
@@ -255,7 +269,6 @@ export function ProjectsList() {
                     <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Última Atualização</span>
                   </div>
-                  {/* TEXTO DA TIMELINE (Aqui o nome do autor populado vai brilhar) */}
                   <div className="text-sm text-foreground line-clamp-2">
                     <span className="font-semibold text-primary">{project.lastUpdate.author}:</span> {project.lastUpdate.description}
                   </div>
@@ -266,14 +279,23 @@ export function ProjectsList() {
 
                 {project.status === "DEMAND" && (
                   <div className="pt-2">
+                    {/* <-- NOVO: Botão agora respeita a variável hasPermission */}
                     <button
+                      disabled={!hasPermission}
                       onClick={(e) => {
-                        e.stopPropagation();
-                        setProjectForParecer({ id: project.id, title: project.title, status: project.status });
+                        e.stopPropagation(); // Evita abrir o card da obra
+                        if (hasPermission) {
+                          setProjectForParecer({ id: project.id, title: project.title, status: project.status });
+                        }
                       }}
-                      className="w-full py-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                      title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
+                      className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                        hasPermission 
+                          ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground' 
+                          : 'bg-muted text-muted-foreground/50 border border-border cursor-not-allowed'
+                      }`}
                     >
-                      <Activity className="w-4 h-4" />
+                      {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                       Emitir Parecer
                     </button>
                   </div>

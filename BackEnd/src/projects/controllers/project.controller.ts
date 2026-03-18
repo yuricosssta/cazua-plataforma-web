@@ -1,5 +1,4 @@
-// BackEnd/src/projects/controllers/project.controller.ts
-
+//src/projects/controllers/project.controller.ts
 import {
   Body,
   Controller,
@@ -18,36 +17,42 @@ import {
   createProjectSchema,
   EmitParecerDto,
   emitParecerSchema,
-} from '../validations/project.zod';//'../validations/projects.zod';
+} from '../validations/project.zod';
 
-// A rota raiz fica aninhada na organização: /organizations/:orgId/projects
 @Controller('organizations/:orgId/projects')
 @UseGuards(AuthGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) { }
 
+  // Função auxiliar para extrair o ID com segurança
+  private extractUserId(req: any): string {
+    return req.user?.sub || req.user?._id || req.user?.id;
+  }
+
+  // Função auxiliar para extrair e normalizar o Cargo (Role)
+  private extractUserRole(req: any): string {
+    const role = req.headers['x-org-role'] || req.membership?.role || req.user?.role || 'MEMBER';
+    return String(role).toUpperCase();
+  }
+
   // 1. CRIAR NOVA DEMANDA/OBRA
-  // Rota: POST /organizations/:orgId/projects
   @Post()
   async createProject(
     @Param('orgId') orgId: string,
     @Body(new ZodValidationPipe(createProjectSchema)) data: CreateProjectDto,
     @Req() req: any,
   ) {
-    // Extrai o ID do usuário logado (O autor da demanda)
-    const userId = req.user.sub || req.user.id;
+    const userId = this.extractUserId(req);
     return this.projectsService.createProject(orgId, userId, data);
   }
 
   // 2. LISTAR TODOS PROJETOS DA EMPRESA
-  // Rota: GET /organizations/:orgId/projects
   @Get()
   async getProjects(@Param('orgId') orgId: string) {
     return this.projectsService.findAllByOrganization(orgId);
   }
 
   // 3. EMITIR PARECER TÉCNICO (E GERAR A PRIORIDADE)
-  // Rota: POST /organizations/:orgId/projects/:projectId/parecer
   @Post(':projectId/parecer')
   async emitParecer(
     @Param('orgId') orgId: string,
@@ -55,14 +60,13 @@ export class ProjectsController {
     @Body(new ZodValidationPipe(emitParecerSchema)) data: EmitParecerDto,
     @Req() req: any,
   ) {
-    // Extrai o ID do usuário que está dando o parecer
-    const userId = req.user.sub || req.user.id;
-    const userRole = req.membership?.role || req.user?.role || 'MEMBER';
+    const userId = this.extractUserId(req);
+    const userRole = this.extractUserRole(req);
+
     return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data, userRole);
   }
 
   // 4. DETALHES DA OBRA E TIMELINE COMPLETA
-  // Rota: GET /organizations/:orgId/projects/:projectId
   @Get(':projectId')
   async getProjectDetails(
     @Param('orgId') orgId: string,
@@ -72,7 +76,6 @@ export class ProjectsController {
   }
 
   // 5. ALOCAR MEMBRO NA OBRA
-  // Rota: POST /organizations/:orgId/projects/:projectId/members
   @Post(':projectId/members')
   async assignMemberToProject(
     @Param('orgId') orgId: string,
@@ -83,7 +86,6 @@ export class ProjectsController {
   }
 
   // 6. REMOVER MEMBRO DA OBRA
-  // Rota: DELETE /organizations/:orgId/projects/:projectId/members/:userId
   @Delete(':projectId/members/:userId')
   async removeMemberFromProject(
     @Param('orgId') orgId: string,
@@ -92,5 +94,4 @@ export class ProjectsController {
   ) {
     return this.projectsService.removeMember(orgId, projectId, userId);
   }
-
 }
