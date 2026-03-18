@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2 
+import {
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -26,6 +26,7 @@ interface ProjectTimelineEvent {
 interface Project {
   id: string;
   title: string;
+  description: string;
   status: ProjectStatus;
   progress: number;
   location: string;
@@ -40,8 +41,8 @@ export function ProjectsList() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projectForParecer, setProjectForParecer] = useState<{id: string, title: string, status: string} | null>(null);
-  
+  const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: string } | null>(null);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -59,7 +60,7 @@ export function ProjectsList() {
 
   const fetchProjects = async () => {
     if (!orgId || !token) return;
-    
+
     try {
       setIsLoading(true);
       const response = await axios.get(
@@ -76,6 +77,7 @@ export function ProjectsList() {
         return {
           id: p._id,
           title: p.title,
+          description: p.description,
           status: p.status,
           progress: p.progress || 0,
           location: p.location,
@@ -85,11 +87,11 @@ export function ProjectsList() {
           attachments: p.attachments || [],
           lastUpdate: p.lastEventId ? {
             id: p.lastEventId._id,
-            date: new Date(p.lastEventId.createdAt || p.updatedAt).toLocaleString('pt-BR', { 
-              day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' 
+            date: new Date(p.lastEventId.createdAt || p.updatedAt).toLocaleString('pt-BR', {
+              day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
             }),
             // A MÁGICA DO POPULATE AQUI: Tenta pegar o nome. Se não vier populado, usa "Sistema"
-            author: p.lastEventId.authorId?.name || "Sistema", 
+            author: p.lastEventId.authorId?.name || "Sistema",
             description: p.lastEventId.description,
             type: p.lastEventId.type
           } : {
@@ -137,7 +139,7 @@ export function ProjectsList() {
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
-      
+
       {/* CABEÇALHO REFORMULADO (Com o botão no Desktop) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -146,9 +148,9 @@ export function ProjectsList() {
             Acompanhe o ciclo de vida e a timeline das suas frentes de trabalho.
           </p>
         </div>
-        
+
         {/* BOTÃO DESKTOP (Oculto no celular) */}
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="hidden md:flex bg-primary text-primary-foreground px-5 py-2.5 rounded-md shadow-sm hover:bg-primary/90 transition-colors items-center justify-center gap-2 font-semibold text-sm h-10"
         >
@@ -169,11 +171,10 @@ export function ProjectsList() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
             {tab.label}
           </button>
@@ -199,26 +200,32 @@ export function ProjectsList() {
             const PriorityIcon = priorityConfig?.icon;
 
             return (
-              <div 
+              <div
                 key={project.id}
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)} 
+                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
                 className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
               >
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1">
                     <h3 className="font-semibold text-base leading-tight">{project.title}</h3>
+                    {project.description && (
+                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
+
                     <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs">
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                     <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
                       <StatusIcon className="w-3 h-3" />
                       {statusConfig.label}
                     </span>
-                    
+
                     {priorityConfig && PriorityIcon && (
                       <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold ${priorityConfig.bg} ${priorityConfig.color}`}>
                         <PriorityIcon className="w-3 h-3" />
@@ -235,8 +242,8 @@ export function ProjectsList() {
                       <span>{project.progress}%</span>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`} 
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
@@ -259,7 +266,7 @@ export function ProjectsList() {
 
                 {project.status === "DEMAND" && (
                   <div className="pt-2">
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setProjectForParecer({ id: project.id, title: project.title, status: project.status });
@@ -293,7 +300,7 @@ export function ProjectsList() {
       </div>
 
       {/* BOTÃO FLUTUANTE MOBILE (Oculto no Desktop) */}
-      <button 
+      <button
         onClick={() => setIsModalOpen(true)}
         className="md:hidden fixed bottom-6 right-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform active:scale-95 flex items-center justify-center z-50"
         title="Nova Demanda / Obra"
@@ -302,9 +309,9 @@ export function ProjectsList() {
       </button>
 
       {/* MODAIS */}
-      <CreateProjectModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <CreateProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onSuccess={() => fetchProjects()}
       />
 

@@ -20,6 +20,9 @@ export class Project {
   @Prop({ required: true })
   title: string;
 
+  @Prop({ required: true })
+  description: string;
+
   @Prop({ type: String, enum: Object.values(ProjectStatus), default: ProjectStatus.DEMAND })
   status: ProjectStatus;
 

@@ -29,6 +29,7 @@ export class ProjectsService {
         organizationId: new Types.ObjectId(String(orgId)),
         createdBy: new Types.ObjectId(String(userId)),
         title: data.title,
+        description: data.description,
         location: data.location,
         status: data.status as ProjectStatus,
         startDate: data.startDate ? new Date(data.startDate) : undefined,

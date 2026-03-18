@@ -5,6 +5,7 @@ import { z } from 'zod';
 // 1. Esquema para Criação da Obra/Demanda
 export const createProjectSchema = z.object({
   title: z.string().min(1, 'O título da obra/demanda é obrigatório.'),
+  description: z.string().min(1, 'A descrição é obrigatória e deve ter pelo menos 1 caracter.'),
   location: z.string().min(1, 'A localização é obrigatória.'),
   status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional().default('DEMAND'),
   startDate: z.string().optional(),
