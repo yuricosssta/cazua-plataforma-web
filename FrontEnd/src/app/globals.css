@@ -1,5 +1,6 @@
 /* FrontEnd/src/app/globals.css */
 @import "tailwindcss";
+@import "ol/ol.css";
 
 @theme {
   /* --- Mapeamento das Variáveis de Sistema (Shadcn UI) --- */
