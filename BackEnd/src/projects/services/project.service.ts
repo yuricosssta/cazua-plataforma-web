@@ -140,7 +140,8 @@ export class ProjectsService {
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
       .populate({
         path: 'lastEventId',
-        select: 'description date authorId type metadata',
+        select: 'description date authorId type metadata createdAt',
+        populate: { path: 'authorId', select: 'name' } 
       })
       // Ordenação primária pela Prioridade (do mais crítico para o menor), secundária pela criação
       .sort({ priorityScore: -1, createdAt: -1 })

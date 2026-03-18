@@ -1,5 +1,4 @@
 import { ActivityLog } from "@/components/dashboard/ActivityLog";
-import { PostList } from "@/components/PostList";
 
 export default function DashboardOverviewPage() {
   return (
