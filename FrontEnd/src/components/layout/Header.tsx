@@ -76,9 +76,9 @@ export function Header() {
           </span>
         )}
 
-        <ChevronRight className="w-4 h-4 mx-2 text-muted-foreground" />
+        {/* <ChevronRight className="w-4 h-4 mx-2 text-muted-foreground" /> */}
 
-        <span className="text-foreground font-semibold">{currentPage}</span>
+        {/* <span className="text-foreground font-semibold">{currentPage}</span> */}
       </div>
 
       {/* DIREITA: Dropdown de Perfil */}

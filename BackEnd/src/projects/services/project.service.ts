@@ -6,12 +6,16 @@ import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
 import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../schemas/timeline-event.schema';
 import { CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
+import { Counter, CounterDocument } from '../schemas/counter.schema';
+import { Organization, OrganizationDocument } from '../../organization/schemas/organization.schema';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @InjectModel(TimelineEvent.name) private timelineEventModel: Model<TimelineEventDocument>,
+    @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
+    @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
   ) { }
 
   // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
@@ -24,10 +28,32 @@ export class ProjectsService {
   // 1. CRIAÇÃO DA DEMANDA INICIAL
   async createProject(orgId: string, userId: string, data: CreateProjectDto) {
     try {
-      // Cria a Obra (Nasce sem prioridade definida)
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, '0');
+      
+      const org = await this.orgModel.findById(orgId).exec();
+      let prefixoOrg = 'CAZ'; // Fallback de segurança
+      if (org && org.name) {
+        // Pega as 4 primeiras letras, remove espaços e acentos, tudo maiúsculo. Ex: "Construtora Alfa" -> "CONS"
+        prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+      }
+
+      const counterId = `DEMAND_${orgId}_${year}${month}`;
+      const counter = await this.counterModel.findByIdAndUpdate(
+        counterId,
+        { $inc: { seq: 1 } }, // Incrementa +1 de forma bloqueante (atômica)
+        { new: true, upsert: true } // Se não existir, cria começando no 1
+      );
+
+      // MONTAGEM DO CÓDIGO: [Org].[AnoMês].[000X]
+      const sequencia = String(counter.seq).padStart(4, '0');
+      const referenceCode = `${prefixoOrg}.${year}${month}.${sequencia}`;
+      
+      // Cria a demanda com o código gerado
       const newProject = new this.projectModel({
         organizationId: new Types.ObjectId(String(orgId)),
         createdBy: new Types.ObjectId(String(userId)),
+        referenceCode: referenceCode,
         title: data.title,
         description: data.description,
         location: data.location,
@@ -46,6 +72,7 @@ export class ProjectsService {
         authorId: new Types.ObjectId(String(userId)),
         type: TimelineEventType.DOCUMENT, // CORREÇÃO: Usando a enumeração oficial
         description: data.description, // O corpo do documento é a descrição real
+        referenceCode: referenceCode,
         metadata: { 
           newStatus: savedProject.status,
           isInitialDemand: true, // Tag para identificar que é a abertura

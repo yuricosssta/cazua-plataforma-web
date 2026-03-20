@@ -25,6 +25,7 @@ interface ProjectTimelineEvent {
 
 interface Project {
   id: string;
+  referenceCode?: string;
   title: string;
   description: string;
   status: ProjectStatus;
@@ -50,7 +51,7 @@ export function ProjectsList() {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   // <-- NOVO: Pegamos o usuário logado para validar permissões
-  const user = useSelector((state: RootState) => state.auth.user); 
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -82,6 +83,7 @@ export function ProjectsList() {
 
         return {
           id: p._id,
+          referenceCode: p.referenceCode,
           title: p.title,
           description: p.description,
           status: p.status,
@@ -221,6 +223,11 @@ export function ProjectsList() {
               >
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1">
+                    {project.referenceCode && (
+                      <span className="inline-block text-[10px] font-mono font-bold px-2 py-0.5 mb-1.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        {project.referenceCode}
+                      </span>
+                    )}
                     <h3 className="font-semibold text-base leading-tight">{project.title}</h3>
                     {project.description && (
                       <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
@@ -289,11 +296,10 @@ export function ProjectsList() {
                         }
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
-                      className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                        hasPermission 
-                          ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground' 
+                      className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
+                          ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
                           : 'bg-muted text-muted-foreground/50 border border-border cursor-not-allowed'
-                      }`}
+                        }`}
                     >
                       {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                       Emitir Parecer

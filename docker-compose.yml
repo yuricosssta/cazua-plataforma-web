@@ -1,5 +1,5 @@
 services:
-  api:
+  backend:
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
@@ -27,7 +27,7 @@ services:
       - ./FrontEnd/.env
     # O depends_on agora espera a API estar "saudável" (healthcheck passar)
     depends_on:
-      - api
+      - backend
       # api:
       #   condition: service_healthy
     networks:

@@ -20,6 +20,9 @@ export class Project {
   @Prop({ required: true })
   title: string;
 
+  @Prop({ unique: true, sparse: true })
+  referenceCode: string;
+
   @Prop({ type: String })
   technicalTitle?: string;
 

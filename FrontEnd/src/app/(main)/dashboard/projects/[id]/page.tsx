@@ -33,6 +33,7 @@ interface TimelineEvent {
 
 interface Project {
   _id: string;
+  referenceCode?: string;
   title: string;
   status: ProjectStatus;
   progress: number;
@@ -169,6 +170,11 @@ export default function ProjectDetailsPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
+              {project.referenceCode && (
+                <div className="text-sm font-mono font-bold text-primary mb-1 tracking-wider uppercase">
+                  {project.referenceCode}
+                </div>
+              )}
               <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground mt-2 text-sm font-medium">
                 <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {project.location}</span>
