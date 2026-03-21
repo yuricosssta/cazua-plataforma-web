@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -34,7 +34,7 @@ interface Project {
   startDate?: string;
   endDate?: string;
   priorityScore?: number;
-  assignedMembers?: any[]; // <-- NOVO: Precisamos da lista de membros para travar o botão
+  assignedMembers?: any[];
   lastUpdate: ProjectTimelineEvent;
   attachments: string[];
 }
@@ -42,6 +42,7 @@ interface Project {
 export function ProjectsList() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("ALL");
+  const [searchTerm, setSearchTerm] = useState(""); // <-- NOVO: Estado da busca
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: string } | null>(null);
 
@@ -50,7 +51,6 @@ export function ProjectsList() {
 
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
-  // <-- NOVO: Pegamos o usuário logado para validar permissões
   const user = useSelector((state: RootState) => state.auth.user);
 
   const getOrgId = (): string => {
@@ -62,7 +62,6 @@ export function ProjectsList() {
   };
   const orgId = getOrgId();
 
-  // <-- NOVO: Verifica se o usuário tem privilégios de Admin na Org
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
 
   const fetchProjects = async () => {
@@ -92,7 +91,7 @@ export function ProjectsList() {
           startDate: formatDate(p.startDate),
           endDate: formatDate(p.endDate),
           priorityScore: p.priorityScore,
-          assignedMembers: p.assignedMembers || [], // <-- NOVO: Mapeia os membros
+          assignedMembers: p.assignedMembers || [],
           attachments: p.attachments || [],
           lastUpdate: p.lastEventId ? {
             id: p.lastEventId._id,
@@ -124,9 +123,19 @@ export function ProjectsList() {
     fetchProjects();
   }, [orgId, token]);
 
-  const filteredProjects = projects.filter(
-    (p) => activeTab === "ALL" || p.status === activeTab
-  ).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
+  // <-- NOVO: Lógica da Busca Omnichannel + Filtro de Aba
+  const filteredProjects = projects.filter((p) => {
+    const matchesTab = activeTab === "ALL" || p.status === activeTab;
+    const term = searchTerm.toLowerCase();
+    
+    const matchesSearch = !term || 
+      (p.title && p.title.toLowerCase().includes(term)) ||
+      (p.referenceCode && p.referenceCode.toLowerCase().includes(term)) ||
+      (p.description && p.description.toLowerCase().includes(term)) ||
+      (p.location && p.location.toLowerCase().includes(term));
+
+    return matchesTab && matchesSearch;
+  }).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
@@ -157,7 +166,6 @@ export function ProjectsList() {
           </p>
         </div>
 
-        {/* BOTÃO DESKTOP (Oculto no celular) */}
         <button
           onClick={() => setIsModalOpen(true)}
           className="hidden md:flex bg-primary text-primary-foreground px-5 py-2.5 rounded-md shadow-sm hover:bg-primary/90 transition-colors items-center justify-center gap-2 font-semibold text-sm h-10"
@@ -167,14 +175,28 @@ export function ProjectsList() {
         </button>
       </div>
 
+      {/* NOVO: BARRA DE PESQUISA OMNICHANNEL */}
+      <div className="relative w-full md:max-w-md">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <input
+          type="text"
+          placeholder="Buscar por código (ex: 0001), título ou local..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm transition-all"
+        />
+      </div>
+
       {/* Navegação por Abas */}
       <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
         {[
-          { id: "ALL", label: "Todas" },
           { id: "DEMAND", label: "Demandas" },
-          { id: "PLANNING", label: "Planejamento" },
-          { id: "EXECUTION", label: "Execução" },
-          { id: "COMPLETED", label: "Concluídas" }
+          { id: "PLANNING", label: "Planejando" },
+          { id: "EXECUTION", label: "Executando" },
+          { id: "COMPLETED", label: "Concluídas" },
+          { id: "ALL", label: "Todas" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -198,7 +220,9 @@ export function ProjectsList() {
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
-            <p className="text-muted-foreground text-sm">Nenhum registro encontrado nesta fase.</p>
+            <p className="text-muted-foreground text-sm">
+              {searchTerm ? "Nenhum registro encontrado para sua busca." : "Nenhum registro encontrado nesta fase."}
+            </p>
           </div>
         ) : (
           filteredProjects.map((project) => {
@@ -207,10 +231,8 @@ export function ProjectsList() {
             const priorityConfig = getPriorityConfig(project.priorityScore);
             const PriorityIcon = priorityConfig?.icon;
 
-            // <-- NOVO: Verifica se o usuário logado está na equipe desta obra
             const isAssigned = project.assignedMembers?.some((m: any) => {
               const memberId = typeof m === 'string' ? m : m._id;
-              // user.sub ou user._id depende de como o JWT é montado no seu sistema
               return memberId === user?.sub || memberId === user?._id || memberId === (user as any)?.id;
             });
             const hasPermission = isOrgAdmin || isAssigned;
@@ -286,11 +308,10 @@ export function ProjectsList() {
 
                 {project.status === "DEMAND" && (
                   <div className="pt-2">
-                    {/* <-- NOVO: Botão agora respeita a variável hasPermission */}
                     <button
                       disabled={!hasPermission}
                       onClick={(e) => {
-                        e.stopPropagation(); // Evita abrir o card da obra
+                        e.stopPropagation();
                         if (hasPermission) {
                           setProjectForParecer({ id: project.id, title: project.title, status: project.status });
                         }
@@ -327,7 +348,6 @@ export function ProjectsList() {
         )}
       </div>
 
-      {/* BOTÃO FLUTUANTE MOBILE (Oculto no Desktop) */}
       <button
         onClick={() => setIsModalOpen(true)}
         className="md:hidden fixed bottom-6 right-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform active:scale-95 flex items-center justify-center z-50"
@@ -336,7 +356,6 @@ export function ProjectsList() {
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* MODAIS */}
       <CreateProjectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
