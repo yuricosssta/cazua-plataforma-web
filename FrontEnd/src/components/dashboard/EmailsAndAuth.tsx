@@ -7,7 +7,7 @@ import { MoreHorizontal } from "lucide-react";
 export function EmailsAndAuth() {
   // Indo buscar o email ao Redux para ficar dinâmico
   const user = useSelector((state: any) => state.auth?.user || state.user?.profile);
-  const email = user?.email || "eng.yuricosta@gmail.com";
+  const email = user?.email || "Cadastro não encontrado";
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col space-y-10 text-foreground pb-10">
@@ -24,7 +24,7 @@ export function EmailsAndAuth() {
           <div className="flex items-center justify-between pb-4">
             <h3 className="text-sm font-semibold">Emails</h3>
             <button className="h-9 px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 transition-colors shadow-sm">
-              Add an email
+              Adicionar email
             </button>
           </div>
 

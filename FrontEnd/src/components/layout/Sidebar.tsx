@@ -15,7 +15,7 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { OrgSwitcher } from "@/components/OrgSwitcher";
+import { OrgSwitcher } from "@/components/dashboard/OrgSwitcher";
 import { usePathname } from "next/navigation";
 
 export function Sidebar() {

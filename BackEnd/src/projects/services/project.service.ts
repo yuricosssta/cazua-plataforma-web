@@ -33,9 +33,13 @@ export class ProjectsService {
       
       const org = await this.orgModel.findById(orgId).exec();
       let prefixoOrg = 'CAZ'; // Fallback de segurança
-      if (org && org.name) {
-        // Pega as 4 primeiras letras, remove espaços e acentos, tudo maiúsculo. Ex: "Construtora Alfa" -> "CONS"
-        prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+      if (org) {
+        if (org.acronym) {
+          prefixoOrg = org.acronym;
+        } else if (org.name) {
+          // Fallback para organizações antigas criadas antes dessa atualização
+          prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+        }
       }
 
       const counterId = `DEMAND_${orgId}_${year}${month}`;

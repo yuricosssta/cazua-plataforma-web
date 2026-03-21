@@ -1,4 +1,4 @@
-//src/components/OrgSwitcher.tsx
+//src/components/dashboard/OrgSwitcher.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -10,6 +10,7 @@ import {
   setCurrentOrganization 
 } from "@/lib/redux/slices/organizationSlice";
 import { ChevronsUpDown, Check, Settings, Plus } from "lucide-react";
+import { CreateOrganizationModal } from "@/components/dashboard/CreateOrganizationModal";
 
 export function OrgSwitcher() {
   const dispatch = useDispatch();
@@ -17,10 +18,11 @@ export function OrgSwitcher() {
   // Dados do Redux
   const organizations = useSelector(selectAllOrgs);
   const currentOrg = useSelector(selectCurrentOrg);
-  const status = useSelector(selectOrgStatus); // 'idle' | 'loading' | 'succeeded' | 'failed'
+  const status = useSelector(selectOrgStatus); 
 
-  // Controle do Dropdown Customizado
+  // Controle do Dropdown Customizado e do Modal
   const [isOpen, setIsOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // <-- NOVO ESTADO
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fecha o dropdown ao clicar fora dele
@@ -40,43 +42,48 @@ export function OrgSwitcher() {
   };
 
   // --- 1. ESTADO DE CARREGAMENTO (SKELETON) ---
-  // Se estiver carregando, mostra o esqueleto do exato tamanho do botão (h-10)
   if (status === 'loading' || status === 'idle') {
     return (
       <div className="w-full h-10 px-3 flex items-center justify-between border border-border bg-background rounded-md animate-pulse">
         <div className="flex items-center gap-2">
-          {/* Esqueleto do Ícone (Avatar da empresa) */}
           <div className="w-5 h-5 bg-muted rounded-sm"></div>
-          {/* Esqueleto do Texto */}
           <div className="w-24 h-4 bg-muted rounded-sm"></div>
         </div>
-        {/* Esqueleto da setinha */}
         <div className="w-4 h-4 bg-muted rounded-sm"></div>
       </div>
     );
   }
 
-  // Se não tiver organizações, não renderiza nada (O Dashboard redireciona para criar)
-  if (organizations.length === 0 || !currentOrg) return null;
+  if (organizations.length === 0 || !currentOrg) {
+    // Se não tiver organizações, mostra apenas o botão de criar
+    return (
+      <>
+        <button 
+          onClick={() => setIsCreateModalOpen(true)}
+          className="w-full h-10 px-3 flex items-center justify-center gap-2 border border-dashed border-primary/50 text-primary hover:bg-primary/5 rounded-md text-sm font-semibold transition-colors"
+        >
+          <Plus className="w-4 h-4" /> Nova Construtora
+        </button>
+        <CreateOrganizationModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      </>
+    );
+  }
 
-  // Pegar a primeira letra da empresa para fazer um "Logo" falso
   const initial = currentOrg.organizationId.name.charAt(0).toUpperCase();
 
   // --- 2. ESTADO CARREGADO (BOTÃO + DROPDOWN) ---
   return (
     <div className="relative w-full" ref={dropdownRef}>
       
-      {/* BOTÃO PRINCIPAL (Garante altura fixa h-10) */}
+      {/* BOTÃO PRINCIPAL */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-10 px-3 flex items-center justify-between border border-border bg-background hover:bg-accent rounded-md text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
       >
         <div className="flex items-center gap-2 truncate">
-          {/* Logo da Empresa */}
           <div className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-sm font-bold text-xs">
             {initial}
           </div>
-          {/* Nome da Empresa */}
           <span className="truncate font-medium text-foreground">
             {currentOrg.organizationId.name}
           </span>
@@ -84,13 +91,12 @@ export function OrgSwitcher() {
         <ChevronsUpDown className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
       </button>
 
-      {/* MENU DROPDOWN (Baseado na sua referência) */}
+      {/* MENU DROPDOWN */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-full min-w-[240px] bg-popover border border-border rounded-md shadow-lg z-50 p-1 flex flex-col text-popover-foreground">
           
-          {/* Seção: Current Team */}
           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-            Current team
+            Equipe Atual
           </div>
           <div className="flex items-center justify-between px-2 py-1.5 bg-accent/50 rounded-sm mb-1">
             <div className="flex items-center gap-2 truncate">
@@ -102,7 +108,6 @@ export function OrgSwitcher() {
               </span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
-               {/* Ícone de configurações da equipe atual */}
                <Settings className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors" />
                <Check className="w-4 h-4 text-foreground" />
             </div>
@@ -110,11 +115,10 @@ export function OrgSwitcher() {
 
           <div className="h-px bg-border my-1"></div>
 
-          {/* Seção: Other Teams */}
           {organizations.length > 1 && (
             <>
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                Other teams
+                Outras Equipes
               </div>
               <div className="max-h-[140px] overflow-y-auto space-y-1 mb-1">
                 {organizations
@@ -136,13 +140,26 @@ export function OrgSwitcher() {
             </>
           )}
 
-          {/* Ação: Create a Team */}
-          <button className="w-full flex items-center justify-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-sm transition-colors mt-1">
+          {/* <-- NOVO: Botão ativando o Modal --> */}
+          <button 
+            onClick={() => {
+              setIsOpen(false); // Fecha o dropdownzinho
+              setIsCreateModalOpen(true); // Abre o modão
+            }}
+            className="w-full flex items-center justify-center gap-2 px-2 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-sm transition-colors mt-1"
+          >
             <Plus className="w-4 h-4" />
-            Create a team
+            Nova Construtora
           </button>
         </div>
       )}
+
+      {/* <-- NOVO: O Modal Injetado no Componente --> */}
+      <CreateOrganizationModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+      />
+      
     </div>
   );
 }
