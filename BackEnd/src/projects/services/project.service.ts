@@ -51,7 +51,7 @@ export class ProjectsService {
 
       // MONTAGEM DO CÓDIGO: [Org].[AnoMês].[000X]
       const sequencia = String(counter.seq).padStart(4, '0');
-      const referenceCode = `${prefixoOrg}.${year}${month}.${sequencia}`;
+      const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
       
       // Cria a demanda com o código gerado
       const newProject = new this.projectModel({
@@ -104,13 +104,15 @@ export class ProjectsService {
       organizationId: new Types.ObjectId(String(orgId))
     });
 
+    const referenceCode = project?.referenceCode || 'PRC'; // Fallback para garantir que sempre haja um código de referência
+
     if (!project) {
       throw new NotFoundException('Demanda/Projeto não encontrada.');
     }
 
     const isAssigned = project.assignedMembers?.some(memberId => memberId.toString() === userId.toString()) || false;
     const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
-    // Nova trava: Verifica se o usuário logado foi quem criou a demanda
+    // Verifica se o usuário logado foi quem criou a demanda
     const isCreator = project.createdBy && project.createdBy.toString() === userId.toString();
 
     if (!isAssigned && !isAdmin && !isCreator) {
@@ -118,11 +120,14 @@ export class ProjectsService {
     }
 
     // Gerar um código de referência único para este parecer
+    
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, '0');
     const day = String(new Date().getDate()).padStart(2, '0');
     const milliseconds = String(new Date().getTime()).slice(-4);
-    const referenceCode = `${year}${month}${day}-${milliseconds}`;
+    const randon = String(Math.floor(10 + Math.random() * 90));
+    // const parecerCode = `${year}${month}${day}-${milliseconds}`;
+    const parecerCode = `${referenceCode}.${year}${month}${day}.${randon}`;
 
     try {
       // Verifica e atualiza o Status (se foi enviado um novo)
@@ -159,7 +164,7 @@ export class ProjectsService {
         authorId: new Types.ObjectId(String(userId)),
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
-        referenceCode: referenceCode,
+        parecerCode: parecerCode,
         metadata: metadata 
       });
 
@@ -231,7 +236,7 @@ export class ProjectsService {
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
       type: TimelineEventType.STATUS_CHANGE, // CORREÇÃO: Usando a enumeração oficial
-      description: 'Novo membro alocado à equipe.',
+      description: `Membro adicionado à equipe.`, 
     });
     await timelineEvent.save();
 

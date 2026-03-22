@@ -30,7 +30,7 @@ export class TimelineEvent {
   description: string;
 
   @Prop({ type: String, unique: true, sparse: true })
-  referenceCode?: string;
+  parecerCode?: string;
 
   // Campo flexível para guardar dados extras. 
   // Ex: Se o tipo for STATUS_CHANGE, podemos guardar { oldStatus: 'DEMAND', newStatus: 'PLANNING' }

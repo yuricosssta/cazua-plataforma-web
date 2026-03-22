@@ -22,7 +22,7 @@ interface TimelineEvent {
   _id: string;
   type: TimelineEventType;
   description: string;
-  referenceCode?: string;
+  parecerCode?: string;
   authorId: {
     _id: string;
     name: string;
@@ -290,7 +290,7 @@ export default function ProjectDetailsPage() {
             const isDocumentStyle = event.type === "COMMENT" || event.type === "REPORT" || event.type === "DOCUMENT";
 
             return (
-              <div key={event._id} className="relative pl-8 md:pl-12 mb-10">
+              <div key={event._id} className="relative pl-6 md:pl-6 mb-4">
 
                 {/* O Círculo com o Ícone na Linha */}
                 <span className={`absolute -left-[17px] top-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-background ${eventConfig.bg} ${eventConfig.color} ${isLatest ? 'scale-110 shadow-sm' : ''}`}>
@@ -299,35 +299,74 @@ export default function ProjectDetailsPage() {
 
                 {/* Conteúdo do Evento */}
                 <div className={`flex flex-col ${isDocumentStyle ? 'bg-card border border-border shadow-md rounded-sm p-6 md:p-10' : 'pt-5'}`}>
+                  <div className="border-b border-border gap-2 pb-3 mb-4">
+                    {/* Cabeçalho do Evento */}
+                    <div className="flex items-baseline justify-between flex-wrap">
+                      <div className="flex items-center gap-3">
 
-                  {/* Cabeçalho do Evento */}
-                  <div className="flex items-baseline justify-between gap-4 flex-wrap mb-4 border-b border-border pb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-foreground">
-                        {event.authorId?.name || "Usuário Desconhecido"}
-                      </span>
-
-                      {isDocumentStyle && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                            Laudo Técnico
-                          </span>
-                          {event.referenceCode && (
-                            <span className="text-[11px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 select-all" title="Código para citação em documentos">
-                              {event.referenceCode}
+                        {isDocumentStyle && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-foreground">
+                              {/* <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5"> */}
+                              Parecer Técnico
                             </span>
-                          )}
-                        </div>
-                      )}
+                            {event.parecerCode && (
+                              <span className="text-sm font-bold text-foreground">
+                                {/* // <span className="text-[11px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 select-all" title="Código para citação em documentos"> */}
+                                {event.parecerCode}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <time className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatDateTime(event.createdAt)}
+                      </time>
                     </div>
-                    <time className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      {formatDateTime(event.createdAt)}
-                    </time>
+                    {/* Metadados Extras (As tags no final do documento) */}
+                    {event.metadata && Object.keys(event.metadata).length > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        {/* <div className="mt-6 pt-4 border-t border-dashed border-border flex gap-2 flex-wrap"> */}
+                        {event.metadata.priorityScore && (
+                          // <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-200">
+                          <span className="text-sm text-foreground">
+                            {/* <Flame className="w-4 h-4" />  */}
+                            Prioridade: {event.metadata.priorityScore}
+                          </span>
+                        )}
+                        {event.metadata.newStatus && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md border border-orange-200">
+                            <ArrowRightCircle className="w-4 h-4" /> Status Avançado
+                          </span>
+                        )}
+
+                        {event.metadata.attachments && event.metadata.attachments.length > 0 && (
+                          <div className="w-full mb-2 flex gap-2 flex-wrap">
+                            {event.metadata.attachments.map((link: string, idx: number) => (
+                              <a
+                                key={idx} href={link} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
+                              >
+                                <LinkIcon className="w-3.5 h-3.5" /> Acessar Anexos da Demanda
+                              </a>
+                            ))}
+                          </div>
+                        )}
+
+                        {event.metadata.isInitialDemand && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-md border border-zinc-200">
+                            <FileText className="w-4 h-4" /> Demanda Original
+                          </span>
+                        )}
+
+                      </div>
+                    )}
+
                   </div>
 
                   {/* O Texto do Evento (O "Documento") */}
-                  <div className={`text-base text-foreground/90 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
+                  <div className={`text-base text-foreground/90 mb-10 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
                     {event.description.split('\n').map((line, i) => (
                       <React.Fragment key={i}>
                         {line}
@@ -335,45 +374,10 @@ export default function ProjectDetailsPage() {
                       </React.Fragment>
                     ))}
                   </div>
-
-                  {/* Metadados Extras (As tags no final do documento) */}
-                  {event.metadata && Object.keys(event.metadata).length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-dashed border-border flex gap-2 flex-wrap">
-                      {event.metadata.priorityScore && (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-red-50 text-red-700 px-2.5 py-1 rounded-md border border-red-200">
-                          <Flame className="w-4 h-4" /> Novo Score GUT: {event.metadata.priorityScore}
-                        </span>
-                      )}
-                      {event.metadata.newStatus && (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md border border-orange-200">
-                          <ArrowRightCircle className="w-4 h-4" /> Status Avançado
-                        </span>
-                      )}
-
-                      {event.metadata.attachments && event.metadata.attachments.length > 0 && (
-                        <div className="w-full mb-2 flex gap-2 flex-wrap">
-                          {event.metadata.attachments.map((link: string, idx: number) => (
-                            <a
-                              key={idx} href={link} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
-                            >
-                              <LinkIcon className="w-3.5 h-3.5" /> Acessar Anexos da Demanda
-                            </a>
-                          ))}
-                        </div>
-                      )}
-
-                      {event.metadata.isInitialDemand && (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-md border border-zinc-200">
-                          <FileText className="w-4 h-4" /> Demanda Original
-                        </span>
-                      )}
-
-                    </div>
-
-                  )}
+                  <span className="text-sm font-bold text-foreground">
+                    {event.authorId?.name || "Usuário Desconhecido"}
+                  </span>
                 </div>
-
               </div>
             );
           })
