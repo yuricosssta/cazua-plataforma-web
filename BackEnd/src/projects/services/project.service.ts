@@ -1,6 +1,6 @@
 // BackEnd/src/projects/services/project.service.ts
 
-import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, HttpException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
@@ -32,6 +32,23 @@ export class ProjectsService {
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
       
       const org = await this.orgModel.findById(orgId).exec();
+      if (!org) {
+        throw new NotFoundException('Organização não encontrada.');
+      }
+
+      const plan = (org as any).plan || 'FREE';
+      if (plan === 'FREE') {
+        const projectsCount = await this.projectModel.countDocuments({
+          organizationId: new Types.ObjectId(String(orgId))
+        });
+
+        if (projectsCount >= 2) {
+          // Exceção específica (403 Forbidden ou 402 Payment Required)
+          // O Frontend vai ler a mensagem e mostrar o modal de Upgrade
+          throw new ForbiddenException('LIMITE_FREE_EXCEDIDO: Sua construtora atingiu o limite de 2 demandas do Plano Gratuito. Evolua para o Plano PRO.');
+        }
+      }
+
       let prefixoOrg = 'CAZ'; // Fallback de segurança
       if (org) {
         if (org.acronym) {
@@ -93,6 +110,9 @@ export class ProjectsService {
       return savedProject;
     } catch (error) {
       console.error('Erro ao criar demanda:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Falha estrutural ao registrar a demanda.');
     }
   }

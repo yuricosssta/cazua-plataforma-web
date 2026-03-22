@@ -18,6 +18,15 @@ export class OrganizationService {
 
   // 1. CRIAÇÃO E VÍNCULO AUTOMÁTICO
   async create(createDto: CreateOrganizationDto, ownerId: string) {
+    const ownedOrgsCount = await this.memberModel.countDocuments({
+      userId: new Types.ObjectId(ownerId),
+      role: 'OWNER'
+    });
+
+    if (ownedOrgsCount >= 1) {
+      throw new BadRequestException('Você atingiu o limite do Plano Gratuito. Faça o upgrade para o Plano PRO para criar múltiplas empresas.');
+    }
+
     const slug = createDto.slug || this.generateSlug(createDto.name);
 
     const existing = await this.orgModel.findOne({ slug });
@@ -63,13 +72,13 @@ export class OrganizationService {
     const memberships = await this.memberModel
       .find({ organizationId: new Types.ObjectId(orgId) })
       .populate({
-        path: 'userId', 
-        select: 'name email', 
+        path: 'userId',
+        select: 'name email',
       })
       .exec();
 
     return memberships
-      .filter(m => m.userId) 
+      .filter(m => m.userId)
       .map(m => {
         const user = m.userId as any;
         return {
@@ -91,7 +100,7 @@ export class OrganizationService {
     }
 
     let user;
-    
+
     // 1. Verifica se a Identidade Global já existe
     user = await this.usersService.findOne(userData.email);
 

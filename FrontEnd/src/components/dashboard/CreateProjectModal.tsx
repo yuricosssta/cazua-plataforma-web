@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axios from "axios";
+import { UpgradeModal } from "./UpgradeModal";
 
 // Importações do OpenLayers
 import Map from "ol/Map";
@@ -30,6 +31,8 @@ interface CreateProjectModalProps {
 export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
 
   const orgId = typeof currentOrg?.organizationId === "object"
     ? (currentOrg.organizationId as any)._id
@@ -157,7 +160,14 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
       onSuccess();
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro interno ao criar a demanda.");
+      console.error(error);
+      const errorMsg = error.response?.data?.message || error.message || "Erro interno ao registrar a demanda.";
+      if (errorMsg.includes("LIMITE_FREE_EXCEDIDO") || errorMsg.includes("limite")) {
+        setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
+        setIsUpgradeModalOpen(true);
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -275,6 +285,14 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
           </form>
         )}
       </div>
+
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        title="Limite de Demandas Atingido"
+        message={upgradeMessage}
+      />
+
     </div>
   );
 }

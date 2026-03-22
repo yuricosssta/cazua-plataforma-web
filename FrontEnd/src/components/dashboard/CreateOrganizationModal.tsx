@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/redux/store";
 import { fetchMyOrganizations } from "@/lib/redux/slices/organizationSlice";
 import { apiCreateOrganization } from "@/lib/api/organizationService";
+import { UpgradeModal } from "./UpgradeModal";
 
 interface CreateOrganizationModalProps {
   isOpen: boolean;
@@ -17,6 +18,9 @@ interface CreateOrganizationModalProps {
 export function CreateOrganizationModal({ isOpen, onClose }: CreateOrganizationModalProps) {
   const dispatch = useDispatch<AppDispatch>();
   const token = useSelector((state: RootState) => state.auth.token);
+
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
 
   const [name, setName] = useState("");
   const [acronym, setAcronym] = useState("");
@@ -33,7 +37,7 @@ export function CreateOrganizationModal({ isOpen, onClose }: CreateOrganizationM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return alert("Usuário não autenticado.");
-    
+
     if (acronym.length < 2) {
       return alert("A sigla precisa ter pelo menos 2 letras.");
     }
@@ -47,7 +51,13 @@ export function CreateOrganizationModal({ isOpen, onClose }: CreateOrganizationM
       onClose();
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Erro interno ao criar construtora.");
+      const errorMsg = error.message || error.response?.data?.message || "Erro interno ao registrar a empresa.";
+      if (errorMsg.includes("LIMITE_FREE_EXCEDIDO") || errorMsg.includes("limite")) {
+        setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
+        setIsUpgradeModalOpen(true);
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -56,7 +66,7 @@ export function CreateOrganizationModal({ isOpen, onClose }: CreateOrganizationM
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-background w-full max-w-md rounded-xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
-        
+
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
@@ -113,12 +123,20 @@ export function CreateOrganizationModal({ isOpen, onClose }: CreateOrganizationM
               Cancelar
             </button>
             <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50 shadow-sm">
-              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} 
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               Criar Ambiente
             </button>
           </div>
         </form>
       </div>
+
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        title="Limite de Empresas Atingido"
+        message={upgradeMessage}
+      />
+
     </div>,
     document.body //  Destino 
   );
