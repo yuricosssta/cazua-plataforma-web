@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -11,9 +11,10 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axios from "axios";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
+type TabType = ProjectStatus | "ALL" | "MINE";
 
 interface ProjectTimelineEvent {
   id: string;
@@ -41,8 +42,10 @@ interface Project {
 
 export function ProjectsList() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<ProjectStatus | "ALL">("ALL");
-  const [searchTerm, setSearchTerm] = useState(""); // <-- NOVO: Estado da busca
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get("tab") as TabType | null;
+  const [activeTab, setActiveTab] = useState<TabType>("MINE");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: string } | null>(null);
 
@@ -52,6 +55,9 @@ export function ProjectsList() {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
+
+  // Extrai o ID do usuário
+  const userId = user?.sub || (user as any)?._id || (user as any)?.id;
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -123,12 +129,41 @@ export function ProjectsList() {
     fetchProjects();
   }, [orgId, token]);
 
-  // <-- NOVO: Lógica da Busca Omnichannel + Filtro de Aba
+  useEffect(() => {
+    if (urlTab && ["ALL", "MINE", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED"].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
+
+  // Função auxiliar para verificar se o usuário está na equipe
+  const isUserAssigned = (assignedMembers: any[]) => {
+    return assignedMembers?.some((m: any) => {
+      const memberId = typeof m === 'string' ? m : m._id;
+      return memberId === userId;
+    });
+  };
+
+  // --- CÁLCULO DOS CONTADORES DAS ABAS ---
+  const counts = {
+    MINE: projects.filter(p => isUserAssigned(p.assignedMembers || [])).length,
+    ALL: projects.length,
+    DEMAND: projects.filter(p => p.status === "DEMAND").length,
+    PLANNING: projects.filter(p => p.status === "PLANNING").length,
+    EXECUTION: projects.filter(p => p.status === "EXECUTION").length,
+    COMPLETED: projects.filter(p => p.status === "COMPLETED").length,
+  };
+
+  // --- LÓGICA DE FILTRO FINAL (Aba + Pesquisa) ---
   const filteredProjects = projects.filter((p) => {
-    const matchesTab = activeTab === "ALL" || p.status === activeTab;
+    // 1. Filtra pela Aba Ativa
+    let matchesTab = false;
+    if (activeTab === "ALL") matchesTab = true;
+    else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || []);
+    else matchesTab = p.status === activeTab;
+
+    // 2. Filtra pela Pesquisa
     const term = searchTerm.toLowerCase();
-    
-    const matchesSearch = !term || 
+    const matchesSearch = !term ||
       (p.title && p.title.toLowerCase().includes(term)) ||
       (p.referenceCode && p.referenceCode.toLowerCase().includes(term)) ||
       (p.description && p.description.toLowerCase().includes(term)) ||
@@ -136,6 +171,7 @@ export function ProjectsList() {
 
     return matchesTab && matchesSearch;
   }).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
+
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
@@ -153,6 +189,16 @@ export function ProjectsList() {
     if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-600/10 border-blue-200" };
     return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200" };
   };
+
+  // Configuração das Abas para renderização
+  const tabs = [
+    { id: "MINE", label: "Minhas Obras", icon: UserCircle, count: counts.MINE },
+    { id: "ALL", label: "Todas", count: counts.ALL },
+    { id: "DEMAND", label: "Demandas", count: counts.DEMAND },
+    { id: "PLANNING", label: "Planejamento", count: counts.PLANNING },
+    { id: "EXECUTION", label: "Em Execução", count: counts.EXECUTION },
+    { id: "COMPLETED", label: "Concluídas", count: counts.COMPLETED },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
@@ -175,7 +221,7 @@ export function ProjectsList() {
         </button>
       </div>
 
-      {/* NOVO: BARRA DE PESQUISA OMNICHANNEL */}
+      {/* BARRA DE PESQUISA OMNICHANNEL */}
       <div className="relative w-full md:max-w-md">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -189,26 +235,28 @@ export function ProjectsList() {
         />
       </div>
 
-      {/* Navegação por Abas */}
-      <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
-        {[
-          { id: "DEMAND", label: "Demandas" },
-          { id: "PLANNING", label: "Planejando" },
-          { id: "EXECUTION", label: "Executando" },
-          { id: "COMPLETED", label: "Concluídas" },
-          { id: "ALL", label: "Todas" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* NAVEGAÇÃO POR ABAS (COM CONTADORES) */}
+      <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-t-md"
+                }`}
+            >
+              {tab.icon && <tab.icon className="w-4 h-4" />}
+              {tab.label}
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Lista de Cards */}
@@ -219,10 +267,18 @@ export function ProjectsList() {
             <p className="text-sm text-muted-foreground">Sincronizando com o canteiro...</p>
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
-            <p className="text-muted-foreground text-sm">
-              {searchTerm ? "Nenhum registro encontrado para sua busca." : "Nenhum registro encontrado nesta fase."}
-            </p>
+          <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border flex flex-col items-center justify-center">
+            {activeTab === "MINE" && !searchTerm ? (
+              <>
+                <UserCircle className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                <p className="text-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
+                <p className="text-muted-foreground text-sm mt-1">Quando um administrador te adicionar a uma equipe, a obra aparecerá aqui.</p>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {searchTerm ? "Nenhum registro encontrado para sua busca." : "Nenhum registro encontrado nesta fase."}
+              </p>
+            )}
           </div>
         ) : (
           filteredProjects.map((project) => {
@@ -231,11 +287,7 @@ export function ProjectsList() {
             const priorityConfig = getPriorityConfig(project.priorityScore);
             const PriorityIcon = priorityConfig?.icon;
 
-            const isAssigned = project.assignedMembers?.some((m: any) => {
-              const memberId = typeof m === 'string' ? m : m._id;
-              return memberId === user?.sub || memberId === user?._id || memberId === (user as any)?.id;
-            });
-            const hasPermission = isOrgAdmin || isAssigned;
+            const hasPermission = isOrgAdmin || isUserAssigned(project.assignedMembers || []);
 
             return (
               <div
@@ -318,8 +370,8 @@ export function ProjectsList() {
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
                       className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
-                          ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
-                          : 'bg-muted text-muted-foreground/50 border border-border cursor-not-allowed'
+                        ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
+                        : 'bg-muted text-muted-foreground/50 border border-border cursor-not-allowed'
                         }`}
                     >
                       {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}

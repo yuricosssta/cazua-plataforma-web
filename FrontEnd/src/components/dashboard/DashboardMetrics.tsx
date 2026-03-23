@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import Link from "next/link";
 import { Plus, HardHat, FileText, CheckCircle, AlertCircle, Activity, Loader2 } from "lucide-react";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
@@ -22,7 +23,6 @@ export function DashboardMetrics() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Puxa dados do Redux
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
@@ -51,7 +51,6 @@ export function DashboardMetrics() {
     fetchProjects();
   }, [orgId, token]);
 
-  // --- CÁLCULO DOS INDICADORES (KPIs) ---
   const currentYear = new Date().getFullYear();
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;
 
@@ -84,15 +83,14 @@ export function DashboardMetrics() {
   return (
     <div className="w-full flex flex-col gap-6">
       
-      {/* Cabeçalho da Seção com o Botão de Ação */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card border border-border p-5 rounded-xl shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" />
-            Painel da Construtora
+            Painel Geral
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Resumo executivo de todas as demandas e obras ativas.
+            Resumo executivo de todas as demandas e projetos ativos.
           </p>
         </div>
         <button
@@ -104,53 +102,51 @@ export function DashboardMetrics() {
         </button>
       </div>
 
-      {/* Grid de Métricas (Blocos) */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         
-        <div className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-primary/30 transition-colors">
+        <Link href="/dashboard/projects?tab=ALL" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-primary/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg"><FileText className="w-4 h-4" /></div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total</span>
+            <div className="p-2 bg-primary/10 text-primary rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Total</span>
           </div>
           <div className="text-3xl font-black text-foreground">{totalDemandas}</div>
-        </div>
+        </Link>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-blue-500/30 transition-colors">
+        <Link href="/dashboard/projects?tab=PLANNING" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><AlertCircle className="w-4 h-4" /></div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Planejamento</span>
+            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-colors"><AlertCircle className="w-4 h-4" /></div>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Planejamento</span>
           </div>
           <div className="text-3xl font-black text-foreground">{emPlanejamento}</div>
-        </div>
+        </Link>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-amber-500/30 transition-colors">
+        <Link href="/dashboard/projects?tab=EXECUTION" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-amber-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg"><HardHat className="w-4 h-4" /></div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Em Execução</span>
+            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-colors"><HardHat className="w-4 h-4" /></div>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Em Execução</span>
           </div>
           <div className="text-3xl font-black text-foreground">{emExecucao}</div>
-        </div>
+        </Link>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-emerald-500/30 transition-colors">
+        <Link href="/dashboard/projects?tab=COMPLETED" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><CheckCircle className="w-4 h-4" /></div>
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Concluídas ({currentYear})</span>
+            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors"><CheckCircle className="w-4 h-4" /></div>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Concluídas ({currentYear})</span>
           </div>
           <div className="text-3xl font-black text-foreground">{concluidasEsteAno}</div>
-        </div>
+        </Link>
 
-        <div className="bg-card border border-primary/20 p-4 rounded-xl shadow-sm md:col-span-2 flex items-center justify-between relative overflow-hidden group">
+        <Link href="/dashboard/projects?tab=MINE" className="bg-card border border-primary/20 p-4 rounded-xl shadow-sm md:col-span-2 flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-all cursor-pointer">
           <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
           <div className="relative z-10">
-            <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Minhas Obras (Alocado)</div>
-            <div className="text-sm text-muted-foreground">Demandas onde você faz parte da equipe técnica.</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Meus Projetos (Alocado)</div>
+            <div className="text-sm text-muted-foreground">Projetos onde você faz parte da equipe técnica.</div>
           </div>
-          <div className="relative z-10 text-4xl font-black text-primary pr-4">{minhasObras}</div>
-        </div>
+          <div className="relative z-10 text-4xl font-black text-primary pr-4 group-hover:scale-110 transition-transform">{minhasObras}</div>
+        </Link>
 
       </div>
 
-      {/* Reutilizando o Modal de Criação (Ele também disparará o seu Paywall se bater o limite!) */}
       <CreateProjectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
