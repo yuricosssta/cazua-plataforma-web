@@ -93,7 +93,6 @@ export class OrganizationService {
       });
   }
 
-  // --- NOVO: A LÓGICA DE CADASTRO SAAS B2B ---
   async addMemberToOrganization(orgId: string, userData: any) {
     if (!Types.ObjectId.isValid(orgId)) {
       throw new BadRequestException('ID da organização inválido.');
@@ -154,4 +153,29 @@ export class OrganizationService {
       .replace(/[^a-z0-9 ]/g, '')
       .replace(/\s+/g, '-');
   }
+
+  async findAllForSuperAdmin() {
+    return this.orgModel
+      .find()
+      .populate('ownerId', 'name email')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  // Altera o plano de qualquer empresa
+  async updatePlan(orgId: string, newPlan: string) {
+    if (!['FREE', 'PRO', 'ENTERPRISE'].includes(newPlan)) {
+      throw new BadRequestException('Plano inválido.');
+    }
+
+    const org = await this.orgModel.findByIdAndUpdate(
+      orgId,
+      { plan: newPlan },
+      { new: true }
+    );
+
+    if (!org) throw new BadRequestException('Organização não encontrada.');
+    return org;
+  }
+
 }

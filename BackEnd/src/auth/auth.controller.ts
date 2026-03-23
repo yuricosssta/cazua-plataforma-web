@@ -19,6 +19,3 @@ export class AuthController {
     return req.user;
   }
 }
-
-// Instalando JWT
-// npm install --save @nestjs/jwt

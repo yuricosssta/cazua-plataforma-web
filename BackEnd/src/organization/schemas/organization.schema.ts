@@ -19,7 +19,7 @@ export class Organization {
   acronym: string;
 
   @Prop({ type: String, enum: ['FREE', 'PRO', 'ENTERPRISE'], default: 'FREE' })
-  plan: string; // Plano atual da organização (ex: "FREE", "PRO", "ENTERPRISE")
+  plan: string;
 
   // O identificador único na URL (ex: "construtora-silva")
   @Prop({ required: true, unique: true, index: true, lowercase: true, trim: true })

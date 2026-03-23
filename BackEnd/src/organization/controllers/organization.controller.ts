@@ -1,18 +1,19 @@
 // src/organization/controllers/organization.controller.ts
 
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { AuthGuard } from '../../auth/auth.guard';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('organizations')
-@UseGuards(AuthGuard) 
+@UseGuards(AuthGuard)
 export class OrganizationController {
-  constructor(private readonly orgService: OrganizationService) {}
+  constructor(private readonly orgService: OrganizationService, private readonly configService: ConfigService) { }
 
   @Post()
   create(@Body() createDto: CreateOrganizationDto, @Req() req: any) {
-    const userId = req.user.sub || req.user.id; 
+    const userId = req.user.sub || req.user.id;
     return this.orgService.create(createDto, userId);
   }
 
@@ -22,49 +23,51 @@ export class OrganizationController {
     return this.orgService.findAllForUser(userId);
   }
 
-  // --- NOVA ROTA: Busca de membros ---
+  // Busca de membros ---
   @Get(':orgId/members')
   getMembers(@Param('orgId') orgId: string) {
     return this.orgService.findMembersByOrganization(orgId);
   }
 
-  // --- NOVA ROTA: Adição de membro (O Front-end chama aqui!) ---
+  // Adição de membro
   @Post(':orgId/members')
   addMember(@Param('orgId') orgId: string, @Body() body: any) {
     return this.orgService.addMemberToOrganization(orgId, body);
   }
 
-  // Curinga: Busca por slug (Sempre deixe rotas curingas genéricas no final)
+  @Get('admin/all')
+  async getAllForAdmin(@Req() req: any) {
+    // A TRAVA DE DEUS
+    const userEmail = req.user?.email; // Certifique-se de que seu token JWT tenha o email embutido
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+
+    if (userEmail !== superAdminEmail) {
+      throw new ForbiddenException('Acesso negado: Área restrita ao Administrador.');
+    }
+
+    return this.orgService.findAllForSuperAdmin();
+  }
+
+  @Patch('admin/:id/plan')
+  async updateOrgPlan(
+    @Param('id') orgId: string,
+    @Body('plan') plan: string,
+    @Req() req: any
+  ) {
+    const userEmail = req.user?.email;
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+
+    if (userEmail !== superAdminEmail) {
+      throw new ForbiddenException('Acesso negado: Área restrita ao Master Admin.');
+    }
+
+    return this.orgService.updatePlan(orgId, plan);
+  }
+
+  // Busca por slug
   @Get(':slug')
   getBySlug(@Param('slug') slug: string) {
     return this.orgService.findOneBySlug(slug);
   }
+
 }
-
-// import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-// import { OrganizationService } from '../services/organization.service';
-// import { CreateOrganizationDto } from '../dto/create-organization.dto';
-// import { AuthGuard } from '../../auth/auth.guard';
-
-// @Controller('organizations')
-// @UseGuards(AuthGuard) 
-// export class OrganizationController {
-//   constructor(private readonly orgService: OrganizationService) {}
-
-//   @Post()
-//   create(@Body() createDto: CreateOrganizationDto, @Req() req: any) {
-//     const userId = req.user.sub || req.user.id; 
-//     return this.orgService.create(createDto, userId);
-//   }
-
-//   @Get('my-orgs')
-//   getMyOrgs(@Req() req: any) {
-//     const userId = req.user.sub || req.user.id;
-//     return this.orgService.findAllForUser(userId);
-//   }
-
-//   @Get(':slug')
-//   getBySlug(@Param('slug') slug: string) {
-//     return this.orgService.findOneBySlug(slug);
-//   }
-// }
