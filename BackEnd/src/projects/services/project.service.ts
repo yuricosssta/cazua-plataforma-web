@@ -30,7 +30,7 @@ export class ProjectsService {
     try {
       const year = new Date().getFullYear();
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      
+
       const org = await this.orgModel.findById(orgId).exec();
       if (!org) {
         throw new NotFoundException('Organização não encontrada.');
@@ -69,7 +69,7 @@ export class ProjectsService {
       // MONTAGEM DO CÓDIGO: [Org].[AnoMês].[000X]
       const sequencia = String(counter.seq).padStart(4, '0');
       const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
-      
+
       // Cria a demanda com o código gerado
       const newProject = new this.projectModel({
         organizationId: new Types.ObjectId(String(orgId)),
@@ -94,10 +94,10 @@ export class ProjectsService {
         type: TimelineEventType.DOCUMENT, // CORREÇÃO: Usando a enumeração oficial
         description: data.description, // O corpo do documento é a descrição real
         referenceCode: referenceCode,
-        metadata: { 
+        metadata: {
           newStatus: savedProject.status,
           isInitialDemand: true, // Tag para identificar que é a abertura
-          attachments: data.attachments || [] 
+          attachments: data.attachments || []
         }
       });
 
@@ -124,33 +124,36 @@ export class ProjectsService {
       organizationId: new Types.ObjectId(String(orgId))
     });
 
-    const referenceCode = project?.referenceCode || 'PRC'; // Fallback para garantir que sempre haja um código de referência
-
     if (!project) {
       throw new NotFoundException('Demanda/Projeto não encontrada.');
     }
 
+    // Código pai da demanda (Ex: CAZ.202603.0001). Se não tiver, usa o ID como fallback
+    const referenceCode = project.referenceCode || String(project._id).substring(0, 8).toUpperCase();
+
     const isAssigned = project.assignedMembers?.some(memberId => memberId.toString() === userId.toString()) || false;
     const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
-    // Verifica se o usuário logado foi quem criou a demanda
     const isCreator = project.createdBy && project.createdBy.toString() === userId.toString();
 
     if (!isAssigned && !isAdmin && !isCreator) {
       throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
     }
 
-    // Gerar um código de referência único para este parecer
-    
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
-    const day = String(new Date().getDate()).padStart(2, '0');
-    const milliseconds = String(new Date().getTime()).slice(-4);
-    const randon = String(Math.floor(10 + Math.random() * 90));
-    // const parecerCode = `${year}${month}${day}-${milliseconds}`;
-    const parecerCode = `${referenceCode}.${year}${month}${day}.${randon}`;
+    // A chave única do contador será: PRC_[ID_DA_OBRA]
+    const counterId = `PRC_${projectId}`;
+    const counter = await this.counterModel.findByIdAndUpdate(
+      counterId,
+      { $inc: { seq: 1 } }, // Incrementa atômico +1
+      { new: true, upsert: true } // Se for o 1º parecer, ele cria o contador começando no 1
+    );
+
+    // Formata o sequencial do parecer com 4 dígitos (ex: 0001, 0002)
+    const sequenciaParecer = String(counter.seq).padStart(4, '0');
+
+    // Ex: CAZ.202603.0001.PRC.0001
+    const parecerCode = `${referenceCode}.PRC.${sequenciaParecer}`;
 
     try {
-      // Verifica e atualiza o Status (se foi enviado um novo)
       let statusChanged = false;
       if (data.newStatus && data.newStatus !== project.status) {
         project.status = data.newStatus as ProjectStatus;
@@ -162,17 +165,15 @@ export class ProjectsService {
       if (data.endDate) project.endDate = new Date(data.endDate);
       if (data.location) project.location = data.location;
 
-      // Base dos metadados da Timeline
       const metadata: any = {
         statusChanged: statusChanged ? project.status : null
       };
 
-      // Só recalcula e atualiza o banco se o Front-end mandou os dados da matriz
       if (data.priorityDetails && Object.keys(data.priorityDetails).length > 0) {
         const score = this.calculatePriorityScore(data.priorityDetails);
         project.priorityScore = score;
         project.priorityDetails = data.priorityDetails;
-        
+
         metadata.priorityScore = score;
         metadata.priorityDetails = data.priorityDetails;
       }
@@ -185,18 +186,18 @@ export class ProjectsService {
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
         parecerCode: parecerCode,
-        metadata: metadata 
+        metadata: metadata
       });
 
       const savedEvent = await parecerEvent.save();
 
-      // Atualiza o projeto com o ID do último evento para a listagem rápida
       project.lastEventId = savedEvent._id as any;
       await project.save();
 
       return project;
     } catch (error) {
       console.error('Erro ao emitir parecer:', error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Falha ao registrar o parecer técnico.');
     }
   }
@@ -208,7 +209,7 @@ export class ProjectsService {
       .populate({
         path: 'lastEventId',
         select: 'description date authorId type metadata createdAt',
-        populate: { path: 'authorId', select: 'name' } 
+        populate: { path: 'authorId', select: 'name' }
       })
       .sort({ priorityScore: -1, createdAt: -1 })
       .exec();
@@ -224,14 +225,14 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException('Projeto não encontrado.');
     }
-    
+
     const timeline = await this.timelineEventModel.find({
       projectId: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
     })
-    .populate('authorId', 'name')
-    .sort({ createdAt: -1 })
-    .exec();
+      .populate('authorId', 'name')
+      .sort({ createdAt: -1 })
+      .exec();
 
     return { project, timeline };
   }
@@ -256,7 +257,7 @@ export class ProjectsService {
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
       type: TimelineEventType.STATUS_CHANGE, // CORREÇÃO: Usando a enumeração oficial
-      description: `Membro adicionado à equipe.`, 
+      description: `Membro adicionado à equipe.`,
     });
     await timelineEvent.save();
 
@@ -282,7 +283,7 @@ export class ProjectsService {
       projectId: project._id,
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
-      type: TimelineEventType.STATUS_CHANGE, 
+      type: TimelineEventType.STATUS_CHANGE,
       description: 'Membro removido da equipe.',
     });
     await timelineEvent.save();
