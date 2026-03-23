@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { selectCurrentOrg, selectOrgStatus } from "@/lib/redux/slices/organizationSlice";
-import { ChevronRight, Settings, LogOut, User } from "lucide-react";
+import { ChevronRight, Settings, LogOut, User, ShieldAlert } from "lucide-react";
 import { ColorModeSwitcher } from "../color-mode-switcher";
 import { AppDispatch, RootState } from "@/lib/redux/store";
 import { logout, setAuthState } from "@/lib/redux/slices/authSlice";
@@ -122,6 +122,18 @@ export function Header() {
                 <Settings className="w-4 h-4" />
                 Configurações da conta
               </Link>
+              
+              {/* Acesso ao Painel Administrador */}
+              {displayUser?.isSuperAdmin && (
+                <Link
+                  href="/dashboard/master-admin"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-sm transition-colors"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  Painel Administrador
+                </Link>
+              )}
 
               <ColorModeSwitcher
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded-sm transition-colors w-full text-left"

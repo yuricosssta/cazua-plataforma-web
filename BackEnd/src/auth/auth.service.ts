@@ -1,13 +1,17 @@
+//src/auth/auth.service.ts
+
 import * as bcrypt from 'bcryptjs';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/services/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private configService: ConfigService 
   ) { }
 
   async signIn(
@@ -28,12 +32,14 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
     
-    // Payload limpo: Apenas a Identidade Global. 
-    // Removemos o 'memberships' daqui definitivamente.
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+    const isSuperAdmin = user.email === superAdminEmail; // Verifica se o e-mail do usuário é o mesmo do super admin definido nas variáveis de ambiente
+    
     const payload = { 
       sub: user._id,
       name: user.name, 
-      email: user.email 
+      email: user.email,
+      isSuperAdmin,
     };
     
     console.log('Payload gerado para o JWT:', payload);
