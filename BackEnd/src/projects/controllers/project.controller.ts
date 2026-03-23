@@ -52,6 +52,11 @@ export class ProjectsController {
     return this.projectsService.findAllByOrganization(orgId);
   }
 
+  @Get('timeline')
+  async getOrgTimeline(@Param('orgId') orgId: string) {
+    return this.projectsService.getOrganizationTimeline(orgId);
+  }
+
   // 3. EMITIR PARECER TÉCNICO (E GERAR A PRIORIDADE)
   @Post(':projectId/parecer')
   async emitParecer(

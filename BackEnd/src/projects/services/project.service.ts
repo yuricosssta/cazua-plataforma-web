@@ -291,4 +291,15 @@ export class ProjectsService {
     return project;
   }
 
+  // --- FEED DE ATIVIDADES (DASHBOARD) ---
+  async getOrganizationTimeline(orgId: string) {
+    return this.timelineEventModel
+      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .sort({ createdAt: -1 }) // Traz os mais recentes primeiro
+      .limit(20) // Mostra apenas as últimas 20 ações
+      .populate('authorId', 'name avatarUrl')
+      .populate('projectId', 'title referenceCode')
+      .exec();
+  }
+
 }

@@ -1,3 +1,4 @@
+//src/organization/organization.module.ts
 import { Module } from '@nestjs/common';
 import { OrganizationController } from './controllers/organization.controller';
 import { OrganizationService } from './services/organization.service';
@@ -5,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { OrganizationSchema } from './schemas/organization.schema';
 import { OrganizationMemberSchema } from './schemas/organization-member.schema';
 import { UsersModule } from '../users/user.module';
-import { ProjectsModule } from 'src/projects/project.module';
 
 @Module({
   imports: [
