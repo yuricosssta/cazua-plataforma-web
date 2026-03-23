@@ -1,3 +1,4 @@
+//src/components/LandingPage.tsx
 "use client";
 
 import React from "react";

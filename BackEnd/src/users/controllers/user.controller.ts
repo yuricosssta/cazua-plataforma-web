@@ -29,12 +29,9 @@ import { AuthGuard } from '../../auth/auth.guard';
 export class UsersController {
   constructor(private readonly userService: UsersService) { }
 
-  // 1. ROTAS GERAIS E DE PERFIL (Sem amarras de organização)
-
   @UseGuards(AuthGuard)
   @Get()
   async getAllUsers() {
-    // Retorna todos os usuários (No futuro, restrinja isso apenas para SuperAdmins da sua empresa)
     return this.userService.getAllUsers();
   }
 
@@ -56,12 +53,8 @@ export class UsersController {
     return this.userService.getUser(userId);
   }
 
-  // 2. CRIAÇÃO E ATUALIZAÇÃO DA IDENTIDADE GLOBAL
-
-  @UseGuards(AuthGuard)
   @Post()
   async createUser(
-    // Criação simples, sem x-organization-id no cabeçalho
     @Body(new ZodValidationPipe(createUserSchema)) user: CreateUser,
   ) {
     return this.userService.createUser(user);
@@ -71,7 +64,6 @@ export class UsersController {
   @Put(':userId')
   async updateUser(
     @Param('userId') userId: string,
-    // Extraímos apenas o 'name' (memberships não existe mais aqui)
     @Body(new ZodValidationPipe(updateUserSchema)) { name }: UpdateUser,
   ) {
     return this.userService.updateUser(userId, { name });
