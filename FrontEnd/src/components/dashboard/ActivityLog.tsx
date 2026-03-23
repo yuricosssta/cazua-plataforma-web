@@ -1,3 +1,4 @@
+//src/components/dashboard/ActivityLog.tsx
 "use client";
 
 import React from "react";
