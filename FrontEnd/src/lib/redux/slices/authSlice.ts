@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { RootState } from '../store';
 import { jwtDecode } from 'jwt-decode';
+import axiosInstance from '@/lib/api/axiosInstance';
 
 interface UserPayload {
   sub: string;
@@ -59,6 +60,18 @@ export const loginUser = createAsyncThunk<AuthResponse, { email: string; passwor
   }
 );
 
+export const renewToken = createAsyncThunk<AuthResponse>(
+  'auth/renewToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post('/auth/refresh');
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Erro ao renovar token');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -99,13 +112,20 @@ const authSlice = createSlice({
         state.status = 'succeeded';
         state.token = token;
         state.isAuthenticated = true;
-        localStorage.setItem('token', token); // Armazena o token no localStorage
+        localStorage.setItem('token', token);
         state.user = safeDecode(token);
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
         console.error('Erro ao fazer login:', action.error.message);
+      })
+      .addCase(renewToken.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+        const token = action.payload.access_token;
+        state.token = token;
+        state.isAuthenticated = true;
+        localStorage.setItem('token', token);
+        state.user = safeDecode(token);
       });
   },
 });

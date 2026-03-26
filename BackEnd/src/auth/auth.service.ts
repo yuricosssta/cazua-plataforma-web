@@ -11,7 +11,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService 
+    private configService: ConfigService
   ) { }
 
   async signIn(
@@ -19,33 +19,49 @@ export class AuthService {
     pass: string
   ): Promise<{ access_token: string }> {
     const user = await this.usersService.findOne(email);
-    
+
     if (!user) {
       console.log('Usuário não encontrado');
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
-    
+
     const passwordMatch = await bcrypt.compare(pass, user.password);
-    
+
     if (!passwordMatch) {
       console.log('Senha incorreta');
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
-    
+
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
     const isSuperAdmin = user.email === superAdminEmail; // Verifica se o e-mail do usuário é o mesmo do super admin definido nas variáveis de ambiente
-    
-    const payload = { 
+
+    const payload = {
       sub: user._id,
-      name: user.name, 
+      name: user.name,
       email: user.email,
       isSuperAdmin,
     };
-    
+
     console.log('Payload gerado para o JWT:', payload);
 
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
+
+  async refreshToken(userPayload: any): Promise<{ access_token: string }> {
+    const payload = {
+      sub: userPayload.sub,
+      name: userPayload.name,
+      email: userPayload.email,
+      isSuperAdmin: userPayload.isSuperAdmin,
+    };
+
+    console.log('Token renovado para o usuário:', payload.email);
+
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
+  }
+
 }

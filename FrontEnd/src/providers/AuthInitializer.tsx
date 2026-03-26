@@ -8,6 +8,7 @@ import { fetchUserProfile } from '../lib/redux/slices/userSlice';
 import { AppDispatch } from '../lib/redux/store';
 import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
 import { SessionExpiredModal } from '@/components/auth/SessionExpiredModal';
+import { SessionWarningModal } from '@/components/auth/SessionWarningModal';
 
 export default function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -17,15 +18,16 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
 
     if (token) {
       dispatch(setAuthState({ token }));
-      dispatch(fetchUserProfile()); 
+      dispatch(fetchUserProfile());
       dispatch(fetchMyOrganizations());
     }
   }, [dispatch]);
 
   return (
     <>
+      <SessionWarningModal />
       <SessionExpiredModal />
       {children}
     </>
-  ); 
+  );
 }
