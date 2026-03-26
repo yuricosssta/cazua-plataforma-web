@@ -1,3 +1,4 @@
+//src/providers/AuthInitializer.tsx
 "use client";
 
 import { useEffect } from 'react';
@@ -6,6 +7,7 @@ import { setAuthState } from '../lib/redux/slices/authSlice';
 import { fetchUserProfile } from '../lib/redux/slices/userSlice';
 import { AppDispatch } from '../lib/redux/store';
 import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
+import { SessionExpiredModal } from '@/components/auth/SessionExpiredModal';
 
 export default function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -14,14 +16,16 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
     const token = localStorage.getItem('token');
 
     if (token) {
-      //Restaura o estado de Autenticação no Redux
       dispatch(setAuthState({ token }));
-
-      //Dispara as buscas de dados iniciais
-      dispatch(fetchUserProfile());
+      dispatch(fetchUserProfile()); 
       dispatch(fetchMyOrganizations());
     }
   }, [dispatch]);
 
-  return <>{children}</>; 
+  return (
+    <>
+      <SessionExpiredModal />
+      {children}
+    </>
+  ); 
 }

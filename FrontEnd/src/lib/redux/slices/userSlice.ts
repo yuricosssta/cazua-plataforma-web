@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '@/lib/api/axiosInstance';
 import { IUser } from '../../../types/IUser';
+import { logout, sessionExpired } from './authSlice'; 
 
 interface UserState {
   users: IUser[] | null;
@@ -25,18 +26,20 @@ export const fetchUserProfile = createAsyncThunk<IUser>(
   }
 );
 
-export const carregaUsuarios = createAsyncThunk<IUser[]>(
+export const fetchUsers = createAsyncThunk<IUser[]>(
   'user/fetchUsers',
   async () => {
     const response = await axiosInstance.get('/users');
-    return response.data;//
+    return response.data;
   }
 );
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
-  reducers: {},
+  reducers: {
+    // actions manuais aqui
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserProfile.pending, (state) => {
@@ -50,16 +53,22 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || 'Falha ao buscar perfil.';
       })
-      .addCase(carregaUsuarios.pending, (state) => {
+      .addCase(fetchUsers.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(carregaUsuarios.fulfilled, (state, action: PayloadAction<IUser[]>) => {
+      .addCase(fetchUsers.fulfilled, (state, action: PayloadAction<IUser[]>) => {
         state.status = 'succeeded';
         state.users = action.payload;
       })
-      .addCase(carregaUsuarios.rejected, (state, action) => {
+      .addCase(fetchUsers.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Falha ao buscar usuários.';
+      })
+      .addCase(logout, () => {
+        return initialState;
+      })
+      .addCase(sessionExpired, () => {
+        return initialState;
       });
   },
 });

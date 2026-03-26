@@ -8,8 +8,7 @@ const axiosInstance = axios.create({
 // Request Interceptor
 axiosInstance.interceptors.request.use(
   async (config) => {
-    // Pega o estado mais recente do token da store do Redux
-    const { store } = await import('@/lib/redux/store'); // Importa a store dinamicamente
+    const { store } = await import('@/lib/redux/store');
     const state = store.getState();
     const token = state.auth.token;
     const currentOrg = state.organizations.currentOrganization;
@@ -19,7 +18,6 @@ axiosInstance.interceptors.request.use(
     }
 
     if (currentOrg && currentOrg.organizationId) {
-      // O ID da empresa está dentro do objeto populado
       config.headers['x-org-id'] = currentOrg.organizationId._id;
     }
 

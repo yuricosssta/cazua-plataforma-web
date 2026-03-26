@@ -1,8 +1,8 @@
 {
-  "name": "tech-challenge-nestjs",
-  "version": "0.0.1",
+  "name": "grupo-cazua-backend",
+  "version": "1.0.0",
   "description": "Este manual oferece uma visão geral de como usar os endpoints disponíveis, incluindo detalhes de autenticação, exemplos de requisições e respostas, e tratamento de erros.",
-  "author": "",
+  "author": "Yuri Costa",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
