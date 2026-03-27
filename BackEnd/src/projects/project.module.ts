@@ -7,7 +7,7 @@ import { ProjectsController } from './controllers/project.controller';
 import { Project, ProjectSchema } from './schemas/project.schema';
 import { TimelineEvent, TimelineEventSchema } from './schemas/timeline-event.schema';
 import { Counter, CounterSchema } from './schemas/counter.schema';
-import { OrganizationModule } from 'src/organization/organization.module';
+import { OrganizationModule } from  '../organization/organization.module';
 
 @Module({
   imports: [
