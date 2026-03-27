@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import axios from "axios";
+// import axios from "axios";
+import axiosInstance from "@/lib/api/axiosInstance";
 import Link from "next/link";
 import { Plus, HardHat, FileText, CheckCircle, AlertCircle, Activity, Loader2 } from "lucide-react";
 import { RootState } from "@/lib/redux/store";
@@ -24,7 +25,7 @@ export function DashboardMetrics() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
+  // const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
 
   const orgId = typeof currentOrg?.organizationId === "object"
@@ -32,13 +33,10 @@ export function DashboardMetrics() {
     : currentOrg?.organizationId;
 
   const fetchProjects = async () => {
-    if (!orgId || !token) return;
+    if (!orgId) return;
     try {
       setIsLoading(true);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
       setProjects(response.data);
     } catch (error) {
       console.error("Erro ao buscar projetos para as métricas:", error);
@@ -49,7 +47,7 @@ export function DashboardMetrics() {
 
   useEffect(() => {
     fetchProjects();
-  }, [orgId, token]);
+  }, [orgId]);
 
   const currentYear = new Date().getFullYear();
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;

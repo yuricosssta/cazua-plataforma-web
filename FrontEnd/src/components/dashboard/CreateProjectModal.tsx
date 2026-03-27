@@ -6,7 +6,8 @@ import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as M
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axios from "axios";
+// import axios from "axios";
+import axiosInstance from "@/lib/api/axiosInstance";
 import { UpgradeModal } from "./UpgradeModal";
 
 // Importações do OpenLayers
@@ -30,7 +31,7 @@ interface CreateProjectModalProps {
 
 export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProjectModalProps) {
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
+  // const token = useSelector((state: RootState) => state.auth.token);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState("");
 
@@ -150,10 +151,9 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         ...(formData.endDate && { endDate: formData.endDate }),
       };
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosInstance.post(
+        `/organizations/${orgId}/projects`,
+        payload
       );
 
       setFormData({ title: "", description: "", location: "", startDate: "", endDate: "", attachments: "" });

@@ -6,7 +6,8 @@ import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigatio
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axios from "axios";
+// import axios from "axios";
+import axiosInstance from "@/lib/api/axiosInstance";
 
 // Importações do OpenLayers
 import Map from "ol/Map";
@@ -36,7 +37,7 @@ interface EmitParecerModalProps {
 
 export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitParecerModalProps) {
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
+  // const token = useSelector((state: RootState) => state.auth.token);
 
   const orgId = typeof currentOrg?.organizationId === "object"
     ? (currentOrg.organizationId as any)._id
@@ -166,12 +167,11 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       if (startDate) payload.startDate = startDate;
       if (endDate) payload.endDate = endDate;
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${project.id}/parecer`,
+      await axiosInstance.post(
+        `/organizations/${orgId}/projects/${project.id}/parecer`,
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             'x-org-role': orgRole
           }
         }
