@@ -78,7 +78,6 @@ export function Header() {
         )}
         
         {/* <ChevronRight className="w-4 h-4 mx-2 text-muted-foreground" /> */}
-
         {/* <span className="text-foreground font-semibold">{currentPage}</span> */}
       </div>
 
