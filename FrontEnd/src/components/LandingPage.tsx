@@ -3,19 +3,20 @@
 
 import React from "react";
 import Link from "next/link";
-import { 
-  BarChart3, 
-  Activity, 
-  Clock, 
-  Target, 
-  Flame, 
-  CheckCircle, 
-  FileText, 
+import {
+  BarChart3,
+  Activity,
+  Clock,
+  Target,
+  Flame,
+  CheckCircle,
+  FileText,
   Award,
   ArrowRight,
   ShieldCheck
 } from "lucide-react";
 import LogoBloco from "./LogoBloco";
+import { Footer } from "./Footer";
 
 // Componente para as Badges de Recurso
 function FeatureBadge({ children }: { children: React.ReactNode }) {
@@ -53,7 +54,7 @@ const FEATURES = [
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
+
       {/* 1. HEADER / NAVBAR COMPACTA */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -169,20 +170,6 @@ export function LandingPage() {
           </Link>
         </div>
       </section>
-
-      {/* 6. FOOTER COMPACTO */}
-      <footer className="border-t border-border bg-muted/10 py-10 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
-          <LogoBloco />
-          <p className="text-xs text-muted-foreground font-medium">
-            © 2026 Grupo Cazuá. A engenharia de gestão imobiliária começa aqui.
-          </p>
-          <div className="text-xs text-muted-foreground space-x-3">
-            <span>Privacidade</span>
-            <span>Termos</span>
-          </div>
-        </div>
-      </footer>
 
     </div>
   );

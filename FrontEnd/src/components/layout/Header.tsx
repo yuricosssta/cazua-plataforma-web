@@ -10,6 +10,7 @@ import { ChevronRight, Settings, LogOut, User, ShieldAlert } from "lucide-react"
 import { ColorModeSwitcher } from "../color-mode-switcher";
 import { AppDispatch, RootState } from "@/lib/redux/store";
 import { logout, setAuthState } from "@/lib/redux/slices/authSlice";
+import LogoBloco from "../LogoBloco";
 
 export function Header() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,7 +23,7 @@ export function Header() {
   // 1. Puxa o usuário que foi decodificado instantaneamente no authSlice
   const authUser = useSelector((state: RootState) => state.auth.user);
   // 2. Mantem a busca pelo profile completo (que pode conter mais detalhes do que o token decodificado)
-  const profile = useSelector((state: any) => state.user?.profile);  
+  const profile = useSelector((state: any) => state.user?.profile);
   // 3. Mescla: Se tiver profile completo, usa ele. Se não, usa os dados vitais do Token instantaneamente.
   const displayUser = profile || authUser;
 
@@ -64,10 +65,10 @@ export function Header() {
   };
 
   return (
-    <header className="h-14 border-b border-border bg-background flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-14 border-b border-border bg-background flex items-center justify-end px-6 flex-shrink-0">
 
       {/* ESQUERDA: Breadcrumbs */}
-      <div className="flex items-center text-sm">
+      <div className="flex items-center text-sm p-6">
         {orgStatus === 'loading' ? (
           <div className="w-20 h-4 bg-muted animate-pulse rounded-sm"></div>
         ) : (
@@ -75,7 +76,7 @@ export function Header() {
             {currentOrg ? currentOrg.organizationId.name : 'Configurações'}
           </span>
         )}
-
+        
         {/* <ChevronRight className="w-4 h-4 mx-2 text-muted-foreground" /> */}
 
         {/* <span className="text-foreground font-semibold">{currentPage}</span> */}
@@ -122,7 +123,7 @@ export function Header() {
                 <Settings className="w-4 h-4" />
                 Configurações da conta
               </Link>
-              
+
               {/* Acesso ao Painel Administrador */}
               {displayUser?.isSuperAdmin && (
                 <Link

@@ -14,7 +14,7 @@ export function SettingsSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const organizations = useSelector(selectAllOrgs);
-  
+
   // Pegamos a organização atual para destacar
   const currentOrg = useSelector(selectCurrentOrg);
   // Pegamos a lista COMPLETA de organizações do usuário no Redux
@@ -39,7 +39,7 @@ export function SettingsSidebar() {
 
       {/* Backdrop escuro (Mobile apenas) */}
       {isOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={() => setIsOpen(false)}
         />
@@ -65,7 +65,7 @@ export function SettingsSidebar() {
               Voltar ao Dashboard
             </Link>
           </div>
-          
+
           {/* Seção 1: Account Settings */}
           <div>
             <h4 className="px-2 text-xs font-semibold text-foreground mb-3">Configurações da Conta</h4>
@@ -78,7 +78,7 @@ export function SettingsSidebar() {
                     key={link.name}
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`} 
+                    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"}`}
                   >
                     <Icon className="w-4 h-4" />
                     {link.name}
@@ -92,7 +92,7 @@ export function SettingsSidebar() {
           <div>
             <h4 className="px-2 text-xs font-semibold text-foreground mb-3">Equipes</h4>
             <div className="space-y-1">
-              
+
               {/* Loop pelas organizações reais do usuário */}
               {userOrganizations.map((orgWrapper: any) => {
                 const org = orgWrapper.organizationId;
@@ -108,19 +108,19 @@ export function SettingsSidebar() {
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isCurrent
                       ? "bg-primary/10 text-primary border border-primary/20"
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <div className={`flex items-center justify-center w-6 h-6 rounded-sm font-bold text-xs flex-shrink-0 ${isCurrent ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                       {org.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="truncate">{org.name}</span>
-                  {/* </Link> */}
+                    {/* </Link> */}
                   </div>
                 );
               })}
 
               {/* Criar nova equipe */}
-              <Link 
+              <Link
                 href="/account/organization/new" // Rota para criação de nova org
                 onClick={() => setIsOpen(false)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors mt-3 border border-dashed border-border"
@@ -130,7 +130,6 @@ export function SettingsSidebar() {
               </Link>
             </div>
           </div>
-
         </nav>
       </aside>
     </>

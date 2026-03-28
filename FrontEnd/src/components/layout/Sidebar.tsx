@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/dashboard/OrgSwitcher";
 import { usePathname } from "next/navigation";
+import LogoBloco from "../LogoBloco";
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +54,7 @@ export function Sidebar() {
 
       {/* Backdrop escuro (Mobile apenas) */}
       {isOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={() => setIsOpen(false)}
         />
@@ -61,7 +62,12 @@ export function Sidebar() {
 
       {/* Sidebar (Gaveta no Mobile / Fixa no Desktop) */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-[230px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        
+        <div className="h-14 flex items-center justify-between px-6 border-b border-border">
+          <LogoBloco />
+          <button onClick={() => setIsOpen(false)} className="md:hidden p-1 -mr-2 text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
         <div className="p-4 border-b border-border flex justify-between items-center">
           <div className="flex-1">
             <OrgSwitcher />
@@ -105,7 +111,7 @@ export function Sidebar() {
 function NavItem({ href, icon, label, onClick }: { href: string; icon: React.ReactNode; label: string; onClick?: () => void }) {
   const pathname = usePathname();
   const isActive = pathname === href;
-  
+
   return (
     <Link
       href={href}
@@ -113,7 +119,7 @@ function NavItem({ href, icon, label, onClick }: { href: string; icon: React.Rea
       className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive
         ? "bg-accent text-accent-foreground"
         : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-      }`}
+        }`}
     >
       {icon}
       {label}

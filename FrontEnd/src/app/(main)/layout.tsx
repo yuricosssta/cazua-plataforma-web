@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/lib/redux/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Footer } from '@/components/Footer';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
