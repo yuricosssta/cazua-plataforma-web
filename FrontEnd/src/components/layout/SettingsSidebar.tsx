@@ -46,7 +46,7 @@ export function SettingsSidebar() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[230px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
         <div className="h-14 flex items-center justify-between px-6 border-b border-border">
           <LogoBloco />

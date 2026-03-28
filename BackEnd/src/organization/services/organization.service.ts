@@ -1,6 +1,6 @@
 // src/organization/services/organization.service.ts
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Organization, OrganizationDocument } from '../schemas/organization.schema';
@@ -136,6 +136,59 @@ export class OrganizationService {
 
     return { message: 'Membro adicionado com sucesso!' };
   }
+
+  async updateMemberRole(orgId: string, adminId: string, targetUserId: string, newRole: string) {
+    // Verifica se quem está pedindo é ADMIN ou OWNER
+    const adminMember = await this.memberModel.findOne({
+      organizationId: new Types.ObjectId(String(orgId)),
+      userId: new Types.ObjectId(String(adminId)),
+      role: { $in: ['ADMIN', 'OWNER'] }
+    });
+
+    if (!adminMember) {
+      throw new ForbiddenException('Apenas administradores podem alterar cargos.');
+    }
+
+    // Atualiza o cargo do alvo
+    const updated = await this.memberModel.findOneAndUpdate(
+      {
+        organizationId: new Types.ObjectId(String(orgId)),
+        userId: new Types.ObjectId(String(targetUserId))
+      },
+      { role: newRole },
+      { new: true }
+    );
+
+    if (!updated) throw new NotFoundException('Membro não encontrado nesta organização.');
+    return { message: 'Cargo atualizado com sucesso.' };
+  }
+
+  async removeMemberFromOrganization(orgId: string, adminId: string, targetUserId: string) {
+    // Verifica se quem está pedindo é ADMIN ou OWNER
+    const adminMember = await this.memberModel.findOne({
+      organizationId: new Types.ObjectId(String(orgId)),
+      userId: new Types.ObjectId(String(adminId)),
+      role: { $in: ['ADMIN', 'OWNER'] }
+    });
+
+    if (!adminMember) {
+      throw new ForbiddenException('Apenas administradores podem remover membros.');
+    }
+
+    if (adminId === targetUserId) {
+      throw new BadRequestException('Você não pode remover a si mesmo por aqui.');
+    }
+
+    // Remove o vínculo
+    await this.memberModel.findOneAndDelete({
+      organizationId: new Types.ObjectId(String(orgId)),
+      userId: new Types.ObjectId(String(targetUserId)),
+      role: { $ne: 'OWNER' } // Proteção extra: não deixa deletar o dono supremo
+    });
+
+    return { message: 'Membro removido da organização.' };
+  }
+
 
   // 4. BUSCA POR SLUG
   async findOneBySlug(slug: string) {

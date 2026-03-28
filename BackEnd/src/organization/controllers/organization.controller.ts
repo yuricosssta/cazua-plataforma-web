@@ -1,6 +1,6 @@
 // src/organization/controllers/organization.controller.ts
 
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { AuthGuard } from '../../auth/auth.guard';
@@ -33,6 +33,29 @@ export class OrganizationController {
   @Post(':orgId/members')
   addMember(@Param('orgId') orgId: string, @Body() body: any) {
     return this.orgService.addMemberToOrganization(orgId, body);
+  }
+
+  // --- ATUALIZAR CARGO DO MEMBRO ---
+  @Patch(':orgId/members/:userId/role')
+  async updateMemberRole(
+    @Param('orgId') orgId: string,
+    @Param('userId') userId: string,
+    @Body('role') role: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.updateMemberRole(orgId, adminId, userId, role);
+  }
+
+  // --- REMOVER MEMBRO DA ORGANIZAÇÃO ---
+  @Delete(':orgId/members/:userId')
+  async removeMember(
+    @Param('orgId') orgId: string,
+    @Param('userId') userId: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.removeMemberFromOrganization(orgId, adminId, userId);
   }
 
   @Get('admin/all')
