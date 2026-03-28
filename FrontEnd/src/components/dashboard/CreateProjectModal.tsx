@@ -6,7 +6,6 @@ import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as M
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-// import axios from "axios";
 import axiosInstance from "@/lib/api/axiosInstance";
 import { UpgradeModal } from "./UpgradeModal";
 
@@ -22,6 +21,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Style from "ol/style/Style";
 import Icon from "ol/style/Icon";
+import { config } from "process";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -71,16 +71,17 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         }),
       });
 
+      const initialCenter = fromLonLat(process.env.NEXT_PUBLIC_INITIAL_MAP_CENTER?.split(',').map(Number) || [-43.76, -21.22]); // Barbacena-MG
       mapInstance.current = new Map({
         target: mapRef.current,
         layers: [new TileLayer({ source: new OSM() }), vectorLayer],
         view: new View({
-          center: fromLonLat([-43.76, -21.22]), // Barbacena-MG
+          center: initialCenter,
           zoom: 13,
         }),
       });
 
-      // Se já tiver uma coordenada no input, tenta centralizar o mapa nela e pôr o pino
+      // Se já tiver uma coordenada no input, tenta centralizar o mapa nela por pino
       const latMatch = formData.location.match(/Lat:\s*(-?\d+\.\d+)/);
       const lngMatch = formData.location.match(/Lng:\s*(-?\d+\.\d+)/);
       if (latMatch && lngMatch) {

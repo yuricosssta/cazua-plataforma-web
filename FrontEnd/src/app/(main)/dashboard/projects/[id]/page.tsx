@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
+import { MapViewerModal } from "@/components/ui/MapViewer";
+import axiosInstance from "@/lib/api/axiosInstance";
 
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
 type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
@@ -54,6 +56,7 @@ export default function ProjectDetailsPage() {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
+  const [mapLocationView, setMapLocationView] = useState<string | null>(null);
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -78,11 +81,8 @@ export default function ProjectDetailsPage() {
     try {
       if (showFullLoader) setIsLoading(true);
 
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      const response = await axiosInstance.get(
+        `/organizations/${orgId}/projects/${projectId}`);
       setProject(response.data.project);
       setTimeline(response.data.timeline);
     } catch (error) {
@@ -177,7 +177,12 @@ export default function ProjectDetailsPage() {
               )}
               <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground mt-2 text-sm font-medium">
-                <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {project.location}</span>
+                <span className="flex items-center gap-1.5"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Evita de abrir a demanda
+                    setMapLocationView(project.location);
+                  }}
+                ><MapPin className="w-4 h-4" /> {project.location}</span>
                 {(project.startDate || project.endDate) && (
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
@@ -403,6 +408,12 @@ export default function ProjectDetailsPage() {
         onSuccess={() => {
           fetchProjectDetails(false);
         }}
+      />
+
+      <MapViewerModal
+        isOpen={!!mapLocationView}
+        onClose={() => setMapLocationView(null)}
+        locationString={mapLocationView || ""}
       />
 
     </div>

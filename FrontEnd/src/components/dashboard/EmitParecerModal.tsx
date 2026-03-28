@@ -4,9 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, FileText, Briefcase } from "lucide-react";
 import { useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-// import axios from "axios";
 import axiosInstance from "@/lib/api/axiosInstance";
 
 // Importações do OpenLayers

@@ -12,6 +12,7 @@ import axios from "axios";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MapViewerModal } from "../ui/MapViewer";
 
 type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
 type TabType = ProjectStatus | "ALL" | "MINE";
@@ -48,6 +49,7 @@ export function ProjectsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: string } | null>(null);
+  const [mapLocationView, setMapLocationView] = useState<string | null>(null);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -244,8 +246,8 @@ export function ProjectsList() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-t-md"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-t-md"
                 }`}
             >
               {tab.icon && <tab.icon className="w-4 h-4" />}
@@ -309,7 +311,12 @@ export function ProjectsList() {
                       </p>
                     )}
 
-                    <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium">
+                    <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Evita de abrir a demanda
+                        setMapLocationView(project.location);
+                      }}
+                    >
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
@@ -419,6 +426,12 @@ export function ProjectsList() {
         onClose={() => setProjectForParecer(null)}
         project={projectForParecer}
         onSuccess={() => fetchProjects()}
+      />
+
+      <MapViewerModal
+        isOpen={!!mapLocationView}
+        onClose={() => setMapLocationView(null)}
+        locationString={mapLocationView || ""}
       />
 
     </div>
