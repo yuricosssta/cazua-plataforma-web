@@ -22,7 +22,7 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
     <div className="bg-background text-foreground min-h-screen transition-colors duration-300">
       
       {/* Container Centralizado */}
-      <div className="max-w-4xl mx-auto px-4 py-12 md:py-20">
+      <div className="flex-1 mx-auto px-4 py-4 md:py-4">
         
         {/* Botão Voltar */}
         <Link 

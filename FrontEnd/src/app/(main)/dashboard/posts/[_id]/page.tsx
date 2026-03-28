@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { AppDispatch, RootState } from '@/lib/redux/store';
 import { fetchPostById } from '@/lib/redux/slices/postsSlice';
 import { BlogPostContent } from '@/components/BlogPostContent';
-import { Footer } from '@/components/Footer';
 
 export default function PostDetailPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -46,7 +45,7 @@ export default function PostDetailPage() {
   return (
 
     // <div className="container mx-auto px-5">
-    <div className="relative pt-30 max-w-6xl mx-auto px-4 py-8 break-words"> 
+    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-10 text-foreground pb-10"> 
       <BlogPostContent post={currentPost} />
     </div>
     // </div>

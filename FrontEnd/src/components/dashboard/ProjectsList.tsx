@@ -201,7 +201,7 @@ export function ProjectsList() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
+    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
 
       {/* CABEÇALHO REFORMULADO (Com o botão no Desktop) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -272,7 +272,7 @@ export function ProjectsList() {
               <>
                 <UserCircle className="w-12 h-12 text-muted-foreground/30 mb-3" />
                 <p className="text-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
-                <p className="text-muted-foreground text-sm mt-1">Quando um administrador te adicionar a uma equipe, a obra aparecerá aqui.</p>
+                <p className="text-muted-foreground text-sm mt-1">Quando um administrador te adicionar a uma equipe, a demanda aparecerá aqui.</p>
               </>
             ) : (
               <p className="text-muted-foreground text-sm">
@@ -293,12 +293,12 @@ export function ProjectsList() {
               <div
                 key={project.id}
                 onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
+                className="bg-card border border-border rounded-md p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
               >
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1">
                     {project.referenceCode && (
-                      <span className="inline-block text-[10px] font-mono font-bold px-2 py-0.5 mb-1.5 rounded bg-primary/10 text-primary border border-primary/20">
+                      <span className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
                         {project.referenceCode}
                       </span>
                     )}

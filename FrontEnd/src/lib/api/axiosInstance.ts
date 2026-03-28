@@ -1,5 +1,6 @@
 // src/lib/api/axiosInstance.ts
 import axios from 'axios';
+import { Console } from 'console';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -24,6 +25,7 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request Interceptor Error:', error);
     return Promise.reject(error);
   }
 );

@@ -9,9 +9,7 @@ export default async function PostsPage() {
   await store.dispatch(fetchPosts({ page: 1 })); // Fetch posts for the first page
 
   return (
-
-    // <div className="container mx-auto px-5 mb-10">
-    <div>
+    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-10 text-foreground pb-10">
       <PostList />
     </div>
   );

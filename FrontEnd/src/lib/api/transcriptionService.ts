@@ -10,14 +10,14 @@ export const transcribeAudioAPI = async (file: File): Promise<string> => {
   formData.append('file', file);
 
   try {
-    // ✅ 1. CORREÇÃO DA URL: Adicionado '/transcription'
+    //'/transcription'
     const response = await axiosInstance.post<TranscriptionResponse>('/transcription/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    // ✅ 2. CORREÇÃO DA RESPOSTA: Retornar 'response.data.text'
+    //Retornar 'response.data.text'
     return response.data.text;
 
   } catch (error) {

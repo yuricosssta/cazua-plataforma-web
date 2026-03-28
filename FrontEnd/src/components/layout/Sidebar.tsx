@@ -27,7 +27,7 @@ export function Sidebar() {
 
   const managementLinks = [
     { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
-    { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
+    // { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
     { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
   ];
 
@@ -60,7 +60,7 @@ export function Sidebar() {
       )}
 
       {/* Sidebar (Gaveta no Mobile / Fixa no Desktop) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[230px] border-r border-border bg-background flex flex-col h-full flex-shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         
         <div className="p-4 border-b border-border flex justify-between items-center">
           <div className="flex-1">

@@ -35,6 +35,7 @@ export function DashboardMetrics() {
   const fetchProjects = async () => {
     if (!orgId) return;
     try {
+      console.log("Buscando projetos para as métricas...");
       setIsLoading(true);
       const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
       setProjects(response.data);
