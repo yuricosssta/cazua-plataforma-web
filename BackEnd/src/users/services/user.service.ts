@@ -10,13 +10,12 @@ import {
 import { UsersRepository } from '../repositories/user.repository';
 import { CreateUser, UpdateUser } from '../validations/users.zod';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { IUser } from '../schemas/models/user.interface';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly userRepository: UsersRepository) { }
-
-  // --- IDENTIDADE GLOBAL ---
 
   async findOne(email: string): Promise<IUser | undefined> {
     return this.userRepository.findOneByEmail(email);
@@ -33,14 +32,11 @@ export class UsersService {
     } catch (e: any) {
       if (e.code === 11000) {
         // Isso retorna o Erro 409 (Conflict). 
-        // O seu OrganizationService está escutando exatamente este erro para reaproveitar o usuário!
         throw new ConflictException('O E-mail já está em uso');
       }
       throw new InternalServerErrorException('Erro ao criar usuário');
     }
   }
-
-  // --- MÉTODOS GERAIS/ADMINISTRATIVOS ---
 
   async getAllUsers() {
     return this.userRepository.getAllUsers();
@@ -94,6 +90,57 @@ export class UsersService {
     await this.userRepository.updateUser(userId, { password: hashedNewPassword } as Partial<IUser>);
 
     return { message: 'Senha atualizada com sucesso.' };
+  }
+
+  // Esqueci minha senha
+  async forgotPassword(email: string) {
+    const user = await this.userRepository.findOneByEmail(email);
+    if (!user) {
+      return { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+    }
+
+    // 1. Gera um Token Aleatório Seguro (Hexadecimal)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // 2. Define a validade para 1 hora a partir de agora
+    const expireDate = new Date();
+    expireDate.setHours(expireDate.getHours() + 1);
+
+    // 3. Salva no banco (Certifique-se que seu updateUser aceita esses campos)
+    await this.userRepository.updateUser(String(user._id), {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: expireDate
+    } as Partial<IUser>);
+
+    // 4. "Envia" o e-mail
+    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`; // teste
+    console.log(`\n\n[SIMULAÇÃO DE E-MAIL]`);
+    console.log(`Para: ${user.email}`);
+    console.log(`Assunto: Recuperação de Senha - Cazuá`);
+    console.log(`Clique no link para redefinir sua senha: ${resetLink}\n\n`);
+
+    return { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+  }
+
+  async resetPassword(token: string, newPass: string) {
+    // Busca um usuário que tenha ESTE token
+    const user = await this.userRepository.findOneByResetToken(token);
+
+    if (!user) {
+      throw new BadRequestException('Token de recuperação inválido ou expirado. Solicite um novo link.');
+    }
+
+    // Hash da nova senha
+    const hashedNewPassword = await bcrypt.hash(newPass, 10);
+
+    // Salva a nova senha e DESTROI o token para ele não ser usado de novo
+    await this.userRepository.updateUser(String(user._id || user.id), {
+      password: hashedNewPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    } as any);
+
+    return { message: 'Sua senha foi redefinida com sucesso! Você já pode fazer o login.' };
   }
 
 }

@@ -2,6 +2,7 @@
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { UserRule } from './models/user.interface';
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -13,36 +14,21 @@ export class User extends Document {
 
   @Prop({ required: true })
   password?: string;
+
+  @Prop({ required: true })
+  isAdmin: boolean;
+
+  @Prop({ required: true })
+  rule: UserRule;
+
+  @Prop({ required: false })
+  avatarUrl?: string;
+
+  @Prop({ required: false })
+  resetPasswordToken: string;
+
+  @Prop({ required: false })
+  resetPasswordExpires: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-
-
-// import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-// import { HydratedDocument } from 'mongoose';
-// import { UserRule } from './models/user.interface';
-
-// export type UserDocument = HydratedDocument<User>;
-
-// @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'modified_at' } })
-// export class User {
-//   @Prop({ required: true, unique: true })
-//   email: string;
-
-//   @Prop({ required: true })
-//   name: string;
-
-//   @Prop({ required: true })
-//   password: string;
-
-//   @Prop({ default: false })
-//   isAdmin: boolean;
-
-//   @Prop({ required: true, enum: UserRule })
-//   rule: UserRule;
-
-//   @Prop({ required: false, type: Object, default: null })
-//   defaultOrganizationId?: string;
-// }
-
-// export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,6 +1,7 @@
 // BackEnd/src/users/controllers/user.controller.ts
 
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -83,4 +84,20 @@ export class UsersController {
   ) {
     return this.userService.changeUserPassword(userId, body.currentPassword, body.newPassword);
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) throw new BadRequestException('O e-mail é obrigatório.');
+    return this.userService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string
+  ) {
+    if (!token || !newPassword) throw new BadRequestException('Token e nova senha são obrigatórios.');
+    return this.userService.resetPassword(token, newPassword);
+  }
+
 }

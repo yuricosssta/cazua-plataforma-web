@@ -82,8 +82,8 @@ export default function LoginPage() {
                 <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
                   Senha
                 </label>
-                <Link href="/esqueci-minha-senha" className="text-xs font-medium text-primary hover:underline" tabIndex={-1}>
-                  Esqueceu a senha?
+                <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline" tabIndex={-1}>
+                  Esqueceu a senha? (em breve)
                 </Link>
               </div>
               <input

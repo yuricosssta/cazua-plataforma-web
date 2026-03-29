@@ -103,6 +103,22 @@ export class UsersMongooseRepository implements UsersRepository {
     }
   }
 
+  async findOneByResetToken(token : string){
+    console.log(`Buscando usuário com token de reset: ${token}`);
+    const user = await this.userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() } // Verifica se o token ainda é válido
+    }).lean().exec();
+
+    if (user) {
+      console.log(`Usuário encontrado para token de reset: ${user.email}`);
+      return user as unknown as IUser;
+    } else {
+      console.log(`Nenhum usuário encontrado com token de reset: ${token}`);
+      return undefined;
+    }
+  }
+
   async deleteUser(userId: string): Promise<IUser | null> {
     console.log(`Deletando usuário com ID: ${userId}`);
     const deletedUser = await this.userModel.findByIdAndDelete({ _id: userId }).lean().exec();

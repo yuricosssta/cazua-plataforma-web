@@ -16,4 +16,6 @@ export interface IUser {
   avatarUrl?: string; 
   created_at?: Date;
   modified_at?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }

@@ -1,3 +1,4 @@
+//BackEnd/src/users/repositories/user.repository.ts
 import { IUser } from '../schemas/models/user.interface';
 import { CreateUser, UpdateUser } from '../validations/users.zod';
 export abstract class UsersRepository {
@@ -13,4 +14,5 @@ export abstract class UsersRepository {
   ): Promise<IUser | null>;
   abstract getUsersByOrganization(orgId: string): Promise<IUser[]>
   abstract getUserWithPassword(userId: string): Promise<IUser | null>;
+  abstract findOneByResetToken(token: string): Promise<IUser | undefined>;
 }
