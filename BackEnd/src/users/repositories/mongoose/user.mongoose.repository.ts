@@ -38,6 +38,17 @@ export class UsersMongooseRepository implements UsersRepository {
     return user as unknown as IUser;
   }
 
+  async getUserWithPassword(userId: string): Promise<IUser> {
+    console.log(`Buscando usuário COM SENHA para validação. ID: ${userId}`);
+    const user = await this.userModel.findById(userId).lean().exec();
+
+    if (!user) {
+      console.log(`Usuário com ID ${userId} não encontrado.`);
+      return null;
+    }
+    return user as unknown as IUser;
+  }
+
   async searchUser(term: string): Promise<IUser[]> {
     const regex = new RegExp(term, 'i');
     console.log(`Buscando usuários com termo: ${term}`);

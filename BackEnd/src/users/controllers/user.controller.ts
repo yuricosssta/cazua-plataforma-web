@@ -74,4 +74,13 @@ export class UsersController {
   async deleteUser(@Param('userId') userId: string) {
     return this.userService.deleteUser(userId);
   }
+
+  @UseGuards(AuthGuard)
+  @Post('change-password')
+  async changePassword(
+    @GetUser('sub') userId: string,
+    @Body() body: any // Em um cenário ideal, você criaria um Zod schema para isso: changePasswordSchema
+  ) {
+    return this.userService.changeUserPassword(userId, body.currentPassword, body.newPassword);
+  }
 }
