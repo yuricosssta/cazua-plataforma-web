@@ -15,10 +15,10 @@ export class User extends Document {
   @Prop({ required: true })
   password?: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: false })
   isAdmin: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: 1 })
   rule: UserRule;
 
   @Prop({ required: false })

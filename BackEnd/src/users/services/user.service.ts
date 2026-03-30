@@ -24,12 +24,13 @@ export class UsersService {
   async createUser(user: CreateUser) {
     const hashedPassword = await bcrypt.hash(user.password, 10);
     try {
-      // Cria a Identidade Global de forma limpa, sem se preocupar com cargos (roles) ou organizações.
+      // Cria a Identidade Global
       return await this.userRepository.createUser({
         ...user,
         password: hashedPassword,
       } as Partial<IUser>);
     } catch (e: any) {
+      console.error('Erro ao criar usuário:', e);
       if (e.code === 11000) {
         // Isso retorna o Erro 409 (Conflict). 
         throw new ConflictException('O E-mail já está em uso');
