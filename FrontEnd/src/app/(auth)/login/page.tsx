@@ -122,7 +122,7 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground font-medium">
             Sua empresa ainda não utiliza o Cazuá?{" "}
             <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
-              Agendar demonstração
+              Criar conta.
             </Link>
           </p>
 

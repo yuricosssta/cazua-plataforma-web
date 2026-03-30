@@ -19,6 +19,7 @@ interface OrganizationState {
   currentOrganization: IOrganization | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
+  isCreateOrgModalOpen: boolean;
 }
 
 const initialState: OrganizationState = {
@@ -26,6 +27,7 @@ const initialState: OrganizationState = {
   currentOrganization: null,
   status: 'idle',
   error: null,
+  isCreateOrgModalOpen: false,
 };
 
 export const fetchMyOrganizations = createAsyncThunk(
@@ -34,13 +36,14 @@ export const fetchMyOrganizations = createAsyncThunk(
     try {
       // Pega o token direto do estado do Redux (AuthSlice)
       const state = getState() as RootState;
-      const token = state.auth.token; 
+      const token = state.auth.token;
 
       if (!token) {
         return rejectWithValue('Usuário não autenticado');
       }
 
-      const data = await apiFetchMyOrganizations(token); 
+      const data = await apiFetchMyOrganizations(token);
+      
       return data;
     } catch (err: any) {
       return rejectWithValue(err);
@@ -53,6 +56,13 @@ const organizationSlice = createSlice({
   name: 'organizations',
   initialState,
   reducers: {
+    // se quantidade de orgs for 0, força abrir modal de criação
+    setCreateOrgModalOpen(state, action: PayloadAction<boolean>) {
+      if (state.list.length === 0) {
+        state.isCreateOrgModalOpen = true;
+      }
+    },
+
     // Ação para trocar de empresa manualmente (Dropdown)
     setCurrentOrganization(state, action: PayloadAction<string>) {
       const selected = state.list.find(item => item.organizationId._id === action.payload);
@@ -82,7 +92,7 @@ const organizationSlice = createSlice({
         state.list = action.payload;
 
         // Se a lista não está vazia e não temos atual selecionada, seleciona a primeira.
-        if (state.list.length > 0 && !state.currentOrganization) {          
+        if (state.list.length > 0 && !state.currentOrganization) {
           // Tenta recuperar do localStorage (se o user deu F5)
           const lastOrgId = localStorage.getItem('last_org_id');
           const savedOrg = state.list.find(o => o.organizationId._id === lastOrgId);
