@@ -1,11 +1,11 @@
 // BackEnd/src/projects/services/project.service.ts
 
-import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, HttpException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
 import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../schemas/timeline-event.schema';
-import { CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
+import { BulkImportDto, CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
 import { Counter, CounterDocument } from '../schemas/counter.schema';
 import { Organization, OrganizationDocument } from '../../organization/schemas/organization.schema';
 
@@ -25,7 +25,7 @@ export class ProjectsService {
     return values.reduce((acc, curr) => acc * curr, 1);
   }
 
-  // 1. CRIAÇÃO DA DEMANDA INICIAL
+  // CRIAÇÃO DA DEMANDA INICIAL
   async createProject(orgId: string, userId: string, data: CreateProjectDto) {
     try {
       const year = new Date().getFullYear();
@@ -114,6 +114,108 @@ export class ProjectsService {
         throw error;
       }
       throw new InternalServerErrorException('Falha estrutural ao registrar a demanda.');
+    }
+  }
+
+  // IMPORTAÇÃO EM MASSA (BULK)
+  async bulkImportProjects(orgId: string, userId: string, projectsData: BulkImportDto['projects']) {
+    try {
+      if (!projectsData || projectsData.length === 0) {
+        throw new BadRequestException('O array de demandas está vazio.');
+      }
+
+      // 1. CHECAGEM DE LIMITES DO PLANO
+      const org = await this.orgModel.findById(orgId).exec();
+      if (!org) throw new NotFoundException('Organização não encontrada.');
+
+      const plan = (org as any).plan || 'FREE';
+      if (plan === 'FREE') {
+        const currentCount = await this.projectModel.countDocuments({
+          organizationId: new Types.ObjectId(String(orgId))
+        });
+
+        if (currentCount + projectsData.length > 2) {
+          throw new ForbiddenException(`LIMITE_FREE_EXCEDIDO: Você está tentando importar ${projectsData.length} demandas, mas o plano Free permite apenas 2. Evolua para o Plano PRO.`);
+        }
+      }
+
+      // 2. PREPARAR O PREFIXO E O CONTADOR
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, '0');
+      let prefixoOrg = org.acronym || org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() || 'CAZ';
+
+      const counterId = `DEMAND_${orgId}_${year}${month}`;
+
+      const counter = await this.counterModel.findByIdAndUpdate(
+        counterId,
+        { $inc: { seq: projectsData.length } },
+        { new: true, upsert: true }
+      );
+
+      // Descobre de qual número devemos começar a contar
+      let startSequence = (counter.seq - projectsData.length) + 1;
+
+      // 3. MONTAR O LOTE PARA INSERÇÃO
+      const bulkProjectsToInsert = [];
+      const bulkEventsToInsert = [];
+
+      for (const data of projectsData) {
+        const sequencia = String(startSequence).padStart(4, '0');
+        const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
+        startSequence++; // Prepara para a próxima obra do loop
+
+        const projectId = new Types.ObjectId(); // Gera o ID antes de salvar para linkar com a Timeline
+
+        const projectDoc = {
+          _id: projectId,
+          organizationId: new Types.ObjectId(String(orgId)),
+          createdBy: new Types.ObjectId(String(userId)),
+          referenceCode: referenceCode,
+          title: data.title,
+          description: data.description || 'Importado via planilha CSV.',
+          location: data.location || 'Não informada',
+          status: data.status || 'DEMAND',
+          priorityScore: data.priority ? Number(data.priority) : 1,
+          startDate: data.startDate ? new Date(data.startDate) : undefined,
+          endDate: data.endDate ? new Date(data.endDate) : undefined,
+          attachments: [],
+          // lastEventId num 2º passo
+        };
+
+        const eventDoc = {
+          _id: new Types.ObjectId(),
+          projectId: projectId,
+          organizationId: new Types.ObjectId(String(orgId)),
+          authorId: new Types.ObjectId(String(userId)),
+          type: TimelineEventType.DOCUMENT,
+          description: 'Demanda importada em lote via arquivo CSV.',
+          referenceCode: referenceCode,
+          metadata: {
+            newStatus: projectDoc.status,
+            isBulkImport: true
+          }
+        };
+
+        // Linka o último evento ao projeto
+        projectDoc['lastEventId'] = eventDoc._id;
+
+        bulkProjectsToInsert.push(projectDoc);
+        bulkEventsToInsert.push(eventDoc);
+      }
+
+      // 4. Insere tudo de uma vez no MongoDB
+      await this.projectModel.insertMany(bulkProjectsToInsert);
+      await this.timelineEventModel.insertMany(bulkEventsToInsert);
+
+      return {
+        message: 'Importação concluída com sucesso',
+        count: bulkProjectsToInsert.length
+      };
+
+    } catch (error) {
+      console.error('Erro no Bulk Import:', error);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Falha ao importar a planilha.');
     }
   }
 

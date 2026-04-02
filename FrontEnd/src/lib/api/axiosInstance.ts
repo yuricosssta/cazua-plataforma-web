@@ -1,6 +1,5 @@
 // src/lib/api/axiosInstance.ts
 import axios from 'axios';
-import { Console } from 'console';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -20,6 +19,7 @@ axiosInstance.interceptors.request.use(
 
     if (currentOrg && currentOrg.organizationId) {
       config.headers['x-org-id'] = currentOrg.organizationId._id;
+      config.headers['x-org-role'] = currentOrg.role;
     }
 
     return config;
