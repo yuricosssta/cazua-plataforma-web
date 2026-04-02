@@ -26,7 +26,7 @@ export const UserProfile = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-8">
+    <div className="max-w-md mx-auto bg-white rounded-sm shadow-md overflow-hidden md:max-w-2xl p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Perfil do Usuário</h1>
       <div className="space-y-4">
         <div>

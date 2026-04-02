@@ -211,7 +211,7 @@ export function OrganizationPeople() {
       {/* MODAL DE GESTÃO DO MEMBRO */}
       {editingMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-background w-full max-w-sm rounded-xl shadow-2xl border border-border overflow-hidden">
+          <div className="bg-background w-full max-w-sm rounded-sm shadow-2xl border border-border overflow-hidden">
             <div className="px-5 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
               <h3 className="font-semibold text-sm">Gerenciar Acesso</h3>
               <button onClick={() => setEditingMember(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground"><X className="w-4 h-4" /></button>

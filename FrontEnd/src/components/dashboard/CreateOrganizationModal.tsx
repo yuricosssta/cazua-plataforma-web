@@ -65,7 +65,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="bg-background w-full max-w-md rounded-xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
+      <div className="bg-background w-full max-w-md rounded-sm shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
 
         {/*  Aviso de Onboarding Obrigatório --> */}
         {forceOnboarding && (

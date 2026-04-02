@@ -89,7 +89,7 @@ export function MapViewerModal({ isOpen, onClose, locationString }: MapViewerMod
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-6">
-      <div className="bg-background w-full max-w-4xl h-[85vh] rounded-xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden relative">
+      <div className="bg-background w-full max-w-4xl h-[85vh] rounded-sm shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden relative">
         
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30 absolute top-0 left-0 right-0 z-10 bg-background/90 backdrop-blur">

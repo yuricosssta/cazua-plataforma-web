@@ -50,7 +50,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
             {message || "Sua empresa está crescendo e você atingiu o limite do plano gratuito. Faça o upgrade para desbloquear todo o poder da plataforma."}
           </p>
 
-          <div className="w-full bg-muted/30 rounded-xl p-5 mb-8 border border-border text-left">
+          <div className="w-full bg-muted/30 rounded-sm p-5 mb-8 border border-border text-left">
             <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> O que inclui no Plano PRO:
             </h3>

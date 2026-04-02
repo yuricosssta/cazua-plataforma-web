@@ -178,7 +178,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-6">
-      <div className={`bg-background w-full rounded-xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden transition-all ${showMap ? 'max-w-5xl h-[95vh]' : 'max-w-5xl max-h-[95vh]'}`}>
+      <div className={`bg-background w-full rounded-sm shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden transition-all ${showMap ? 'max-w-5xl h-[95vh]' : 'max-w-5xl max-h-[95vh]'}`}>
 
         {/* Cabeçalho Dinâmico */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30 flex-shrink-0">

@@ -121,7 +121,7 @@ function ResetPasswordContent() { // isolado
 export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <div className="max-w-md w-full bg-background border border-border rounded-xl shadow-2xl p-8">
+      <div className="max-w-md w-full bg-background border border-border rounded-sm shadow-2xl p-8">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <KeyRound className="w-6 h-6" />

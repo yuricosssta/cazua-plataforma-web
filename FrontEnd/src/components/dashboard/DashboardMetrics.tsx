@@ -72,7 +72,7 @@ export function DashboardMetrics() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-card border border-border rounded-xl shadow-sm min-h-[300px]">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-card border border-border rounded-sm shadow-sm min-h-[300px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
         <p className="text-sm text-muted-foreground font-medium">Calculando indicadores da obra...</p>
       </div>
@@ -82,7 +82,7 @@ export function DashboardMetrics() {
   return (
     <div className="w-full flex flex-col gap-6">
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card border border-border p-5 rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card border border-border p-5 rounded-sm shadow-sm">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" />
@@ -94,7 +94,7 @@ export function DashboardMetrics() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-md hover:bg-primary/90 transition-colors shadow-sm font-semibold text-sm w-full sm:w-auto justify-center"
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-sm hover:bg-primary/90 transition-colors shadow-sm font-semibold text-sm w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4" />
           Nova Demanda
@@ -103,7 +103,7 @@ export function DashboardMetrics() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         
-        <Link href="/dashboard/projects?tab=ALL" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-primary/50 hover:shadow-md transition-all block group">
+        <Link href="/dashboard/projects?tab=ALL" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-primary/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-primary/10 text-primary rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Total</span>
@@ -111,7 +111,7 @@ export function DashboardMetrics() {
           <div className="text-3xl font-black text-foreground">{totalDemandas}</div>
         </Link>
 
-        <Link href="/dashboard/projects?tab=PLANNING" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all block group">
+        <Link href="/dashboard/projects?tab=PLANNING" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-colors"><AlertCircle className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Planejamento</span>
@@ -119,7 +119,7 @@ export function DashboardMetrics() {
           <div className="text-3xl font-black text-foreground">{emPlanejamento}</div>
         </Link>
 
-        <Link href="/dashboard/projects?tab=EXECUTION" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-amber-500/50 hover:shadow-md transition-all block group">
+        <Link href="/dashboard/projects?tab=EXECUTION" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-amber-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-colors"><HardHat className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Em Execução</span>
@@ -127,7 +127,7 @@ export function DashboardMetrics() {
           <div className="text-3xl font-black text-foreground">{emExecucao}</div>
         </Link>
 
-        <Link href="/dashboard/projects?tab=COMPLETED" className="bg-card border border-border p-4 rounded-xl shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all block group">
+        <Link href="/dashboard/projects?tab=COMPLETED" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors"><CheckCircle className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Concluídas ({currentYear})</span>
@@ -135,7 +135,7 @@ export function DashboardMetrics() {
           <div className="text-3xl font-black text-foreground">{concluidasEsteAno}</div>
         </Link>
 
-        <Link href="/dashboard/projects?tab=MINE" className="bg-card border border-primary/20 p-4 rounded-xl shadow-sm md:col-span-2 flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-all cursor-pointer">
+        <Link href="/dashboard/projects?tab=MINE" className="bg-card border border-primary/20 p-4 rounded-sm shadow-sm md:col-span-2 flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-all cursor-pointer">
           <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
           <div className="relative z-10">
             <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Meus Projetos (Alocado)</div>

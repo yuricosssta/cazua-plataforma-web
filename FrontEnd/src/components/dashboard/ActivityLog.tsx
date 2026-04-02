@@ -95,7 +95,7 @@ export function ActivityLog() {
         </p>
       </div>
 
-      <div className="flex-1 rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 rounded-sm border border-border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
             <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />

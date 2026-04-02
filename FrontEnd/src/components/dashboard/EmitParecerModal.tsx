@@ -209,7 +209,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-6">
-      <div className={`bg-background w-full h-full md:h-[95vh] rounded-none md:rounded-xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 transition-all ${showMap ? 'md:max-w-4xl' : 'md:max-w-7xl'}`}>
+      <div className={`bg-background w-full h-full md:h-[95vh] rounded-none md:rounded-sm shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 transition-all ${showMap ? 'md:max-w-4xl' : 'md:max-w-7xl'}`}>
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30 flex-shrink-0">

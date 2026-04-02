@@ -117,7 +117,7 @@ export function LandingPage() {
             {FEATURES.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div key={feature.title} className="bg-card border border-border rounded-xl p-8 shadow-sm flex flex-col gap-6 hover:border-primary/50 hover:shadow-md transition-all">
+                <div key={feature.title} className="bg-card border border-border rounded-sm p-8 shadow-sm flex flex-col gap-6 hover:border-primary/50 hover:shadow-md transition-all">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-6 w-6" />
                   </div>

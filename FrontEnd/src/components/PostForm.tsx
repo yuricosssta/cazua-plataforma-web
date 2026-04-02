@@ -109,7 +109,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
   const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground transition-all";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-xl border border-border shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-sm border border-border shadow-sm">
 
       {/* Título */}
       <div className="space-y-2">
@@ -365,7 +365,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
 //   const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground transition-all";
 
 //   return (
-//     <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-xl border border-border shadow-sm">
+//     <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-sm border border-border shadow-sm">
 
 //       {/* Campo Título */}
 //       <div className="space-y-2">
