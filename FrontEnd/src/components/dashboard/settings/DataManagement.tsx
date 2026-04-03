@@ -10,6 +10,8 @@ import {
   Trash2, AlertTriangle, Save, Loader2, X
 } from "lucide-react";
 import axiosInstance from "@/lib/api/axiosInstance";
+import Papa from 'papaparse';
+import { UpgradeModal } from "../UpgradeModal";
 
 interface ImportRow {
   id: string;
@@ -33,6 +35,8 @@ export function DataManagement() {
   const [draftRows, setDraftRows] = useState<ImportRow[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
 
   useEffect(() => setMounted(true), []);
 
@@ -77,39 +81,37 @@ export function DataManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim() !== '');
+    Papa.parse(file, {
+      skipEmptyLines: true,
+      complete: (results) => {
+        const lines = results.data as string[][];
 
-      const parsedRows: ImportRow[] = lines.slice(1).map((line, index) => {
-        const cols = line.split(';');
+        const parsedRows: ImportRow[] = lines.slice(1).map((cols, index) => {
+          let mappedStatus = "DEMAND";
+          const rawStatus = cols[6]?.trim() || "1";
+          if (rawStatus === "2" || rawStatus.toUpperCase().includes("PLANEJ")) mappedStatus = "PLANNING";
+          if (rawStatus === "3" || rawStatus.toUpperCase().includes("EXEC")) mappedStatus = "EXECUTION";
+          if (rawStatus === "4" || rawStatus.toUpperCase().includes("CONCL")) mappedStatus = "COMPLETED";
 
-        let mappedStatus = "DEMAND";
-        const rawStatus = cols[6]?.trim() || "1";
-        if (rawStatus === "2" || rawStatus.toUpperCase().includes("PLANEJ")) mappedStatus = "PLANNING";
-        if (rawStatus === "3" || rawStatus.toUpperCase().includes("EXEC")) mappedStatus = "EXECUTION";
-        if (rawStatus === "4" || rawStatus.toUpperCase().includes("CONCL")) mappedStatus = "COMPLETED";
+          return {
+            id: `row_${Date.now()}_${index}`,
+            title: cols[0]?.trim() || "",
+            description: cols[1]?.trim() || "",
+            location: cols[2]?.trim() || "",
+            startDate: cols[3]?.trim() || "",
+            endDate: cols[4]?.trim() || "",
+            priority: cols[5]?.trim() || "1",
+            status: mappedStatus,
+            isVerified: false
+          };
+        });
 
-        return {
-          id: `row_${Date.now()}_${index}`,
-          title: cols[0]?.trim() || "",
-          description: cols[1]?.trim() || "",
-          location: cols[2]?.trim() || "",
-          startDate: cols[3]?.trim() || "",
-          endDate: cols[4]?.trim() || "",
-          priority: cols[5]?.trim() || "1",
-          status: mappedStatus,
-          isVerified: false
-        };
-      });
-
-      const validRows = parsedRows.filter(r => r.title !== "");
-      setDraftRows(validRows);
-      setIsImporting(true);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsText(file);
+        const validRows = parsedRows.filter(r => r.title !== "");
+        setDraftRows(validRows);
+        setIsImporting(true);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    });
   };
 
   const updateRow = (index: number, field: keyof ImportRow, value: any) => {
@@ -155,8 +157,13 @@ export function DataManagement() {
     } catch (error: any) {
       console.error(error);
       const errorMsg = error.response?.data?.message || "Erro ao salvar no banco de dados.";
-      alert(errorMsg);
-      // Se der erro de limite de plano, o erro vai estourar aqui lindamente
+
+      if (errorMsg.includes("LIMITE_FREE_EXCEDIDO")) {
+        setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
+        setIsUpgradeModalOpen(true);
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -341,6 +348,14 @@ export function DataManagement() {
               </button>
             </div>
           </div>
+
+          <UpgradeModal
+            isOpen={isUpgradeModalOpen}
+            onClose={() => setIsUpgradeModalOpen(false)}
+            title="Limite de Demandas Atingido"
+            message={upgradeMessage}
+          />
+
         </div>,
         document.body
       )}
