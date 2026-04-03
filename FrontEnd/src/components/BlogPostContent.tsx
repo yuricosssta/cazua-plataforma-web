@@ -1,7 +1,7 @@
 // src/components/BlogPostContent.tsx
 "use client";
 
-import { IPost } from "../types/IPost";
+import { IPost } from "../types/post";
 import Link from "next/link";
 import MarkdownPreview from "./MarkdownPreview";
 import { ArrowLeft, Calendar, User, Edit } from "lucide-react";

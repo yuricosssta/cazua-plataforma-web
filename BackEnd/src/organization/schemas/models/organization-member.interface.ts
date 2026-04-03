@@ -1,12 +1,10 @@
+//src/organization/schemas/models/organization-member.interface.ts
+import { IOrganization, RoleType } from "./organization.interface";
+
 export interface IOrganizationMember {
-  _id?: string;
-  organizationId: string; // No front trabalhamos com string, não ObjectId
+  _id: string;
+  organizationId: IOrganization;
   userId: string;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST';
-  createdAt?: Date;
-  updatedAt?: Date;
-  
-  // Opcional: Se você fizer o "populate" ao buscar, virá o objeto completo
-  // organization?: IOrganization;
-  // user?: IUser;
+  role: RoleType;
+  createdAt?: string;
 }

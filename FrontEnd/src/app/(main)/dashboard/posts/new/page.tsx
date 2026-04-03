@@ -4,7 +4,7 @@ import PostForm from '@/components/PostForm';
 import { TextSummarizer } from '@/components/TextSummarizer';
 import { createNewPost } from '@/lib/redux/slices/postsSlice';
 import { AppDispatch, RootState } from '@/lib/redux/store';
-import { IPost } from '@/types/IPost';
+import { IPost } from '@/types/post';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 

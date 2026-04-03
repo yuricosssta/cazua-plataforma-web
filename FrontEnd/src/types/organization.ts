@@ -1,4 +1,5 @@
-//src/organization/schemas/models/organization.interface.ts
+//src/types/organization.ts
+// Tipagens Rígidas (Single Source of Truth)
 export type PlanType = 'FREE' | 'PRO' | 'ENTERPRISE';
 export type RoleType = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
 

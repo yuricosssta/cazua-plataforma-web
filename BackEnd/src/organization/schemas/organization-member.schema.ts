@@ -1,17 +1,15 @@
 //src/organization/schemas/organization-member.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { User } from '../../users/schemas/user.schema';
-import { Organization } from './organization.schema';
 
 export type OrganizationMemberDocument = HydratedDocument<OrganizationMember>;
 
-@Schema({ 
+@Schema({
   timestamps: true,
-  collection: 'organization_members' 
+  collection: 'organization_members'
 })
 export class OrganizationMember {
-  
+
   // Vínculo com a Organização
   @Prop({ type: Types.ObjectId, ref: 'Organization', required: true, index: true })
   organizationId: Types.ObjectId;
@@ -21,9 +19,9 @@ export class OrganizationMember {
   userId: Types.ObjectId;
 
   // O "Cargo" neste contexto específico
-  @Prop({ 
-    type: String, 
-    enum: ['OWNER', 'ADMIN', 'MEMBER', 'GUEST'], 
+  @Prop({
+    type: String,
+    enum: ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'],
     default: 'MEMBER',
     required: true
   })

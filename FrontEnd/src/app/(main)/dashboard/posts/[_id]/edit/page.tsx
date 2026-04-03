@@ -3,7 +3,7 @@
 import PostForm from '@/components/PostForm';
 import { fetchPostById, updatePost, deletePost } from '@/lib/redux/slices/postsSlice';
 import { AppDispatch, RootState } from '@/lib/redux/store';
-import { IPost } from '@/types/IPost';
+import { IPost } from '@/types/post';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';

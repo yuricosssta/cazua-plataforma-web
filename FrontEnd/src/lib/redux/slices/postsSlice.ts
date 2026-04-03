@@ -1,6 +1,6 @@
 // FrontEnd/src/lib/redux/slices/postsSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { IPost } from '@/types/IPost';
+import { IPost } from '@/types/post';
 import axiosInstance from '@/lib/api/axiosInstance'; // Usaremos a instância configurada
 
 // interface PostsState {

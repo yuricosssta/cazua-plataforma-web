@@ -13,31 +13,46 @@ export class OrganizationService {
   constructor(
     @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
     @InjectModel(OrganizationMember.name) private memberModel: Model<OrganizationMemberDocument>,
-    private usersService: UsersService // <-- INJEÇÃO DO SERVIÇO DE USUÁRIOS
+    private usersService: UsersService
   ) { }
 
   // 1. CRIAÇÃO E VÍNCULO AUTOMÁTICO
   async create(createDto: CreateOrganizationDto, ownerId: string) {
-    const ownedOrgsCount = await this.memberModel.countDocuments({
+
+    // 1. Busca todas as empresas onde este usuário é o DONO
+    const ownedMemberships = await this.memberModel.find({
       userId: new Types.ObjectId(ownerId),
       role: 'OWNER'
-    });
+    }).exec();
 
-    if (ownedOrgsCount >= 1) {
-      throw new BadRequestException('Você atingiu o limite do Plano Gratuito. Faça o upgrade para o Plano PRO para criar múltiplas empresas.');
+    // Se ele já for dono de alguma empresa, precisamos verificar se ele tem o plano ENTERPRISE
+    if (ownedMemberships.length >= 1) {
+      const ownedOrgIds = ownedMemberships.map(m => m.organizationId);
+
+      // Busca quantas empresas que ele é dono possuem o plano ENTERPRISE
+      const enterpriseOrgsCount = await this.orgModel.countDocuments({
+        _id: { $in: ownedOrgIds },
+        plan: 'ENTERPRISE'
+      });
+
+      // Se NENHUMA empresa dele for ENTERPRISE, bloqueia a criação de novas.
+      if (enterpriseOrgsCount === 0) {
+        throw new BadRequestException('LIMITE_FREE_EXCEDIDO: Você atingiu o limite de 1 empresa por conta. Faça o upgrade para o plano ENTERPRISE para criar e gerenciar múltiplas empresas.');
+      }
     }
 
     const slug = createDto.slug || this.generateSlug(createDto.name);
 
     const existing = await this.orgModel.findOne({ slug });
     if (existing) {
-      throw new BadRequestException('Este endereço (URL) já está em uso.');
+      throw new BadRequestException('Este endereço (URL) ou sigla já está em uso.');
     }
 
     const createdOrg = new this.orgModel({
       ...createDto,
       slug,
       ownerId: new Types.ObjectId(ownerId),
+      plan: 'FREE' // Toda nova empresa nasce no Free por padrão
     });
     const savedOrg = await createdOrg.save();
 
@@ -208,11 +223,40 @@ export class OrganizationService {
   }
 
   async findAllForSuperAdmin() {
-    return this.orgModel
+    // Busca todas as organizações com o dono populado
+    const orgs = await this.orgModel
       .find()
       .populate('ownerId', 'name email')
       .sort({ createdAt: -1 })
+      .lean() // O lean() transforma o Documento Mongoose em um Objeto JS
       .exec();
+
+    // 2. Extrai uma lista única com todos os IDs dos donos
+    const ownerIds = [...new Set(orgs.map(org => org.ownerId?._id).filter(Boolean))];
+
+    // 3. Busca TODAS as participações (memberships) desses donos na plataforma inteira
+    const allMemberships = await this.memberModel
+      .find({ userId: { $in: ownerIds as any[] } })
+      .populate('organizationId', 'name acronym plan')
+      .lean()
+      .exec();
+
+    // 4. Agrupa as participações por ID do usuário para busca rápida (O(1))
+    const membershipsByUser = allMemberships.reduce((acc, membership) => {
+      const uid = String(membership.userId);
+      if (!acc[uid]) acc[uid] = [];
+      acc[uid].push(membership);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // 5. Injeta o currículo completo de empresas de volta no array original
+    return orgs.map(org => {
+      const ownerIdStr = org.ownerId ? String((org.ownerId as any)._id) : null;
+      return {
+        ...org,
+        ownerMemberships: ownerIdStr ? (membershipsByUser[ownerIdStr] || []) : []
+      };
+    });
   }
 
   // Altera o plano de qualquer empresa

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
-import { IPost } from '@/types/IPost';
+import { IPost } from '@/types/post';
 import MarkdownPreview from './MarkdownPreview';
 import { AudioTranscriber } from './AudioTranscriber';
 import { summarizeTextAPI } from '@/lib/api/summaryService';

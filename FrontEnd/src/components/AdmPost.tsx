@@ -1,6 +1,6 @@
 "use client";
 
-import { IPost } from "../types/IPost";
+import { IPost } from "../types/post";
 import Link from "next/link";
 import Markdown from "react-markdown";
 import remarkGfm from 'remark-gfm';

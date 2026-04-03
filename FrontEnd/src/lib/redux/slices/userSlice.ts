@@ -1,7 +1,7 @@
 //src/lib/redux/slices/userSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '@/lib/api/axiosInstance';
-import { IUser } from '../../../types/IUser';
+import { IUser } from '../../../types/user';
 import { logout, sessionExpired } from './authSlice'; 
 
 interface UserState {
