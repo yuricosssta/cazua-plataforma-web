@@ -18,6 +18,31 @@ export class ProjectsService {
     @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
   ) { }
 
+  private async validatePlanLimitAndGetPrefix(orgId: string, incomingItemsCount: number = 1) {
+    const org = await this.orgModel.findById(orgId).exec();
+    if (!org) throw new NotFoundException('Organização não encontrada.');
+
+    const plan = (org as any).plan || 'FREE';
+    if (plan === 'FREE') {
+      const currentCount = await this.projectModel.countDocuments({
+        organizationId: new Types.ObjectId(String(orgId))
+      });
+
+      if (currentCount + incomingItemsCount > 2) {
+        throw new ForbiddenException(`LIMITE_FREE_EXCEDIDO: Sua construtora atingiu o limite. O plano Gratuito permite 2 demandas. Evolua para o Plano PRO.`);
+      }
+    }
+
+    let prefixoOrg = 'CAZ';
+    if (org.acronym) {
+      prefixoOrg = org.acronym;
+    } else if (org.name) {
+      prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+    }
+
+    return { org, plan, prefixoOrg };
+  }
+
   // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
   private calculatePriorityScore(details: Record<string, number>): number {
     const values = Object.values(details);
@@ -31,33 +56,7 @@ export class ProjectsService {
       const year = new Date().getFullYear();
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
-      const org = await this.orgModel.findById(orgId).exec();
-      if (!org) {
-        throw new NotFoundException('Organização não encontrada.');
-      }
-
-      const plan = (org as any).plan || 'FREE';
-      if (plan === 'FREE') {
-        const projectsCount = await this.projectModel.countDocuments({
-          organizationId: new Types.ObjectId(String(orgId))
-        });
-
-        if (projectsCount >= 2) {
-          // Exceção específica (403 Forbidden ou 402 Payment Required)
-          // O Frontend vai ler a mensagem e mostrar o modal de Upgrade
-          throw new ForbiddenException('LIMITE_FREE_EXCEDIDO: Sua construtora atingiu o limite de 2 demandas do Plano Gratuito. Evolua para o Plano PRO.');
-        }
-      }
-
-      let prefixoOrg = 'CAZ'; // Fallback de segurança
-      if (org) {
-        if (org.acronym) {
-          prefixoOrg = org.acronym;
-        } else if (org.name) {
-          // Fallback para organizações antigas criadas antes dessa atualização
-          prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
-        }
-      }
+      const { prefixoOrg } = await this.validatePlanLimitAndGetPrefix(orgId, 1);
 
       const counterId = `DEMAND_${orgId}_${year}${month}`;
       const counter = await this.counterModel.findByIdAndUpdate(
@@ -124,25 +123,9 @@ export class ProjectsService {
         throw new BadRequestException('O array de demandas está vazio.');
       }
 
-      // 1. CHECAGEM DE LIMITES DO PLANO
-      const org = await this.orgModel.findById(orgId).exec();
-      if (!org) throw new NotFoundException('Organização não encontrada.');
-
-      const plan = (org as any).plan || 'FREE';
-      if (plan === 'FREE') {
-        const currentCount = await this.projectModel.countDocuments({
-          organizationId: new Types.ObjectId(String(orgId))
-        });
-
-        if (currentCount + projectsData.length > 2) {
-          throw new ForbiddenException(`LIMITE_FREE_EXCEDIDO: Você está tentando importar ${projectsData.length} demandas, mas o plano Free permite apenas 2. Evolua para o Plano PRO.`);
-        }
-      }
-
-      // 2. PREPARAR O PREFIXO E O CONTADOR
       const year = new Date().getFullYear();
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      let prefixoOrg = org.acronym || org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() || 'CAZ';
+      const { prefixoOrg } = await this.validatePlanLimitAndGetPrefix(orgId, projectsData.length);
 
       const counterId = `DEMAND_${orgId}_${year}${month}`;
 
@@ -155,7 +138,7 @@ export class ProjectsService {
       // Descobre de qual número devemos começar a contar
       let startSequence = (counter.seq - projectsData.length) + 1;
 
-      // 3. MONTAR O LOTE PARA INSERÇÃO
+      // MONTAR O LOTE PARA INSERÇÃO
       const bulkProjectsToInsert = [];
       const bulkEventsToInsert = [];
 
@@ -203,7 +186,7 @@ export class ProjectsService {
         bulkEventsToInsert.push(eventDoc);
       }
 
-      // 4. Insere tudo de uma vez no MongoDB
+      // Insere tudo de uma vez no MongoDB
       await this.projectModel.insertMany(bulkProjectsToInsert);
       await this.timelineEventModel.insertMany(bulkEventsToInsert);
 
@@ -219,7 +202,7 @@ export class ProjectsService {
     }
   }
 
-  // 2. EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE (COM GUT OPCIONAL)
+  // EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE (COM GUT OPCIONAL)
   async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: EmitParecerDto, userRole?: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
@@ -304,7 +287,7 @@ export class ProjectsService {
     }
   }
 
-  // 3. LISTAGEM RÁPIDA (Ordenada por prioridade e data)
+  // LISTAGEM RÁPIDA (Ordenada por prioridade e data)
   async findAllByOrganization(orgId: string) {
     return this.projectModel
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
@@ -317,7 +300,7 @@ export class ProjectsService {
       .exec();
   }
 
-  // 4. VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
+  // VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
   async findOneWithTimeline(orgId: string, projectId: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
@@ -339,7 +322,7 @@ export class ProjectsService {
     return { project, timeline };
   }
 
-  // 5. ALOCAÇÃO DE EQUIPE
+  // ALOCAÇÃO DE EQUIPE
   async assignMember(orgId: string, projectId: string, memberId: string) {
     const project = await this.projectModel.findOneAndUpdate(
       {
@@ -366,7 +349,7 @@ export class ProjectsService {
     return project;
   }
 
-  // 6. DESALOCAÇÃO DE EQUIPE
+  // DESALOCAÇÃO DE EQUIPE
   async removeMember(orgId: string, projectId: string, memberId: string) {
     const project = await this.projectModel.findOneAndUpdate(
       {
@@ -393,12 +376,12 @@ export class ProjectsService {
     return project;
   }
 
-  // --- FEED DE ATIVIDADES (DASHBOARD) ---
+  // FEED DE ATIVIDADES (DASHBOARD)
   async getOrganizationTimeline(orgId: string) {
     return this.timelineEventModel
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
       .sort({ createdAt: -1 }) // Traz os mais recentes primeiro
-      .limit(20) // Mostra apenas as últimas 20 ações
+      .limit(15)
       .populate('authorId', 'name avatarUrl')
       .populate('projectId', 'title referenceCode')
       .exec();
