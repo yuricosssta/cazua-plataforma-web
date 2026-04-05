@@ -28,7 +28,7 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) { }
 
   // Função auxiliar para extrair o ID com segurança
-  private extractUserId(req: any): string {
+  private extractUserId(req: any): string { 
     return req.user?.sub || req.user?._id || req.user?.id;
   }
 

@@ -6,12 +6,8 @@ import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
+import { IUser } from "@/types/user";
 
-interface User {
-    _id: string;
-    name: string;
-    email: string;
-}
 
 interface ManageTeamDrawerProps {
     isOpen: boolean;
@@ -25,7 +21,7 @@ interface ManageTeamDrawerProps {
 export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAssignedMembers, onSuccess }: ManageTeamDrawerProps) {
     const token = useSelector((state: RootState) => state.auth.token);
 
-    const [orgMembers, setOrgMembers] = useState<User[]>([]);
+    const [orgMembers, setOrgMembers] = useState<IUser[]>([]);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
 

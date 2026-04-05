@@ -41,10 +41,10 @@ export class PostController {
     if (limit > 100) {
       limit = 100;
     }
-    // Pega o organizationId quando existente
+
     const orgId = req.organizationId || ''; 
-    console.log(`Buscando posts blindados para a Organização: ${orgId}`);
-    // console.log(`Buscando posts -> Page: ${page}, Limit: ${limit}, Org: ${organizationId}`);
+    // console.log(`Buscando posts blindados para a Organização: ${orgId}`);
+    console.log(`Buscando posts -> Page: ${page}, Limit: ${limit}, Org: ${orgId}`);
     return this.postService.getAllPosts(page, limit, orgId);
   }
 
@@ -69,15 +69,11 @@ export class PostController {
     console.log('Dados recebidos (DTO):', createPostDto);
 
     return this.postService.createPost({
-      ...createPostDto,
+      ...createPostDto, 
       organizationId: orgId,      
       created_at: new Date(),
       modified_at: new Date(),
-      
-      // Lógica de Autor: Se o front mandou, usa. Se não, tenta pegar do token JWT.
       author: createPostDto.author || req.user?.name || 'Anônimo',
-      
-      // O organizationId já vem dentro do ...createPostDto se o front enviou
     });
   }
 

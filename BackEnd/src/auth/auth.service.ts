@@ -33,7 +33,7 @@ export class AuthService {
     }
 
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
-    const isSuperAdmin = user.email === superAdminEmail; // Verifica se o e-mail do usuário é o mesmo do super admin definido nas variáveis de ambiente
+    const isSuperAdmin = user.email === superAdminEmail;
 
     const payload = {
       sub: user._id,

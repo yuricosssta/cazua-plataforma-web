@@ -7,7 +7,7 @@ export const createProjectSchema = z.object({
   title: z.string().min(1, 'O título da obra/demanda é obrigatório.'),
   description: z.string().min(1, 'A descrição é obrigatória e deve ter pelo menos 1 caracter.'),
   location: z.string().min(1, 'A localização é obrigatória.'),
-  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional().default('DEMAND'),
+  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional().default('DEMAND'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   attachments: z.array(z.string()).optional(),
@@ -23,7 +23,7 @@ export const emitParecerSchema = z.object({
   parecerText: z.string().min(1, 'O texto do parecer é obrigatório.'),
 
   // O engenheiro pode decidir avançar a demanda para PLANEJAMENTO ou mantê-la como DEMANDA
-  newStatus: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional(),
+  newStatus: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional(),
 
   // Campos adicionais para atualização do projeto
   technicalTitle: z.string().optional(), // Título técnico específico para o parecer
@@ -36,7 +36,7 @@ export const bulkImportItemSchema = z.object({
   title: z.string().min(1, 'O título é obrigatório.'),
   description: z.string().optional(),
   location: z.string().optional(),
-  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED']).optional().default('DEMAND'),
+  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional().default('DEMAND'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   // O preprocess converte string "125" para número 125 antes de validar os limites

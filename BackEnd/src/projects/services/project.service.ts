@@ -8,6 +8,7 @@ import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../sche
 import { BulkImportDto, CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
 import { Counter, CounterDocument } from '../schemas/counter.schema';
 import { Organization, OrganizationDocument } from '../../organization/schemas/organization.schema';
+import { IUser } from '../../users/schemas/models/user.interface';
 
 @Injectable()
 export class ProjectsService {
@@ -42,6 +43,7 @@ export class ProjectsService {
 
     return { org, plan, prefixoOrg };
   }
+
 
   // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
   private calculatePriorityScore(details: Record<string, number>): number {
@@ -331,7 +333,9 @@ export class ProjectsService {
       },
       { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
       { new: true }
-    ).exec();
+    )
+    // .populate('assignedMembers', 'name') 
+    .exec();
 
     if (!project) {
       throw new NotFoundException('Projeto não encontrado nesta organização.');
@@ -341,7 +345,7 @@ export class ProjectsService {
       projectId: project._id,
       organizationId: new Types.ObjectId(String(orgId)),
       authorId: new Types.ObjectId(String(memberId)),
-      type: TimelineEventType.STATUS_CHANGE, // CORREÇÃO: Usando a enumeração oficial
+      type: TimelineEventType.STATUS_CHANGE,
       description: `Membro adicionado à equipe.`,
     });
     await timelineEvent.save();

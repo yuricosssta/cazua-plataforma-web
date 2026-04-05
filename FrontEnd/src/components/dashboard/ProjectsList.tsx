@@ -13,33 +13,34 @@ import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MapViewerModal } from "../ui/MapViewer";
+import { ProjectStatus, ProjectTimelineEvent, Project, TabType } from "@/types/project";
 
-type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
-type TabType = ProjectStatus | "ALL" | "MINE";
 
-interface ProjectTimelineEvent {
-  id: string;
-  date: string;
-  author: string;
-  description: string;
-  type: "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
-}
+// type TabType = ProjectStatus | "ALL" | "MINE";
 
-interface Project {
-  id: string;
-  referenceCode?: string;
-  title: string;
-  description: string;
-  status: ProjectStatus;
-  progress: number;
-  location: string;
-  startDate?: string;
-  endDate?: string;
-  priorityScore?: number;
-  assignedMembers?: any[];
-  lastUpdate: ProjectTimelineEvent;
-  attachments: string[];
-}
+// interface ProjectTimelineEvent {
+//   id: string;
+//   date: string;
+//   author: string;
+//   description: string;
+//   type: "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
+// }
+
+// interface Project {
+//   id: string;
+//   referenceCode?: string;
+//   title: string;
+//   description: string;
+//   status: ProjectStatus;
+//   progress: number;
+//   location: string;
+//   startDate?: string;
+//   endDate?: string;
+//   priorityScore?: number;
+//   assignedMembers?: any[];
+//   lastUpdate: ProjectTimelineEvent;
+//   attachments: string[];
+// }
 
 export function ProjectsList() {
   const router = useRouter();
@@ -132,7 +133,7 @@ export function ProjectsList() {
   }, [orgId, token]);
 
   useEffect(() => {
-    if (urlTab && ["ALL", "MINE", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED"].includes(urlTab)) {
+    if (urlTab && ["ALL", "MINE", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "INVALID"].includes(urlTab)) {
       setActiveTab(urlTab);
     }
   }, [urlTab]);
@@ -153,6 +154,7 @@ export function ProjectsList() {
     PLANNING: projects.filter(p => p.status === "PLANNING").length,
     EXECUTION: projects.filter(p => p.status === "EXECUTION").length,
     COMPLETED: projects.filter(p => p.status === "COMPLETED").length,
+    INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
   // --- LÓGICA DE FILTRO FINAL (Aba + Pesquisa) ---
@@ -181,6 +183,7 @@ export function ProjectsList() {
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
+      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
     }
   };
 
@@ -200,6 +203,7 @@ export function ProjectsList() {
     { id: "PLANNING", label: "Planejamento", count: counts.PLANNING },
     { id: "EXECUTION", label: "Em Execução", count: counts.EXECUTION },
     { id: "COMPLETED", label: "Concluídas", count: counts.COMPLETED },
+    { id: "INVALID", label: "Inválidas", count: counts.INVALID },
   ];
 
   return (

@@ -32,6 +32,9 @@ export class TimelineEvent {
   @Prop({ type: String, unique: true, sparse: true })
   parecerCode?: string;
 
+  @Prop({ type: String, required: false })
+  memberName?: string;
+
   // Campo flexível para guardar dados extras. 
   // Ex: Se o tipo for STATUS_CHANGE, podemos guardar { oldStatus: 'DEMAND', newStatus: 'PLANNING' }
   @Prop({ type: MongooseSchema.Types.Mixed })

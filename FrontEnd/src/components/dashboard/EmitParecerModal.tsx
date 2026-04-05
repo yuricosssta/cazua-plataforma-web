@@ -6,6 +6,7 @@ import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigatio
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axiosInstance from "@/lib/api/axiosInstance";
+import { Project } from "@/types/project";
 
 // Importações do OpenLayers
 import Map from "ol/Map";
@@ -20,11 +21,6 @@ import VectorSource from "ol/source/Vector";
 import Style from "ol/style/Style";
 import Icon from "ol/style/Icon";
 
-interface Project {
-  id: string;
-  title: string;
-  status: string;
-}
 
 interface EmitParecerModalProps {
   isOpen: boolean;
@@ -35,7 +31,6 @@ interface EmitParecerModalProps {
 
 export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitParecerModalProps) {
   const currentOrg = useSelector(selectCurrentOrg);
-  // const token = useSelector((state: RootState) => state.auth.token);
 
   const orgId = typeof currentOrg?.organizationId === "object"
     ? (currentOrg.organizationId as any)._id
@@ -261,7 +256,8 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                     <option value="DEMAND">Aguardando Planejamento</option>
                     <option value="PLANNING">Aprovar para Planejamento</option>
                     <option value="EXECUTION">Em Execução</option>
-                    <option value="COMPLETED">Concluído / Improcedente</option>
+                    <option value="COMPLETED">Concluído</option>
+                    <option value="INVALID">Inválida ou Improcedente</option>
                   </select>
                 </div>
 
@@ -275,7 +271,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
                         <Briefcase className="w-4 h-4 text-muted-foreground" />
-                        Nome Técnico da Obra <span className="text-red-500">*</span>
+                        Nome Técnico do Projeto <span className="text-red-500">*</span>
                       </label>
                       <input type="text" required placeholder="Ex: Reforma Estrutural da Cobertura..." value={technicalTitle} onChange={(e) => setTechnicalTitle(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary" />
                     </div>
@@ -303,7 +299,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   {updateGUT && (
                     <div className="space-y-5 bg-card border border-border rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
                       <div className="flex justify-between items-center pb-2 mb-2 border-b border-dashed border-border">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase">Novo Score</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">Nova prioridade</span>
                         <p className={`text-xl font-black leading-none ${currentScore >= 60 ? 'text-red-500' : 'text-primary'}`}>{currentScore}</p>
                       </div>
                       <ScoreSelector label="Gravidade" description="Danos" value={gut.gravidade} onChange={(v) => setGut({ ...gut, gravidade: v })} />
@@ -355,7 +351,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
             <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border bg-background flex-shrink-0">
               <button type="button" onClick={onClose} disabled={isSubmitting} className="px-5 py-2.5 text-sm font-medium rounded-md border border-border hover:bg-accent hover:text-foreground transition-colors">Cancelar</button>
               <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm">
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} Assinar e Salvar Parecer
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} Salvar Parecer
               </button>
             </div>
           </form>

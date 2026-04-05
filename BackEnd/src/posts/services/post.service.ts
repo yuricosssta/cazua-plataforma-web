@@ -3,7 +3,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostRepository } from '../repositories/post.repository';
 import { IPost } from '../schemas/models/post.interface';
-// import { IUser } from '../../users/schemas/models/user.interface'; // (Não usado no código atual)
 
 export interface PaginatedPostsResult {
   data: IPost[];

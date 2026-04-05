@@ -13,14 +13,13 @@ export class PostMongooseRepository implements PostRepository {
     // Monta o filtro dinamicamente
     const filter: FilterQuery<Post> = {};
 
-    // Se o organizationId vier, adicionamos ao filtro.
-    // Se não vier, o filtro continua vazio {} e busca tudo (comportamento antigo)
+    // Se o organizationId vier, adiciona ao filtro.
     if (options.organizationId && options.organizationId == 'undefined') {
       filter.organizationId = options.organizationId;
     }
 
     return this.postModel
-      .find(filter) // <--- Aplica o filtro aqui
+      .find(filter)
       .sort({ created_at: -1 })
       .skip(options.skip)
       .limit(options.limit)
