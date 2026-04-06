@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axios from "axios";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
   Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network, Users,
@@ -16,9 +15,10 @@ import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
 import { MapViewerModal } from "@/components/ui/MapViewer";
 import axiosInstance from "@/lib/api/axiosInstance";
+import { ProjectStatus, TimelineEventType } from "@/types/project";
 
-type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
-type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
+// type ProjectStatus = ProjectStatus;//"DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
+// type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
 
 interface TimelineEvent {
   _id: string;
@@ -26,7 +26,7 @@ interface TimelineEvent {
   description: string;
   parecerCode?: string;
   authorId: {
-    _id: string;
+    _id: string; 
     name: string;
   };
   createdAt: string;
@@ -104,6 +104,7 @@ export default function ProjectDetailsPage() {
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-600", bg: "bg-blue-100 border-blue-200" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-700", bg: "bg-amber-100 border-amber-200" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-700", bg: "bg-emerald-100 border-emerald-200" };
+      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
       default: return { label: "Desconhecido", icon: AlertCircle, color: "text-gray-600", bg: "bg-gray-100 border-gray-200" };
     }
   };
