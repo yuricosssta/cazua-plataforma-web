@@ -8,39 +8,12 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axios from "axios";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MapViewerModal } from "../ui/MapViewer";
-import { ProjectStatus, ProjectTimelineEvent, Project, TabType } from "@/types/project";
-
-
-// type TabType = ProjectStatus | "ALL" | "MINE";
-
-// interface ProjectTimelineEvent {
-//   id: string;
-//   date: string;
-//   author: string;
-//   description: string;
-//   type: "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
-// }
-
-// interface Project {
-//   id: string;
-//   referenceCode?: string;
-//   title: string;
-//   description: string;
-//   status: ProjectStatus;
-//   progress: number;
-//   location: string;
-//   startDate?: string;
-//   endDate?: string;
-//   priorityScore?: number;
-//   assignedMembers?: any[];
-//   lastUpdate: ProjectTimelineEvent;
-//   attachments: string[];
-// }
+import { ProjectStatus, Project, TabType } from "@/types/project";
+import axiosInstance from "@/lib/api/axiosInstance";
 
 export function ProjectsList() {
   const router = useRouter();
@@ -49,9 +22,9 @@ export function ProjectsList() {
   const [activeTab, setActiveTab] = useState<TabType>("MINE");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: string } | null>(null);
+  const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: ProjectStatus } | null>(null);
+  
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -59,7 +32,6 @@ export function ProjectsList() {
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
 
-  // Extrai o ID do usuário
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;
 
   const getOrgId = (): string => {
@@ -78,10 +50,7 @@ export function ProjectsList() {
 
     try {
       setIsLoading(true);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
 
       const formattedProjects: Project[] = response.data.map((p: any) => {
         const formatDate = (dateString?: string) => {
@@ -94,7 +63,7 @@ export function ProjectsList() {
           referenceCode: p.referenceCode,
           title: p.title,
           description: p.description,
-          status: p.status,
+          status: p.status as ProjectStatus,
           progress: p.progress || 0,
           location: p.location,
           startDate: formatDate(p.startDate),
@@ -138,7 +107,6 @@ export function ProjectsList() {
     }
   }, [urlTab]);
 
-  // Função auxiliar para verificar se o usuário está na equipe
   const isUserAssigned = (assignedMembers: any[]) => {
     return assignedMembers?.some((m: any) => {
       const memberId = typeof m === 'string' ? m : m._id;
@@ -146,7 +114,6 @@ export function ProjectsList() {
     });
   };
 
-  // --- CÁLCULO DOS CONTADORES DAS ABAS ---
   const counts = {
     MINE: projects.filter(p => isUserAssigned(p.assignedMembers || [])).length,
     ALL: projects.length,
@@ -157,15 +124,12 @@ export function ProjectsList() {
     INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
-  // --- LÓGICA DE FILTRO FINAL (Aba + Pesquisa) ---
   const filteredProjects = projects.filter((p) => {
-    // 1. Filtra pela Aba Ativa
     let matchesTab = false;
     if (activeTab === "ALL") matchesTab = true;
     else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || []);
     else matchesTab = p.status === activeTab;
 
-    // 2. Filtra pela Pesquisa
     const term = searchTerm.toLowerCase();
     const matchesSearch = !term ||
       (p.title && p.title.toLowerCase().includes(term)) ||
@@ -176,7 +140,6 @@ export function ProjectsList() {
     return matchesTab && matchesSearch;
   }).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
 
-
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
       case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-orange-500", bg: "bg-orange-500/10" };
@@ -184,6 +147,7 @@ export function ProjectsList() {
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
+      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted/10" };
     }
   };
 
@@ -195,7 +159,6 @@ export function ProjectsList() {
     return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200" };
   };
 
-  // Configuração das Abas para renderização
   const tabs = [
     { id: "MINE", label: "Minhas Obras", icon: UserCircle, count: counts.MINE },
     { id: "ALL", label: "Todas", count: counts.ALL },
@@ -208,11 +171,10 @@ export function ProjectsList() {
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
-
-      {/* CABEÇALHO REFORMULADO (Com o botão no Desktop) */}
+      {/* CABEÇALHO REFORMULADO */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Projetos e Demandas</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Demandas e Projetos</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Acompanhe o ciclo de vida e a timeline das suas frentes de trabalho.
           </p>
@@ -227,21 +189,21 @@ export function ProjectsList() {
         </button>
       </div>
 
-      {/* BARRA DE PESQUISA OMNICHANNEL */}
+      {/* BARRA DE PESQUISA */}
       <div className="relative w-full md:max-w-md">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-muted-foreground" />
         </div>
         <input
           type="text"
-          placeholder="Buscar por código (ex: 0001), título ou local..."
+          placeholder="Buscar por código, título ou local..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm transition-all"
         />
       </div>
 
-      {/* NAVEGAÇÃO POR ABAS (COM CONTADORES) */}
+      {/* NAVEGAÇÃO POR ABAS */}
       <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -292,7 +254,6 @@ export function ProjectsList() {
             const StatusIcon = statusConfig.icon;
             const priorityConfig = getPriorityConfig(project.priorityScore);
             const PriorityIcon = priorityConfig?.icon;
-
             const hasPermission = isOrgAdmin || isUserAssigned(project.assignedMembers || []);
 
             return (
@@ -317,12 +278,12 @@ export function ProjectsList() {
 
                     <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium"
                       onClick={(e) => {
-                        e.stopPropagation(); // Evita de abrir a demanda
-                        setMapLocationView(project.location);
+                        e.stopPropagation();
+                        setMapLocationView(project.location || null); 
                       }}
                     >
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="truncate">{project.location}</span>
+                      <span className="truncate">{project.location || 'Local não encontrado'}</span>
                     </div>
                   </div>
 
@@ -356,18 +317,20 @@ export function ProjectsList() {
                   </div>
                 )}
 
-                <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Última Atualização</span>
+                {project.lastUpdate && (
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Última Atualização</span>
+                    </div>
+                    <div className="text-sm text-foreground line-clamp-2">
+                      <span className="font-semibold text-primary">{project.lastUpdate.author}:</span> {project.lastUpdate.description}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {project.lastUpdate.date}
+                    </p>
                   </div>
-                  <div className="text-sm text-foreground line-clamp-2">
-                    <span className="font-semibold text-primary">{project.lastUpdate.author}:</span> {project.lastUpdate.description}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {project.lastUpdate.date}
-                  </p>
-                </div>
+                )}
 
                 {project.status === "DEMAND" && (
                   <div className="pt-2">
@@ -425,10 +388,11 @@ export function ProjectsList() {
         onSuccess={() => fetchProjects()}
       />
 
+      {/* O TypeScript agora entende perfeitamente o 'projectForParecer' */}
       <EmitParecerModal
         isOpen={!!projectForParecer}
         onClose={() => setProjectForParecer(null)}
-        project={projectForParecer}
+        project={projectForParecer as any} 
         onSuccess={() => fetchProjects()}
       />
 
