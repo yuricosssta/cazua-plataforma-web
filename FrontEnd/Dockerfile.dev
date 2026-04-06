@@ -1,0 +1,20 @@
+# Dockerfile.dev frontend para desenvolvimento com hot reload
+FROM node:22-alpine
+WORKDIR /app
+
+# Instala o pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copia apenas arquivos de dependência primeiro (para aproveitar o cache)
+COPY package.json pnpm-lock.yaml* ./
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_INITIAL_MAP_CENTER
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_INITIAL_MAP_CENTER=$NEXT_PUBLIC_INITIAL_MAP_CENTER
+RUN pnpm install
+
+# Não precisamos de COPY . . aqui se usarmos volumes no docker-compose
+EXPOSE 3000
+
+# Comando para rodar com Hot Reload
+CMD ["pnpm", "dev"]

@@ -1,47 +1,31 @@
-# ==================================
-# Estágio 1: "Builder" - Instala dependências e compila o projeto
-# ==================================
+# Dockerfile frontend para produção
+# Estágio 1: Instalação e Build
 FROM node:22-alpine AS builder
-
 WORKDIR /app
 
-# Copia os arquivos de dependência e instala
-COPY package*.json ./
-RUN npm install
+# Instala o pnpm (se for o que você usa)
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copia o restante do código-fonte
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
 COPY . .
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_INITIAL_MAP_CENTER
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_INITIAL_MAP_CENTER=$NEXT_PUBLIC_INITIAL_MAP_CENTER
+RUN pnpm run build
 
-# Roda o script de build. Graças à configuração no next.config.js,
-# isso vai gerar a pasta otimizada .next/standalone
-RUN npm run build
-
-
-# ==================================
-# Estágio 2: "Production" - A imagem final
-# ==================================
+# Estágio 2: Runner (Imagem final bem leve)
 FROM node:22-alpine AS runner
-
 WORKDIR /app
 
-# Cria um usuário não-root para segurança
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 appuser
+ENV NODE_ENV=production
 
-# Copia os arquivos de saída otimizados do estágio 'builder'
-# O --chown garante que o usuário 'appuser' seja o dono dos arquivos
-COPY --from=builder --chown=appuser:nodejs /app/public ./public
-COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=appuser:nodejs /app/.next/static ./.next/static
-
-# Muda para o usuário não-root
-USER appuser
+# Copia apenas o necessário do standalone (exige "output: 'standalone'" no next.config.js)
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
-
-# Define a porta que o Next.js vai usar
-ENV PORT 3000
-
-# Comando para iniciar o servidor de produção otimizado do Next.js
-# O 'server.js' é criado automaticamente pelo 'output: standalone'
 CMD ["node", "server.js"]

@@ -5,6 +5,7 @@ import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { IUser } from 'src/users/schemas/models/user.interface';
 
 @Controller('organizations')
 @UseGuards(AuthGuard)
@@ -59,7 +60,7 @@ export class OrganizationController {
   }
 
   @Get('admin/all')
-  async getAllForAdmin(@Req() req: any) {
+  async getAllForAdmin(@Req() req: any) : Promise<any> {
     // A TRAVA DE DEUS
     const userEmail = req.user?.email; // Certifique-se de que seu token JWT tenha o email embutido
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');

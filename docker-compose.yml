@@ -1,40 +1,18 @@
+# docker-compose.yml
 services:
   backend:
-    build:
-      context: ./BackEnd
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
-    env_file:
-      - ./BackEnd/.env
-    # Sem volumes de código ou command override
-    # healthcheck:
-    #   # Testa se a API está realmente pronta para receber requisições
-    #   test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api"] # Crie uma rota /api ou /health no NestJS
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 5
-    networks:
-      - app-network
+    build: ./BackEnd
+    env_file: ./BackEnd/.env
+    networks: [app-network]
 
   frontend:
-    build:
-      context: ./FrontEnd
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./FrontEnd/.env
-    # O depends_on agora espera a API estar "saudável" (healthcheck passar)
-    depends_on:
-      - backend
-      # api:
-      #   condition: service_healthy
-    networks:
-      - app-network
+    build: ./FrontEnd
+    env_file: ./FrontEnd/.env
+    depends_on: [backend]
+    networks: [app-network]
 
 networks:
   app-network:
     driver: bridge
-             
-    
+
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d

@@ -1,54 +1,38 @@
-# ==================================
-# Estágio 1: "Builder" - Compila a aplicação
-# ==================================
-# Usamos um nome "builder" para este estágio
+# Dockerfile para o BackEnd NestJS produção
+# Estágio 1: Builder
 FROM node:22-alpine AS builder
+WORKDIR /app
 
-# Define o diretório de trabalho
-WORKDIR /usr/app
+# Habilita o pnpm usando o Corepack nativo do Node 22
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copia os arquivos de dependência. Usar '*' garante que o package-lock.json também seja copiado.
-# Isso otimiza o cache do Docker.
-COPY package*.json ./
+# Copia apenas os arquivos de dependência
+COPY pnpm-lock.yaml package.json ./
 
-# Instala TODAS as dependências, incluindo as de desenvolvimento para o build
-RUN npm install
+# Instala todas as dependências para o build
+RUN pnpm install --frozen-lockfile
 
-# Copia o restante do código-fonte da aplicação
+# Copia o código e gera o build (dist/)
 COPY . .
+RUN pnpm run build
 
-# Roda o script de build para compilar o TypeScript para JavaScript na pasta /dist
-RUN npm run build
+# Remove as devDependencies para deixar a node_modules leve
+RUN pnpm prune --prod
 
-
-# ==================================
-# Estágio 2: "Production" - Imagem final e leve
-# ==================================
-# Começamos do zero com a mesma imagem base leve do Node
+# Estágio 2: Runner
 FROM node:22-alpine
-
-# Define o diretório de trabalho
 WORKDIR /usr/app
 
-# Cria um usuário e grupo não-root para rodar a aplicação com mais segurança
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 appuser
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
 
-# Copia o package.json do estágio de build para o estágio de produção
-COPY --from=builder /usr/app/package*.json ./
-
-# Instala APENAS as dependências de produção.
-RUN npm install --only=production
-
-# Copia APENAS a pasta 'dist' (código compilado) do estágio de build
+# No NestJS, precisamos da node_modules (com as prod-deps) e da dist/
+COPY --from=builder /usr/app/node_modules ./node_modules
 COPY --from=builder /usr/app/dist ./dist
+COPY --from=builder /usr/app/package.json ./
 
-# Muda o usuário para o usuário não-root que criamos
 USER appuser
-
-# Expõe a porta em que a aplicação vai rodar
 EXPOSE 3001
 
-# Comando para iniciar a aplicação a partir do código compilado
-# É mais direto e eficiente que "npm start"
+# O NestJS compila para dist/main.js
 CMD ["node", "dist/main"]

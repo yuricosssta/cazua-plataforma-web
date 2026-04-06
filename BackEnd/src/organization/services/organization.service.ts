@@ -222,7 +222,7 @@ export class OrganizationService {
       .replace(/\s+/g, '-');
   }
 
-  async findAllForSuperAdmin() {
+  async findAllForSuperAdmin(): Promise<Organization[]> {
     // Busca todas as organizações com o dono populado
     const orgs = await this.orgModel
       .find()

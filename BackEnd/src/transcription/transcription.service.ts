@@ -5,9 +5,10 @@ import { HttpService } from '@nestjs/axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import YtDlpWrap from 'yt-dlp-wrap';
-import { File as MulterFile } from 'multer';
+// import { File as MulterFile } from 'multer';
 import OpenAI from 'openai';
 import * as os from 'os';
+import type { Express } from 'express';
 
 @Injectable()
 export class TranscriptionService {
@@ -44,7 +45,7 @@ export class TranscriptionService {
   }
 
   //  Transcreve um arquivo de áudio enviado pelo usuário
-  async transcribeFromFile(file: MulterFile): Promise<{ text: string }> {
+  async transcribeFromFile(file: Express.Multer.File): Promise<{ text: string }> {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo foi enviado.');
     }

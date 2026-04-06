@@ -1,23 +1,9 @@
-// import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-// import { TranscriptionService } from './transcription.service';
-// import { CreateTranscriptionDto } from './dto/transcription.dto';
-
-// @Controller('transcription')
-// export class TranscriptionController {
-//   constructor(private readonly transcriptionService: TranscriptionService) {}
-
-//   @Post()
-//   @HttpCode(HttpStatus.OK)
-//   create(@Body() createTranscriptionDto: CreateTranscriptionDto) {
-//     return this.transcriptionService.transcribe(createTranscriptionDto.url);
-//   }
-// }
-
-// ------------------------------------------------ //
+//src/transcription/transcription.controller.ts
 import { Controller, Post, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TranscriptionService } from './transcription.service';
-import type { File as MulterFile } from 'multer';
+// import type { File as MulterFile } from 'multer';
+import type { Express } from 'express';
 
 @Controller('transcription')
 export class TranscriptionController {
@@ -31,7 +17,8 @@ export class TranscriptionController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async transcribeFromFile(@UploadedFile() file: MulterFile) {
+  //Faz upload de um arquivo de áudio para transcrição
+  async transcribeFromFile(@UploadedFile() file: Express.Multer.File) {
     return this.transcriptionService.transcribeFromFile(file);
   }
 }
