@@ -1,3 +1,4 @@
+//src/components/UserProfile.tsx
 "use client";
 
 import { useEffect } from 'react';
@@ -39,7 +40,7 @@ export const UserProfile = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-500">Tipo de Usuário</label>
-          <p className="text-lg text-gray-900 capitalize">{profile.rule || 'Não definido'}</p>
+          <p className="text-lg text-gray-900 capitalize">{profile.role || 'Não definido'}</p>
         </div>
         <div className="pt-4">
           {/* A lógica para a mudança de senha seria uma nova feature  */}
