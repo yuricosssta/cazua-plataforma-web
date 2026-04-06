@@ -21,7 +21,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Style from "ol/style/Style";
 import Icon from "ol/style/Icon";
-import { config } from "process";
+
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -71,13 +71,13 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         }),
       });
 
-      const initialCenter = fromLonLat(process.env.NEXT_PUBLIC_INITIAL_MAP_CENTER?.split(',').map(Number) || [-43.76, -21.22]); // Barbacena-MG
+      const initialCenter = fromLonLat(process.env.NEXT_PUBLIC_INITIAL_MAP_CENTER?.split(',').map(Number) || [-43.7, -21.2]); // Barbacena-MG
       mapInstance.current = new Map({
         target: mapRef.current,
         layers: [new TileLayer({ source: new OSM() }), vectorLayer],
         view: new View({
           center: initialCenter,
-          zoom: 13,
+          zoom: 11,
         }),
       });
 

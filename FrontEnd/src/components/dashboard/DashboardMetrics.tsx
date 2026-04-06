@@ -10,14 +10,16 @@ import { Plus, HardHat, FileText, CheckCircle, AlertCircle, Activity, Loader2 } 
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { CreateProjectModal } from "./CreateProjectModal";
+import { Project } from "@/types/project";
 
-interface Project {
-  id: string;
-  status: "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
-  endDate?: string;
-  createdAt: string;
-  assignedMembers?: any[];
-}
+// interface Project {
+//   id: string;
+//   _id?: string;
+//   status: "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED"; 
+//   endDate?: string;
+//   createdAt: string;
+//   assignedMembers?: any[];
+// }
 
 export function DashboardMetrics() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -59,7 +61,7 @@ export function DashboardMetrics() {
   
   const concluidasEsteAno = projects.filter(p => {
     if (p.status !== "COMPLETED") return false;
-    const dateToCheck = p.endDate ? new Date(p.endDate) : new Date(p.createdAt);
+    const dateToCheck = p.endDate ? new Date(p.endDate) : new Date(p.createdAt || ""); // Fallback para createdAt caso endDate não esteja disponível
     return dateToCheck.getFullYear() === currentYear;
   }).length;
 

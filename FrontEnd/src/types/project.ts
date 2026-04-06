@@ -24,6 +24,7 @@ export interface Project {
   status: ProjectStatus;
   progress?: number;
   location?: string;
+  createdAt?: string;
   startDate?: string;
   endDate?: string;
   priorityScore?: number;
