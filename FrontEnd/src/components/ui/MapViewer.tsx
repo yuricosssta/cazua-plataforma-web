@@ -36,8 +36,8 @@ export function MapViewerModal({ isOpen, onClose, locationString }: MapViewerMod
       let lat = -21.22;
       let coordsFound = false;
 
-      const latMatch = locationString.match(/Lat:\s*(-?\d+\.\d+)/);
-      const lngMatch = locationString.match(/Lng:\s*(-?\d+\.\d+)/);
+      const latMatch = locationString.match(/Lat:\s*(-?\d+\.\d+)/) || locationString.match(/\s*(-?\d+\.\d+,)/);
+      const lngMatch = locationString.match(/Lng:\s*(-?\d+\.\d+)/) || locationString.match(/,\s*(-?\d+\.\d+)/);
 
       if (latMatch && lngMatch) {
         lat = parseFloat(latMatch[1]);
@@ -92,7 +92,7 @@ export function MapViewerModal({ isOpen, onClose, locationString }: MapViewerMod
       <div className="bg-background w-full max-w-4xl h-[85vh] rounded-sm shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden relative">
         
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30 absolute top-0 left-0 right-0 z-10 bg-background/90 backdrop-blur">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30 absolute top-0 left-0 right-0 z-10 backdrop-blur">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-primary" />
             <h2 className="text-sm font-semibold tracking-tight text-foreground truncate max-w-[250px] md:max-w-md">
