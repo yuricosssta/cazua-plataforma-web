@@ -22,8 +22,7 @@ export function ProjectsList() {
   const [activeTab, setActiveTab] = useState<TabType>("MINE");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projectForParecer, setProjectForParecer] = useState<{ id: string, title: string, status: ProjectStatus } | null>(null);
-  
+  const [projectForParecer, setProjectForParecer] = useState<Project | null>(null);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,9 +107,20 @@ export function ProjectsList() {
   }, [urlTab]);
 
   const isUserAssigned = (assignedMembers: any[]) => {
+    const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
+
+    if (!currentUserId || currentUserId === "undefined") return false;
+
     return assignedMembers?.some((m: any) => {
-      const memberId = typeof m === 'string' ? m : m._id;
-      return memberId === userId;
+      if (typeof m === 'string') {
+        return m === currentUserId;
+      }
+
+      if (m && typeof m === 'object') {
+        const memberId = String(m._id || m.id || "");
+        return memberId === currentUserId;
+      }
+      return false;
     });
   };
 
@@ -339,7 +349,7 @@ export function ProjectsList() {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (hasPermission) {
-                          setProjectForParecer({ id: project.id, title: project.title, status: project.status });
+                          setProjectForParecer(project);
                         }
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}

@@ -17,9 +17,6 @@ import { MapViewerModal } from "@/components/ui/MapViewer";
 import axiosInstance from "@/lib/api/axiosInstance";
 import { ProjectStatus, TimelineEventType } from "@/types/project";
 
-// type ProjectStatus = ProjectStatus;//"DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED";
-// type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
-
 interface TimelineEvent {
   _id: string;
   type: TimelineEventType;
@@ -143,10 +140,20 @@ export default function ProjectDetailsPage() {
   }
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
+  const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
+  
   const isAssigned = project.assignedMembers?.some((m: any) => {
-    const memberId = typeof m === 'string' ? m : m._id;
-    return memberId === user?._id;
+    if (typeof m === 'string') {
+      return m === currentUserId;
+    }
+    
+    if (m && typeof m === 'object') {
+      const memberId = String(m._id || m.id || "");
+      return memberId === currentUserId;
+    }
+    return false;
   });
+
   const hasPermission = isOrgAdmin || isAssigned;
 
   const statusConfig = getStatusConfig(project.status);
