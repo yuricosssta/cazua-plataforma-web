@@ -44,6 +44,30 @@ export class ProjectsService {
     return { org, plan, prefixoOrg };
   }
 
+  // Mecanismo de Smart Lock: Para planos FREE, apenas as 2 demandas mais antigas podem ser editadas. As demais ficam congeladas em modo Somente Leitura.
+  private async enforceSmartLock(orgId: string, projectId: string) {
+    const org = await this.orgModel.findById(orgId).exec();
+    const plan = (org as any)?.plan || 'FREE';
+
+    // Se for PRO ou ENTERPRISE, passe livre para qualquer obra
+    if (plan !== 'FREE') return;
+
+    // Se for FREE, pegamos as 2 demandas MAIS ANTIGAS (criadas primeiro)
+    const oldestProjects = await this.projectModel
+      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .sort({ createdAt: 1 }) // 1 = ascendente (mais antigas)
+      .limit(2)
+      .select('_id')
+      .lean()
+      .exec();
+
+    const allowedIds = oldestProjects.map(p => String(p._id));
+
+    // Se o ID da obra que ele está tentando mexer NÃO estiver entre as 2 mais antigas, bloqueia
+    if (!allowedIds.includes(String(projectId))) {
+      throw new ForbiddenException('SMART_LOCK: Esta demanda está congelada em modo Somente Leitura. Faça o upgrade para o plano PRO para voltar a operá-la.');
+    }
+  }
 
   // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
   private calculatePriorityScore(details: Record<string, number>): number {
@@ -314,8 +338,12 @@ export class ProjectsService {
   }
 
   // LISTAGEM RÁPIDA (Ordenada por prioridade e data)
-  async findAllByOrganization(orgId: string) {
-    return this.projectModel
+  async findAllByOrganization(orgId: string): Promise<any[]> {
+    const org = await this.orgModel.findById(orgId).exec();
+    const plan = (org as any)?.plan || 'FREE';
+
+    // Puxa as obras com .lean() para podermos injetar dados nativamente
+    const projects = await this.projectModel
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
       .populate({
         path: 'lastEventId',
@@ -323,18 +351,49 @@ export class ProjectsService {
         populate: { path: 'authorId', select: 'name' }
       })
       .sort({ priorityScore: -1, createdAt: -1 })
+      .lean()
       .exec();
+
+    // Se for PRO ou Enterprise, nada é Read-Only
+    if (plan !== 'FREE') {
+      return projects.map(p => ({ ...p, isReadOnly: false }));
+    }
+
+    // Se for FREE, descobre quais são as 2 mais velhas (Aquelas que têm passe livre)
+    const oldestProjects = await this.projectModel
+      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .sort({ createdAt: 1 })
+      .limit(2)
+      .select('_id')
+      .lean()
+      .exec();
+
+    const allowedIds = oldestProjects.map(p => String(p._id));
+
+    // Mapeia injetando a tag de travamento
+    return projects.map(p => ({
+      ...p,
+      isReadOnly: !allowedIds.includes(String(p._id))
+    }));
   }
 
   // VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
-  async findOneWithTimeline(orgId: string, projectId: string) {
+  async findOneWithTimeline(orgId: string, projectId: string): Promise<{ project: any; timeline: any[] }> {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
-    }).exec();
+    }).lean().exec();
 
-    if (!project) {
-      throw new NotFoundException('Projeto não encontrado.');
+    if (!project) throw new NotFoundException('Projeto não encontrado.');
+
+    // Injeta a flag de Read Only
+    let isReadOnly = false;
+    try {
+      await this.enforceSmartLock(orgId, projectId);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        isReadOnly = true;
+      }
     }
 
     const timeline = await this.timelineEventModel.find({
@@ -345,8 +404,22 @@ export class ProjectsService {
       .sort({ createdAt: -1 })
       .exec();
 
-    return { project, timeline };
+    return { 
+      project: { ...project, isReadOnly }, 
+      timeline 
+    };
   }
+
+  async getOrganizationTimeline(orgId: string) {
+    return this.timelineEventModel
+      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .populate('authorId', 'name avatarUrl')
+      .populate('projectId', 'title referenceCode')
+      .exec();
+  }
+
 
   // ALOCAÇÃO DE EQUIPE
   async assignMember(orgId: string, projectId: string, memberId: string) {
@@ -403,16 +476,4 @@ export class ProjectsService {
 
     return project;
   }
-
-  // FEED DE ATIVIDADES (DASHBOARD)
-  async getOrganizationTimeline(orgId: string) {
-    return this.timelineEventModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
-      .sort({ createdAt: -1 }) // Traz os mais recentes primeiro
-      .limit(15)
-      .populate('authorId', 'name avatarUrl')
-      .populate('projectId', 'title referenceCode')
-      .exec();
-  }
-
 }
