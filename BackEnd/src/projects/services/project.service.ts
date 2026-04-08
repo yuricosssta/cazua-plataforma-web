@@ -119,7 +119,7 @@ export class ProjectsService {
   }
 
   // IMPORTAÇÃO EM MASSA (BULK)
-  async bulkImportProjects(orgId: string, userId: string, projectsData: BulkImportDto['projects']) {
+  async bulkImportProjects(orgId: string, userId: string, projectsData: any[]) {
     try {
       if (!projectsData || projectsData.length === 0) {
         throw new BadRequestException('O array de demandas está vazio.');
@@ -127,6 +127,8 @@ export class ProjectsService {
 
       const year = new Date().getFullYear();
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
+
+      // Validação de negócio (Plano Free vs Pro)
       const { prefixoOrg } = await this.validatePlanLimitAndGetPrefix(orgId, projectsData.length);
 
       const counterId = `DEMAND_${orgId}_${year}${month}`;
@@ -144,6 +146,26 @@ export class ProjectsService {
       const bulkProjectsToInsert = [];
       const bulkEventsToInsert = [];
 
+      const parseSafeDate = (dateStr: any) => {
+        if (!dateStr || String(dateStr).trim() === '') return undefined;
+
+        let safeDateString = String(dateStr).trim();
+
+        // Se o usuário digitou no formato Brasileiro (DD/MM/YYYY), nós invertemos para YYYY-MM-DD
+        if (safeDateString.includes('/')) {
+          const parts = safeDateString.split('/');
+          if (parts.length === 3) {
+            safeDateString = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+        }
+
+        const dateObj = new Date(safeDateString);
+
+        if (isNaN(dateObj.getTime())) return undefined;
+
+        return dateObj;
+      };
+
       for (const data of projectsData) {
         const sequencia = String(startSequence).padStart(4, '0');
         const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
@@ -156,13 +178,15 @@ export class ProjectsService {
           organizationId: new Types.ObjectId(String(orgId)),
           createdBy: new Types.ObjectId(String(userId)),
           referenceCode: referenceCode,
-          title: data.title,
+          title: data.title || 'Demanda Sem Título', // Proteção extra caso venha vazio
           description: data.description || 'Importado via planilha CSV.',
           location: data.location || 'Não informada',
           status: data.status || 'DEMAND',
-          priorityScore: data.priority ? Number(data.priority) : 1,
-          startDate: data.startDate ? new Date(data.startDate) : undefined,
-          endDate: data.endDate ? new Date(data.endDate) : undefined,
+
+          priorityScore: isNaN(Number(data.priority)) ? 1 : Number(data.priority),
+          startDate: parseSafeDate(data.startDate),
+          endDate: parseSafeDate(data.endDate),
+
           attachments: [],
           // lastEventId num 2º passo
         };
@@ -198,9 +222,9 @@ export class ProjectsService {
       };
 
     } catch (error) {
-      console.error('Erro no Bulk Import:', error);
+      console.error('ERRO REAL NO BULK IMPORT:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Falha ao importar a planilha.');
+      throw new InternalServerErrorException('Falha catastrófica ao importar a planilha.');
     }
   }
 
@@ -334,8 +358,8 @@ export class ProjectsService {
       { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
       { new: true }
     )
-    // .populate('assignedMembers', 'name') 
-    .exec();
+      // .populate('assignedMembers', 'name') 
+      .exec();
 
     if (!project) {
       throw new NotFoundException('Projeto não encontrado nesta organização.');
