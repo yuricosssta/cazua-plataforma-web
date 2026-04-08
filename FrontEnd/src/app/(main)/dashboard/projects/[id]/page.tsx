@@ -16,6 +16,7 @@ import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
 import { MapViewerModal } from "@/components/ui/MapViewer";
 import axiosInstance from "@/lib/api/axiosInstance";
 import { ProjectStatus, TimelineEventType } from "@/types/project";
+import { Project } from "@/types/project";
 
 interface TimelineEvent {
   _id: string;
@@ -28,21 +29,6 @@ interface TimelineEvent {
   };
   createdAt: string;
   metadata?: Record<string, any>;
-}
-
-interface Project {
-  _id: string;
-  referenceCode?: string;
-  title: string;
-  status: ProjectStatus;
-  progress: number;
-  location: string;
-  startDate?: string;
-  endDate?: string;
-  priorityScore?: number;
-  priorityDetails?: Record<string, number>;
-  assignedMembers?: any[];
-  createdAt: string;
 }
 
 export default function ProjectDetailsPage() {
@@ -188,7 +174,7 @@ export default function ProjectDetailsPage() {
                 <span className="flex items-center gap-1.5"
                   onClick={(e) => {
                     e.stopPropagation(); // Evita de abrir a demanda
-                    setMapLocationView(project.location);
+                    setMapLocationView(project.location || "");
                   }}
                 ><MapPin className="w-4 h-4" /> {project.location}</span>
                 {(project.startDate || project.endDate) && (
@@ -400,7 +386,7 @@ export default function ProjectDetailsPage() {
       <EmitParecerModal
         isOpen={isParecerOpen}
         onClose={() => setIsParecerOpen(false)}
-        project={{ id: project._id, title: project.title, status: project.status }}
+        project={{ id: project._id || project.id, title: project.title, status: project.status }}
         onSuccess={() => {
           fetchProjectDetails(false);
         }}
@@ -411,7 +397,7 @@ export default function ProjectDetailsPage() {
         isOpen={isTeamDrawerOpen}
         onClose={() => setIsTeamDrawerOpen(false)}
         orgId={orgId}
-        projectId={project._id}
+        projectId={project._id || project.id}
         currentAssignedMembers={project.assignedMembers || []}
         onSuccess={() => {
           fetchProjectDetails(false);

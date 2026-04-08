@@ -28,6 +28,7 @@ export interface Project {
   startDate?: string;
   endDate?: string;
   priorityScore?: number;
+  priorityDetails?: Record<string, number>;
   assignedMembers?: any[];
   lastUpdate?: ProjectTimelineEvent;
   attachments?: string[];
