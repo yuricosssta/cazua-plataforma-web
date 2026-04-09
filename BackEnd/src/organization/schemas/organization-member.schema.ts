@@ -26,6 +26,9 @@ export class OrganizationMember {
     required: true
   })
   role: string;
+
+  @Prop({ required: false })
+  function: string;
 }
 
 export const OrganizationMemberSchema = SchemaFactory.createForClass(OrganizationMember);

@@ -7,4 +7,5 @@ export interface IOrganizationMember {
   userId: string;
   role: RoleType;
   createdAt?: string;
+  function?: string;
 }
