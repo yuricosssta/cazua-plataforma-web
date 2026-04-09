@@ -18,6 +18,7 @@ import axiosInstance from "@/lib/api/axiosInstance";
 import { ProjectStatus, TimelineEventType } from "@/types/project";
 import { Project } from "@/types/project";
 import { TimelineEventCard } from "@/components/dashboard/TimelineEventCard";
+import { ExportPdfModal } from "@/components/dashboard/ExportPdfModal";
 
 interface TimelineEvent {
   _id: string;
@@ -41,6 +42,7 @@ export default function ProjectDetailsPage() {
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
+  const [pdfEventTarget, setPdfEventTarget] = useState<any>(null);
 
   const getOrgId = (): string => {
     if (!currentOrg?.organizationId) return "";
@@ -278,17 +280,17 @@ export default function ProjectDetailsPage() {
 
       {/* 2. O MOTOR: TIMELINE CENTRALIZADA E FOCADA NO CONTEÚDO */}
       <div className="ml-4 md:ml-16 relative border-l-2 border-muted pb-8 mt-4">
-
         {timeline.length === 0 ? (
           <p className="text-muted-foreground text-sm ml-8">Nenhum evento registrado ainda.</p>
         ) : (
           timeline.map((event, index) => (
             <TimelineEventCard
               key={event._id}
-              event={event}
-              index={index}
-              project={project}
-              currentOrg={currentOrg}
+              event={event as any}
+              isLatest={index === 0}
+              onExportPdf={(eventData) => {
+                setPdfEventTarget(eventData);
+              }}
             />
           ))
         )}
@@ -319,6 +321,13 @@ export default function ProjectDetailsPage() {
         isOpen={!!mapLocationView}
         onClose={() => setMapLocationView(null)}
         locationString={mapLocationView || ""}
+      />
+
+      <ExportPdfModal
+        isOpen={!!pdfEventTarget}
+        onClose={() => setPdfEventTarget(null)}
+        event={pdfEventTarget}
+        currentOrg={currentOrg}
       />
 
     </div>
