@@ -282,8 +282,8 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                     <ArrowRightCircle className="w-4 h-4 text-primary" /> Status da Demanda
                   </label>
                   <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 font-semibold text-foreground shadow-sm">
-                    <option value="DEMAND">Aguardando Planejamento</option>
-                    <option value="PLANNING">Aprovar para Planejamento</option>
+                    <option value="DEMAND">Demanda</option>
+                    <option value="PLANNING">Planejamento</option>
                     <option value="EXECUTION">Em Execução</option>
                     <option value="COMPLETED">Concluído</option>
                     <option value="INVALID">Inválida ou Improcedente</option>
