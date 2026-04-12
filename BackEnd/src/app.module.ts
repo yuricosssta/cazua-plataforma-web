@@ -13,6 +13,7 @@ import { TranscriptionModule } from './transcription/transcription.module';
 import { SummaryModule } from './summary/summary.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectsModule } from './projects/project.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { ProjectsModule } from './projects/project.module';
     TranscriptionModule,
     SummaryModule,
     OrganizationModule,
-    ProjectsModule, 
+    ProjectsModule,
+    StorageModule, 
   ],
   controllers: [AppController],
   providers: [AppService],// { provide: APP_GUARD, useClass: AuthGuard }],

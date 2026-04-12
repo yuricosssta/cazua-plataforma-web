@@ -253,7 +253,7 @@ export class ProjectsService {
   }
 
   // EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE (COM GUT OPCIONAL)
-  async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: EmitParecerDto, userRole?: string) {
+  async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: any, userRole?: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
@@ -303,6 +303,11 @@ export class ProjectsService {
       const metadata: any = {
         statusChanged: statusChanged ? project.status : null
       };
+
+      // Salvar os Anexos (Fotos/PDFs) da Cloudflare
+      if (data.attachments && data.attachments.length > 0) {
+        metadata.attachments = data.attachments;
+      }
 
       if (data.priorityDetails && Object.keys(data.priorityDetails).length > 0) {
         const score = this.calculatePriorityScore(data.priorityDetails);
@@ -404,9 +409,9 @@ export class ProjectsService {
       .sort({ createdAt: -1 })
       .exec();
 
-    return { 
-      project: { ...project, isReadOnly }, 
-      timeline 
+    return {
+      project: { ...project, isReadOnly },
+      timeline
     };
   }
 

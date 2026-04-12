@@ -1,9 +1,19 @@
 //src/organization/schemas/organization.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { User } from '../../users/schemas/user.schema'; // Ajuste o caminho conforme sua estrutura
 
 export type OrganizationDocument = HydratedDocument<Organization>;
+
+class OrganizationSettings {
+  @Prop({ type: String, required: false })
+  logoUrl?: string;
+
+  @Prop({ type: String, required: false })
+  headerUrl?: string;
+
+  @Prop({ type: String, required: false })
+  footerUrl?: string;
+}
 
 @Schema({
   timestamps: true, // Cria automaticamente createdAt e updatedAt
@@ -14,6 +24,9 @@ export class Organization {
   // O nome de exibição (ex: "Construtora Silva & Filhos")
   @Prop({ required: true, trim: true })
   name: string;
+
+  @Prop({ required: false, unique: true })
+  cnpj: string;
 
   @Prop({ required: true, uppercase: true, trim: true, maxlength: 4 })
   acronym: string;
@@ -37,9 +50,8 @@ export class Organization {
   })
   status: string;
 
-  // (Opcional) Um campo flexível para configurações futuras (cor, logo, timezone)
-  @Prop({ type: Object, default: {} })
-  settings: Record<string, any>;
+  @Prop({ type: OrganizationSettings, default: {} })
+  settings: OrganizationSettings;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);

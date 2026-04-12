@@ -1,10 +1,10 @@
-//src/components/dashboard/TimelineEventCard.tsx
+// src/components/dashboard/TimelineEventCard.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { 
   MessageSquare, ArrowRightCircle, FileText, ClipboardList, Activity, Clock, 
-  Flame, LinkIcon, MoreVertical, FileDown, Image as ImageIcon 
+  LinkIcon, MoreVertical, FileDown 
 } from "lucide-react";
 import { TimelineEventType } from "@/types/project";
 
@@ -19,6 +19,7 @@ interface TimelineEvent {
   };
   createdAt: string;
   metadata?: Record<string, any>;
+  attachments?: string[]; // Fallback caso o backend salve na raiz
 }
 
 interface TimelineEventCardProps {
@@ -31,7 +32,6 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Fecha o menu ao clicar fora dele
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -62,17 +62,17 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
   const EventIcon = eventConfig.icon;
   const isDocumentStyle = event.type === "COMMENT" || event.type === "REPORT" || event.type === "DOCUMENT";
 
+  // Busca os anexos onde quer que o backend os tenha salvo
+  const attachments = event.metadata?.attachments || event.attachments || [];
+
   return (
     <div className="relative pl-6 md:pl-6 mb-4">
-      {/* O Círculo com o Ícone na Linha */}
       <span className={`absolute -left-[17px] top-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-background ${eventConfig.bg} ${eventConfig.color} ${isLatest ? 'scale-110 shadow-sm' : ''}`}>
         <EventIcon className="h-4 w-4" />
       </span>
 
-      {/* Conteúdo do Evento */}
       <div className={`flex flex-col relative ${isDocumentStyle ? 'bg-card border border-border shadow-md rounded-sm p-6 md:p-10' : 'pt-5'}`}>
         
-        {/* MENU DE 3 PONTINHOS (Apenas para Documentos/Relatórios) */}
         {isDocumentStyle && (
           <div className="absolute top-4 right-4" ref={menuRef}>
             <button 
@@ -95,7 +95,6 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
                     <FileDown className="w-4 h-4" />
                     Exportar para PDF
                   </button>
-                  {/* Espaço para futuras ações, como "Anexar Fotos", "Editar", etc */}
                 </div>
               </div>
             )}
@@ -103,19 +102,12 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
         )}
 
         <div className="border-b border-border gap-2 pb-3 mb-4 pr-8">
-          {/* Cabeçalho do Evento */}
           <div className="flex items-baseline justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               {isDocumentStyle && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">
-                    Parecer Técnico
-                  </span>
-                  {event.parecerCode && (
-                    <span className="text-sm font-bold text-foreground">
-                      {event.parecerCode}
-                    </span>
-                  )}
+                  <span className="text-sm font-bold text-foreground">Parecer Técnico</span>
+                  {event.parecerCode && <span className="text-sm font-bold text-foreground">{event.parecerCode}</span>}
                 </div>
               )}
             </div>
@@ -125,30 +117,15 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
             </time>
           </div>
 
-          {/* Metadados Extras */}
           {event.metadata && Object.keys(event.metadata).length > 0 && (
             <div className="flex gap-2 flex-wrap mt-2">
               {event.metadata.priorityScore && (
-                <span className="text-sm text-foreground">
-                  Prioridade: {event.metadata.priorityScore}
-                </span>
+                <span className="text-sm text-foreground">Prioridade: {event.metadata.priorityScore}</span>
               )}
               {event.metadata.newStatus && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md border border-orange-200">
                   <ArrowRightCircle className="w-4 h-4" /> Status Avançado
                 </span>
-              )}
-              {event.metadata.attachments && event.metadata.attachments.length > 0 && (
-                <div className="w-full flex gap-2 flex-wrap mt-1">
-                  {event.metadata.attachments.map((link: string, idx: number) => (
-                    <a
-                      key={idx} href={link} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md border border-blue-200 transition-colors"
-                    >
-                      <LinkIcon className="w-3.5 h-3.5" /> Acessar Anexos
-                    </a>
-                  ))}
-                </div>
               )}
               {event.metadata.isInitialDemand && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-md border border-zinc-200">
@@ -159,15 +136,41 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
           )}
         </div>
 
-        {/* O Texto do Evento */}
-        <div className={`text-base text-foreground/90 mb-10 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
+        <div className={`text-base text-foreground/90 mb-4 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
           {event.description.split('\n').map((line, i) => (
-            <React.Fragment key={i}>
-              {line}
-              <br />
-            </React.Fragment>
+            <React.Fragment key={i}>{line}<br /></React.Fragment>
           ))}
         </div>
+
+        {/* MURAL DE ANEXOS RENDERIZADO */}
+        {attachments.length > 0 && (
+          <div className="w-full mb-6 border-t border-border pt-4">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+              Anexos do Parecer ({attachments.length})
+            </span>
+            <div className="flex gap-3 flex-wrap">
+              {attachments.map((link: string, idx: number) => {
+                const isPdf = link.toLowerCase().includes('.pdf');
+                return (
+                  <a
+                    key={idx} href={link} target="_blank" rel="noopener noreferrer"
+                    className="group relative flex flex-col items-center justify-center w-16 h-16 rounded-md border border-border bg-muted overflow-hidden hover:ring-2 hover:ring-primary transition-all"
+                  >
+                    {isPdf ? (
+                      <>
+                        <FileText className="w-6 h-6 text-red-500" />
+                        <span className="text-[8px] font-bold mt-1 text-muted-foreground">PDF</span>
+                      </>
+                    ) : (
+                      <img src={link} alt="Anexo" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <span className="text-sm font-bold text-foreground">
           {event.authorId?.name || "Usuário Desconhecido"}
         </span>

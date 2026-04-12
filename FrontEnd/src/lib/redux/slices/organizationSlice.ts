@@ -2,21 +2,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import { apiFetchMyOrganizations } from '@/lib/api/organizationService';
-
-// 1. Interfaces
-export interface IOrganization {
-  _id: string; // ID do vínculo (Membership)
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
-  organizationId: {
-    _id: string;
-    name: string;
-    slug: string;
-  };
-}
+import { IOrgSettings, IMembership } from '@/types/organization';
 
 interface OrganizationState {
-  list: IOrganization[];
-  currentOrganization: IOrganization | null;
+  list: IMembership[];
+  currentOrganization: IMembership | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
   isCreateOrgModalOpen: boolean;
@@ -34,7 +24,6 @@ export const fetchMyOrganizations = createAsyncThunk(
   'organizations/fetchMyOrgs',
   async (_, { getState, rejectWithValue }) => {
     try {
-      // Pega o token direto do estado do Redux (AuthSlice)
       const state = getState() as RootState;
       const token = state.auth.token;
 
@@ -43,7 +32,6 @@ export const fetchMyOrganizations = createAsyncThunk(
       }
 
       const data = await apiFetchMyOrganizations(token);
-      
       return data;
     } catch (err: any) {
       return rejectWithValue(err);
@@ -51,28 +39,36 @@ export const fetchMyOrganizations = createAsyncThunk(
   }
 );
 
-
 const organizationSlice = createSlice({
   name: 'organizations',
   initialState,
   reducers: {
-    // se quantidade de orgs for 0, força abrir modal de criação
     setCreateOrgModalOpen(state, action: PayloadAction<boolean>) {
       if (state.list.length === 0) {
-        state.isCreateOrgModalOpen = true;
+        state.isCreateOrgModalOpen = action.payload;
       }
     },
 
-    // Ação para trocar de empresa manualmente (Dropdown)
     setCurrentOrganization(state, action: PayloadAction<string>) {
       const selected = state.list.find(item => item.organizationId._id === action.payload);
       if (selected) {
         state.currentOrganization = selected;
-        // Salva no localStorage para persistir ao dar F5
         localStorage.setItem('last_org_id', selected.organizationId._id);
       }
     },
-    // Ação para limpar estado ao fazer Logout
+
+    updateCurrentOrgSettings(state, action: PayloadAction<IOrgSettings>) {
+      if (state.currentOrganization && state.currentOrganization.organizationId) {
+        state.currentOrganization.organizationId.settings = action.payload;
+        
+        // Atualiza também na lista para manter tudo sincronizado
+        const index = state.list.findIndex(o => o.organizationId._id === state.currentOrganization!.organizationId._id);
+        if (index !== -1) {
+          state.list[index].organizationId.settings = action.payload;
+        }
+      }
+    },
+
     clearOrganizationState(state) {
       state.list = [];
       state.currentOrganization = null;
@@ -91,16 +87,13 @@ const organizationSlice = createSlice({
         state.status = 'succeeded';
         state.list = action.payload;
 
-        // Se a lista não está vazia e não temos atual selecionada, seleciona a primeira.
         if (state.list.length > 0 && !state.currentOrganization) {
-          // Tenta recuperar do localStorage (se o user deu F5)
           const lastOrgId = localStorage.getItem('last_org_id');
           const savedOrg = state.list.find(o => o.organizationId._id === lastOrgId);
 
           if (savedOrg) {
             state.currentOrganization = savedOrg;
           } else {
-            // Se não tiver salvo, pega a primeira da lista
             state.currentOrganization = state.list[0];
             localStorage.setItem('last_org_id', state.list[0].organizationId._id);
           }
@@ -113,9 +106,12 @@ const organizationSlice = createSlice({
   },
 });
 
-export const { setCurrentOrganization, clearOrganizationState } = organizationSlice.actions;
+export const { 
+  setCurrentOrganization, 
+  clearOrganizationState, 
+  updateCurrentOrgSettings
+} = organizationSlice.actions;
 
-// Seletores úteis
 export const selectAllOrgs = (state: RootState) => state.organizations.list;
 export const selectCurrentOrg = (state: RootState) => state.organizations.currentOrganization;
 export const selectOrgStatus = (state: RootState) => state.organizations.status;

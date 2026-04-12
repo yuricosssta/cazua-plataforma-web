@@ -30,6 +30,7 @@ export const emitParecerSchema = z.object({
   startDate: z.string().optional(), // Nova data de início, se aplicável
   endDate: z.string().optional(), // Nova data de término, se aplicável
   location: z.string().optional(), // Nova localização, se aplicável
+  attachments: z.array(z.string()).optional(),
 });
 
 export const bulkImportItemSchema = z.object({
@@ -41,6 +42,7 @@ export const bulkImportItemSchema = z.object({
   endDate: z.string().optional(),
   // O preprocess converte string "125" para número 125 antes de validar os limites
   priority: z.preprocess((val) => Number(val), z.number().min(1).max(125)).optional().default(1),
+  attachments: z.array(z.string()).optional(),
 });
 
 export const bulkImportSchema = z.object({

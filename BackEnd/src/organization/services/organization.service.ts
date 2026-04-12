@@ -71,7 +71,7 @@ export class OrganizationService {
       .find({ userId: new Types.ObjectId(userId) })
       .populate({
         path: 'organizationId',
-        select: 'name slug ownerId status createdAt',
+        select: 'name acronym slug ownerId status plan createdAt settings',
       })
       .exec();
 
@@ -204,8 +204,47 @@ export class OrganizationService {
     return { message: 'Membro removido da organização.' };
   }
 
+  // ATUALIZA AS CONFIGURAÇÕES VISUAIS (LOGO E PAPEL TIMBRADO)
+  async updateSettings(orgId: string, adminId: string, newSettings: any) {
+    // Verifica se quem está pedindo é ADMIN ou OWNER
+    const adminMember = await this.memberModel.findOne({
+      organizationId: new Types.ObjectId(String(orgId)),
+      userId: new Types.ObjectId(String(adminId)),
+      role: { $in: ['ADMIN', 'OWNER'] }
+    });
 
-  // 4. BUSCA POR SLUG
+    if (!adminMember) {
+      throw new ForbiddenException('Apenas administradores podem alterar as configurações da empresa.');
+    }
+
+    // Busca a organização para atualizar. 
+    const orgToUpdate = await this.orgModel.findById(orgId);
+    
+    if (!orgToUpdate) {
+      throw new NotFoundException('Organização não encontrada.');
+    }
+
+    // Mescla o objeto antigo com as novas propriedades que vieram no payload
+    const updatedSettings = {
+      ...orgToUpdate.settings,
+      ...newSettings
+    };
+
+    // 3. Salva no banco de dados
+    const updated = await this.orgModel.findByIdAndUpdate(
+      orgId,
+      { $set: { settings: updatedSettings } },
+      { new: true }
+    );
+
+    return { 
+      message: 'Configurações atualizadas com sucesso.', 
+      settings: updated.settings 
+    };
+  }
+
+
+  // BUSCA POR SLUG
   async findOneBySlug(slug: string) {
     const org = await this.orgModel.findOne({ slug }).exec();
     if (!org) throw new BadRequestException('Organização não encontrada');

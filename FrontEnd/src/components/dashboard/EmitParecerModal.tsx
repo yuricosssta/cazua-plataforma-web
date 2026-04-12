@@ -1,11 +1,12 @@
-//src/components/dashboard/EmitParecerModal.tsx
+// src/components/dashboard/EmitParecerModal.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, FileText, Briefcase } from "lucide-react";
+import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, FileText, Briefcase, Paperclip, Trash2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axiosInstance from "@/lib/api/axiosInstance";
+import axios from "axios";
 import { Project } from "@/types/project";
 
 // Importações do OpenLayers
@@ -20,7 +21,6 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Style from "ol/style/Style";
 import Icon from "ol/style/Icon";
-
 
 interface EmitParecerModalProps {
   isOpen: boolean;
@@ -52,18 +52,20 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
+  // NOVO: ESTADOS DE UPLOAD R2
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const vectorSource = useRef<VectorSource | null>(null);
 
-  // Inicializa o status apenas quando o modal abrir
   useEffect(() => {
     if (isOpen && project) {
       setNewStatus(project.status);
     }
   }, [isOpen, project]);
 
-  // Instancia o mapa do OpenLayers se ele for ativado
   useEffect(() => {
     if (showMap && mapRef.current && !mapInstance.current) {
       vectorSource.current = new VectorSource();
@@ -131,6 +133,45 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     );
   };
 
+  // --- LÓGICA DE UPLOAD PARA O R2 ---
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setIsUploadingFiles(true);
+    try {
+      const newAttachmentUrls: string[] = [];
+      
+      for (const file of files) {
+        // 1. Pede a URL assinada ao NestJS
+        const authResponse = await axiosInstance.post('/storage/presigned-url', {
+          fileName: file.name,
+          fileType: file.type
+        });
+
+        const { uploadUrl, fileUrl } = authResponse.data;
+
+        // 2. Faz o upload direto para a Cloudflare usando axios limpo (sem JWT)
+        await axios.put(uploadUrl, file, {
+          headers: { 'Content-Type': file.type }
+        });
+
+        newAttachmentUrls.push(fileUrl);
+      }
+
+      setAttachments(prev => [...prev, ...newAttachmentUrls]);
+    } catch (error) {
+      console.error("Erro no upload R2:", error);
+      alert("Houve um erro ao subir os arquivos.");
+    } finally {
+      setIsUploadingFiles(false);
+    }
+  };
+
+  const removeAttachment = (indexToRemove: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
+
   if (!isOpen || !project) return null;
 
   const currentScore = gut.gravidade * gut.urgencia * gut.tendencia;
@@ -141,7 +182,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     if (!orgId) return alert("Erro: Organização não identificada.");
     if (!parecerText.trim()) return alert("O texto do parecer é obrigatório.");
 
-    // Validação extra se estiver convertendo de Demanda para Planejamento
     if (isPlanningMode && !technicalTitle.trim()) {
       return alert("Ao aprovar para planejamento, é obrigatório definir o Nome Técnico da Obra.");
     }
@@ -154,8 +194,10 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       if (newStatus !== project.status) payload.newStatus = newStatus;
       if (updateGUT) payload.priorityDetails = gut;
       if (location) payload.location = location;
+      
+      // Envia os links do R2 para o backend salvar no TimelineEvent
+      if (attachments.length > 0) payload.attachments = attachments;
 
-      // Anexa os dados técnicos se estiverem preenchidos (o backend precisará salvar isso)
       if (technicalTitle) payload.technicalTitle = technicalTitle;
       if (startDate) payload.startDate = startDate;
       if (endDate) payload.endDate = endDate;
@@ -163,17 +205,12 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       await axiosInstance.post(
         `/organizations/${orgId}/projects/${project.id}/parecer`,
         payload,
-        {
-          headers: {
-            'x-org-role': orgRole
-          }
-        }
+        { headers: { 'x-org-role': orgRole } }
       );
 
-      // Limpa os estados
       setParecerText(""); setGut({ gravidade: 3, urgencia: 3, tendencia: 3 });
       setUpdateGUT(false); setLocation(""); setTechnicalTitle(""); setStartDate(""); setEndDate("");
-      setShowMap(false);
+      setAttachments([]); setShowMap(false);
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -206,7 +243,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-6">
       <div className={`bg-background w-full h-full md:h-[95vh] rounded-none md:rounded-sm shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 transition-all ${showMap ? 'md:max-w-4xl' : 'md:max-w-7xl'}`}>
 
-        {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30 flex-shrink-0">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
@@ -222,7 +258,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
           </button>
         </div>
 
-        {/* CONTEÚDO PRINCIPAL (Alterna entre Mapa e Formulário) */}
         {showMap ? (
           <div className="flex-1 flex flex-col relative bg-muted min-h-[50vh]">
             <div ref={mapRef} className="w-full h-full cursor-crosshair" />
@@ -240,19 +275,13 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
             <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden">
 
-              {/* COLUNA ESQUERDA: Configurações Técnicas e Status */}
               <div className="order-2 md:order-1 w-full md:w-[380px] flex-shrink-0 p-5 md:p-6 border-t md:border-t-0 md:border-r border-border md:overflow-y-auto bg-muted/10 space-y-8">
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground flex items-center gap-1.5 border-b border-border pb-2 mb-3">
-                    <ArrowRightCircle className="w-4 h-4 text-primary" />
-                    Status da Demanda
+                    <ArrowRightCircle className="w-4 h-4 text-primary" /> Status da Demanda
                   </label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 font-semibold text-foreground shadow-sm"
-                  >
+                  <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 font-semibold text-foreground shadow-sm">
                     <option value="DEMAND">Aguardando Planejamento</option>
                     <option value="PLANNING">Aprovar para Planejamento</option>
                     <option value="EXECUTION">Em Execução</option>
@@ -261,21 +290,17 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   </select>
                 </div>
 
-                {/* MODO PLANEJAMENTO: Mostra campos extras se aprovou a demanda */}
                 {isPlanningMode && (
                   <div className="space-y-4 pt-4 border-t border-border animate-in fade-in slide-in-from-top-2">
                     <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800 font-medium">
                       Para transferir esta demanda para o Backlog da Engenharia, defina o Escopo Técnico.
                     </div>
-
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                        <Briefcase className="w-4 h-4 text-muted-foreground" />
-                        Nome Técnico do Projeto <span className="text-red-500">*</span>
+                        <Briefcase className="w-4 h-4 text-muted-foreground" /> Nome Técnico do Projeto <span className="text-red-500">*</span>
                       </label>
                       <input type="text" required placeholder="Ex: Reforma Estrutural da Cobertura..." value={technicalTitle} onChange={(e) => setTechnicalTitle(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary" />
                     </div>
-
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Início Est.</label>
@@ -311,13 +336,18 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
               </div>
 
-              {/* COLUNA DIREITA: O "Papel A4" */}
               <div className="order-1 md:order-2 flex-1 flex flex-col bg-muted/30 relative">
-                <div className="px-5 py-3 border-b border-border bg-background/50 flex items-center justify-between text-sm font-medium text-muted-foreground flex-shrink-0">
+                <div className="px-5 py-3 border-b border-border bg-background/50 flex flex-wrap gap-2 items-center justify-between text-sm font-medium text-muted-foreground flex-shrink-0">
                   <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Laudo / Corpo do Parecer <span className="text-red-500">*</span></span>
 
-                  {/* BOTÃO DE GPS NO PARECER */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-auto">
+                    {/* Botão de Anexo */}
+                    <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-1.5 rounded border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:text-primary/80 bg-primary/5 border-primary/20'}`}>
+                      {isUploadingFiles ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
+                      {isUploadingFiles ? 'Enviando...' : 'Anexar'}
+                      <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploadingFiles} />
+                    </label>
+
                     <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1.5 rounded border border-primary/20">
                       <MapIcon className="w-3 h-3" /> Ver Mapa
                     </button>
@@ -327,31 +357,50 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center w-full">
-                  <div className="w-full max-w-[210mm] min-h-[50vh] md:min-h-full bg-background border border-border/50 shadow-md rounded-sm flex flex-col overflow-hidden">
-
-                    {/* Cabeçalho do Laudo (Mostra a localização se tiver sido capturada) */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center w-full">
+                  <div className="w-full max-w-[210mm] min-h-[50vh] bg-background border border-border/50 shadow-md rounded-sm flex flex-col overflow-hidden mb-6">
                     {location && (
                       <div className="bg-muted/30 px-6 md:px-12 py-4 border-b border-border flex items-start gap-3">
                         <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <div>
+                        <div className="w-full">
                           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Localização Anexada ao Parecer</p>
                           <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Endereço complementar ou coordenadas" className="w-full bg-transparent text-sm font-medium text-foreground focus:outline-none border-b border-dashed border-border pb-1" />
                         </div>
                       </div>
                     )}
-
                     <textarea required placeholder="Inicie aqui a redação do seu parecer técnico..." value={parecerText} onChange={(e) => setParecerText(e.target.value)} className="flex-1 w-full h-full resize-none p-6 md:p-12 focus-visible:outline-none text-base leading-relaxed placeholder:text-muted-foreground bg-transparent" />
                   </div>
+
+                  {/* PREVIEW DOS ANEXOS */}
+                  {attachments.length > 0 && (
+                    <div className="w-full max-w-[210mm]">
+                      <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Arquivos Anexados ({attachments.length})</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {attachments.map((url, i) => (
+                          <div key={i} className="relative group rounded-md overflow-hidden bg-muted border border-border flex items-center justify-center w-20 h-20">
+                            {url.endsWith('.pdf') ? (
+                              <FileText className="w-8 h-8 text-muted-foreground" />
+                            ) : (
+                              <img src={url} alt="Anexo" className="w-full h-full object-cover" />
+                            )}
+                            <button type="button" onClick={() => removeAttachment(i)} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
 
             </div>
 
             <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border bg-background flex-shrink-0">
-              <button type="button" onClick={onClose} disabled={isSubmitting} className="px-5 py-2.5 text-sm font-medium rounded-md border border-border hover:bg-accent hover:text-foreground transition-colors">Cancelar</button>
-              <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm">
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} Salvar Parecer
+              <button type="button" onClick={onClose} disabled={isSubmitting || isUploadingFiles} className="px-5 py-2.5 text-sm font-medium rounded-md border border-border hover:bg-accent hover:text-foreground transition-colors">Cancelar</button>
+              <button type="submit" disabled={isSubmitting || isUploadingFiles} className="px-6 py-2.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm">
+                {(isSubmitting || isUploadingFiles) && <Loader2 className="w-4 h-4 animate-spin" />} Salvar Parecer
               </button>
             </div>
           </form>

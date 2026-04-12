@@ -60,7 +60,7 @@ export class OrganizationController {
   }
 
   @Get('admin/all')
-  async getAllForAdmin(@Req() req: any) : Promise<any> {
+  async getAllForAdmin(@Req() req: any): Promise<any> {
     // A TRAVA DE DEUS
     const userEmail = req.user?.email; // Certifique-se de que seu token JWT tenha o email embutido
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
@@ -86,6 +86,16 @@ export class OrganizationController {
     }
 
     return this.orgService.updatePlan(orgId, plan);
+  }
+
+  @Patch(':orgId/settings')
+  async updateOrgSettings(
+    @Param('orgId') orgId: string,
+    @Body('settings') settings: any,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.updateSettings(orgId, adminId, settings);
   }
 
   // Busca por slug
