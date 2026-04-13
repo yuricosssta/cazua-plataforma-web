@@ -1,4 +1,4 @@
-// src/components/dashboard/EmitParecerModal.tsx
+//src/components/dashboard/EmitParecerModal.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -52,7 +52,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
-  // NOVO: ESTADOS DE UPLOAD R2
+  // ESTADOS DE UPLOAD R2
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
@@ -60,12 +60,30 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const mapInstance = useRef<Map | null>(null);
   const vectorSource = useRef<VectorSource | null>(null);
 
+  // RECUPERAÇÃO INICIAL (Status e Rascunho)
   useEffect(() => {
     if (isOpen && project) {
       setNewStatus(project.status);
+      
+      // Carrega o rascunho específico DESSA obra (caso ele tenha fechado sem querer)
+      const draftKey = `draft_parecer_${project.id}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        setParecerText(savedDraft);
+      }
     }
   }, [isOpen, project]);
 
+  // SALVAMENTO AUTOMÁTICO (Auto-Save)
+  useEffect(() => {
+    if (isOpen && project && parecerText.length > 0) {
+      const draftKey = `draft_parecer_${project.id}`;
+      localStorage.setItem(draftKey, parecerText);
+    }
+  }, [parecerText, isOpen, project]);
+
+
+  // OpenLayers Config
   useEffect(() => {
     if (showMap && mapRef.current && !mapInstance.current) {
       vectorSource.current = new VectorSource();
@@ -133,7 +151,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     );
   };
 
-  // --- LÓGICA DE UPLOAD PARA O R2 ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -141,9 +158,8 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     setIsUploadingFiles(true);
     try {
       const newAttachmentUrls: string[] = [];
-      
+
       for (const file of files) {
-        // 1. Pede a URL assinada ao NestJS
         const authResponse = await axiosInstance.post('/storage/presigned-url', {
           fileName: file.name,
           fileType: file.type
@@ -151,7 +167,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
         const { uploadUrl, fileUrl } = authResponse.data;
 
-        // 2. Faz o upload direto para a Cloudflare usando axios limpo (sem JWT)
         await axios.put(uploadUrl, file, {
           headers: { 'Content-Type': file.type }
         });
@@ -194,8 +209,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       if (newStatus !== project.status) payload.newStatus = newStatus;
       if (updateGUT) payload.priorityDetails = gut;
       if (location) payload.location = location;
-      
-      // Envia os links do R2 para o backend salvar no TimelineEvent
       if (attachments.length > 0) payload.attachments = attachments;
 
       if (technicalTitle) payload.technicalTitle = technicalTitle;
@@ -208,9 +221,15 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
         { headers: { 'x-org-role': orgRole } }
       );
 
-      setParecerText(""); setGut({ gravidade: 3, urgencia: 3, tendencia: 3 });
+      // Limpa os estados e DELETA o rascunho após o sucesso
+      const draftKey = `draft_parecer_${project.id}`;
+      localStorage.removeItem(draftKey);
+      
+      setParecerText(""); 
+      setGut({ gravidade: 3, urgencia: 3, tendencia: 3 });
       setUpdateGUT(false); setLocation(""); setTechnicalTitle(""); setStartDate(""); setEndDate("");
       setAttachments([]); setShowMap(false);
+      
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -368,9 +387,17 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                         </div>
                       </div>
                     )}
-                    <textarea required placeholder="Inicie aqui a redação do seu parecer técnico..." value={parecerText} onChange={(e) => setParecerText(e.target.value)} className="flex-1 w-full h-full resize-none p-6 md:p-12 focus-visible:outline-none text-base leading-relaxed placeholder:text-muted-foreground bg-transparent" />
+                    
+                    {/* A CAIXA DE TEXTO SEMPRE RENDERIZA AGORA */}
+                    <textarea 
+                      required 
+                      placeholder="Inicie aqui a redação do seu parecer técnico..." 
+                      value={parecerText} 
+                      onChange={(e) => setParecerText(e.target.value)} 
+                      className="flex-1 w-full h-full resize-none p-6 md:p-12 focus-visible:outline-none text-base leading-relaxed placeholder:text-muted-foreground bg-transparent" 
+                    />
                   </div>
-
+                  
                   {/* PREVIEW DOS ANEXOS */}
                   {attachments.length > 0 && (
                     <div className="w-full max-w-[210mm]">
