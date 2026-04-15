@@ -1,8 +1,9 @@
+//src/components/AudioTranscriber.tsx
 "use client";
 
 import { useState, useRef, DragEvent } from 'react';
 import { TranscriptionModal } from './TranscriptionModal';
-import { transcribeAudioAPI } from '@/lib/api/transcriptionService';
+import { transcribeAudioAPI } from '@/lib/services/transcriptionService';
 
 // Ícones (Lupa e Upload) como componentes SVG
 const SearchIcon = () => (
