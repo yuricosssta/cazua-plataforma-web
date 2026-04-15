@@ -8,6 +8,7 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import axiosInstance from "@/lib/api/axiosInstance";
 import axios from "axios";
 import { Project } from "@/types/project";
+import { uploadFileToR2 } from "@/lib/services/storageService";
 
 // Importações do OpenLayers
 import Map from "ol/Map";
@@ -64,7 +65,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   useEffect(() => {
     if (isOpen && project) {
       setNewStatus(project.status);
-      
+
       // Carrega o rascunho específico DESSA obra (caso ele tenha fechado sem querer)
       const draftKey = `draft_parecer_${project.id}`;
       const savedDraft = localStorage.getItem(draftKey);
@@ -160,24 +161,14 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       const newAttachmentUrls: string[] = [];
 
       for (const file of files) {
-        const authResponse = await axiosInstance.post('/storage/presigned-url', {
-          fileName: file.name,
-          fileType: file.type
-        });
-
-        const { uploadUrl, fileUrl } = authResponse.data;
-
-        await axios.put(uploadUrl, file, {
-          headers: { 'Content-Type': file.type }
-        });
-
+        const fileUrl = await uploadFileToR2(file);
         newAttachmentUrls.push(fileUrl);
       }
 
       setAttachments(prev => [...prev, ...newAttachmentUrls]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro no upload R2:", error);
-      alert("Houve um erro ao subir os arquivos.");
+      alert(error.message || "Houve um erro ao subir os arquivos.");
     } finally {
       setIsUploadingFiles(false);
     }
@@ -224,12 +215,12 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       // Limpa os estados e DELETA o rascunho após o sucesso
       const draftKey = `draft_parecer_${project.id}`;
       localStorage.removeItem(draftKey);
-      
-      setParecerText(""); 
+
+      setParecerText("");
       setGut({ gravidade: 3, urgencia: 3, tendencia: 3 });
       setUpdateGUT(false); setLocation(""); setTechnicalTitle(""); setStartDate(""); setEndDate("");
       setAttachments([]); setShowMap(false);
-      
+
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -387,17 +378,17 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                         </div>
                       </div>
                     )}
-                    
+
                     {/* A CAIXA DE TEXTO SEMPRE RENDERIZA AGORA */}
-                    <textarea 
-                      required 
-                      placeholder="Inicie aqui a redação do seu parecer técnico..." 
-                      value={parecerText} 
-                      onChange={(e) => setParecerText(e.target.value)} 
-                      className="flex-1 w-full h-full resize-none p-6 md:p-12 focus-visible:outline-none text-base leading-relaxed placeholder:text-muted-foreground bg-transparent" 
+                    <textarea
+                      required
+                      placeholder="Inicie aqui a redação do seu parecer técnico..."
+                      value={parecerText}
+                      onChange={(e) => setParecerText(e.target.value)}
+                      className="flex-1 w-full h-full resize-none p-6 md:p-12 focus-visible:outline-none text-base leading-relaxed placeholder:text-muted-foreground bg-transparent"
                     />
                   </div>
-                  
+
                   {/* PREVIEW DOS ANEXOS */}
                   {attachments.length > 0 && (
                     <div className="w-full max-w-[210mm]">

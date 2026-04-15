@@ -13,6 +13,7 @@ import {
   Settings,
   BookOpenText,
   Menu,
+  Archive,
   X
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/dashboard/OrgSwitcher";
@@ -40,6 +41,7 @@ export function Sidebar() {
 
   const settingsLinks = [
     { name: "Configurações", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
+    { name: "Armazenamento", href: "/dashboard/storage", icon: <Archive className="w-4 h-4" /> },
   ];
 
   return (

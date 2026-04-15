@@ -38,6 +38,9 @@ export class Organization {
   @Prop({ required: true, unique: true, index: true, lowercase: true, trim: true })
   slug: string;
 
+  @Prop({ type: Number, default: 0 })
+  storageUsed: number; // Consumo atual em bytes
+
   // Referência ao usuário proprietário/administrador da organização
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   ownerId: Types.ObjectId;

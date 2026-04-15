@@ -7,7 +7,7 @@ import { X, Loader2, Building2, Tag, AlertTriangle } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/redux/store";
 import { fetchMyOrganizations } from "@/lib/redux/slices/organizationSlice";
-import { apiCreateOrganization } from "@/lib/api/organizationService";
+import { apiCreateOrganization } from "@/lib/services/organizationService";
 import { UpgradeModal } from "./UpgradeModal";
 
 interface CreateOrganizationModalProps {

@@ -9,6 +9,7 @@ import { clearOrganizationState } from "@/lib/redux/slices/organizationSlice";
 import { DataManagement } from "@/components/dashboard/settings/DataManagement";
 import { LogOut, Palette, X } from "lucide-react";
 import { BrandingSettings } from "@/components/dashboard/settings/BrandingSettings";
+import { StorageManagement } from "@/components/dashboard/settings/StorageManagement";
 
 export default function GeneralSettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -55,7 +56,8 @@ export default function GeneralSettingsPage() {
         {/* Gestão de Dados (Componente Isolado) */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gestão e Importação</h2>
-          <DataManagement />
+          <StorageManagement />
+          
         </div>
 
         {/* Zona de Perigo / Logout */}

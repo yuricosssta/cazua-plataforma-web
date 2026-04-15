@@ -5,7 +5,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { IPost } from '@/types/post';
 import MarkdownPreview from './MarkdownPreview';
 import { AudioTranscriber } from './AudioTranscriber';
-import { summarizeTextAPI } from '@/lib/api/summaryService';
+import { summarizeTextAPI } from '@/lib/services/summaryService';
 import { Wand2, Save } from 'lucide-react';
 import { selectCurrentUser } from '@/lib/redux/slices/authSlice';
 import { useSelector } from 'react-redux';

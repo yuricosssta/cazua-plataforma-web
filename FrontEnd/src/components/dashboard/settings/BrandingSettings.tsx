@@ -1,21 +1,18 @@
-//src/components/dashboard/settings/BrandingSettings.tsx
+// src/components/dashboard/settings/BrandingSettings.tsx
 "use client";
 
 import React, { useState } from "react";
-import { UploadCloud, Loader2, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import axiosInstance from "@/lib/api/axiosInstance";
-import axios from "axios";
 import { updateCurrentOrgSettings } from "@/lib/redux/slices/organizationSlice";
+import { uploadFileToR2 } from "@/lib/services/storageService"; // IMPORT NOVO
 
 export function BrandingSettings() {
   const dispatch = useDispatch();
-  
-  // Acessa o Membership (O vínculo populado)
   const currentMembership = useSelector((state: RootState) => state.organizations.currentOrganization);
   
-  // Extrai o ID e as Settings de forma segura navegando pelo objeto populado
   const orgId = currentMembership?.organizationId?._id;
   const orgSettings = currentMembership?.organizationId?.settings || {};
   
@@ -36,18 +33,8 @@ export function BrandingSettings() {
       setIsLoading(prev => ({ ...prev, [fieldName]: true }));
       setSuccessMsg("");
 
-      const authResponse = await axiosInstance.post('/storage/presigned-url', {
-        fileName: file.name,
-        fileType: file.type
-      });
-
-      const { uploadUrl, fileUrl } = authResponse.data;
-
-      await axios.put(uploadUrl, file, {
-        headers: {
-          'Content-Type': file.type,
-        }
-      });
+      // CHAMA O SERVIÇO CENTRALIZADO
+      const fileUrl = await uploadFileToR2(file);
 
       const updatedSettings = {
         ...images,
@@ -63,9 +50,9 @@ export function BrandingSettings() {
       
       setSuccessMsg("Imagem atualizada com sucesso no servidor!");
 
-    } catch (error) {
-      console.error(`Erro ao subir ${fieldName}:`, error);
-      alert("Falha ao fazer upload da imagem. Verifique o console.");
+    } catch (error: any) {
+      // Exibe o alerta do bloqueio de 500MB direto na tela
+      alert(error.message || "Falha ao fazer upload da imagem.");
     } finally {
       setIsLoading(prev => ({ ...prev, [fieldName]: false }));
     }

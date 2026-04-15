@@ -1,7 +1,7 @@
 // src/lib/redux/slices/organizationSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
-import { apiFetchMyOrganizations } from '@/lib/api/organizationService';
+import { apiFetchMyOrganizations } from '@/lib/services/organizationService';
 import { IOrgSettings, IMembership } from '@/types/organization';
 
 interface OrganizationState {

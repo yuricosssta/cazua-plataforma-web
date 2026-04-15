@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { summarizeTextAPI } from '@/lib/api/summaryService';
+import { summarizeTextAPI } from '@/lib/services/summaryService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
