@@ -27,7 +27,7 @@ export default function StorageManagementPage() {
       </div>
 
       <div className="flex flex-col space-y-8">
-        <DataManagement />
+        <StorageManagement />
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import { StorageManagement } from "@/components/dashboard/settings/StorageManage
 
 export default function GeneralSettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  
+
   const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false);
 
   const handleLogout = () => {
@@ -56,8 +56,7 @@ export default function GeneralSettingsPage() {
         {/* Gestão de Dados (Componente Isolado) */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gestão e Importação</h2>
-          <StorageManagement />
-          
+          <DataManagement />
         </div>
 
         {/* Zona de Perigo / Logout */}
@@ -83,12 +82,12 @@ export default function GeneralSettingsPage() {
       {isBrandingModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-background w-full max-w-4xl max-h-[90vh] rounded-lg shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-            
+
             {/* Header do Modal Fixo */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
               <h2 className="text-lg font-bold tracking-tight">Configurações de Identidade</h2>
-              <button 
-                onClick={() => setIsBrandingModalOpen(false)} 
+              <button
+                onClick={() => setIsBrandingModalOpen(false)}
                 className="p-1.5 text-muted-foreground hover:bg-muted rounded-md transition-colors"
               >
                 <X className="w-5 h-5" />
