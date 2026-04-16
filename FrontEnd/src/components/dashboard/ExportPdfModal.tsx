@@ -1,8 +1,8 @@
-// src/components/dashboard/ExportPdfModal.tsx
+//src/components/dashboard/ExportPdfModal.tsx
 "use client";
 
 import React, { useState } from "react";
-import { X, Image as ImageIcon, FileText, Loader2, UploadCloud, Trash2 } from "lucide-react";
+import { X, Image as ImageIcon, FileText, Loader2, UploadCloud, Trash2, PenTool, Plus, UserMinus } from "lucide-react";
 import { createPortal } from "react-dom";
 import jsPDF from "jspdf";
 import { TimelineEventType } from "@/types/project";
@@ -14,7 +14,8 @@ interface TimelineEvent {
   parecerCode?: string;
   authorId: { name: string };
   createdAt: string;
-  metadata?: Record<string, any>; // Tipado para conseguirmos ler os anexos salvos no banco
+  metadata?: Record<string, any>;
+  attachments?: string[];
 }
 
 interface ExportPdfModalProps {
@@ -24,23 +25,24 @@ interface ExportPdfModalProps {
   currentOrg: any;
 }
 
+interface Signer {
+  name: string;
+  role: string;
+}
+
 const loadImage = (url: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-
-    // Se for link temporário do upload local, não precisa de CORS nem Cache-Buster
     if (url.startsWith('blob:')) {
       img.src = url;
     } else {
-      // Se for link público da Cloudflare R2, aplica a segurança
       img.crossOrigin = "Anonymous";
       const cacheBuster = url.includes('?') ? '&' : '?';
       img.src = `${url}${cacheBuster}nocache=${new Date().getTime()}`;
     }
-
     img.onload = () => resolve(img);
     img.onerror = (e) => {
-      console.error("Falha ao processar imagem para o PDF:", url);
+      console.error("🔥 Falha ao processar imagem para o PDF:", url);
       reject(e);
     };
   });
@@ -48,23 +50,43 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
 
 export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdfModalProps) {
   const [step, setStep] = useState<"ASK" | "PHOTOS" | "GENERATING">("ASK");
-  const [photos, setPhotos] = useState<File[]>([]); // Fotos adicionadas apenas para este PDF
+  const [photos, setPhotos] = useState<File[]>([]);
+
+  // Estado dinâmico para múltiplos assinantes
+  const [signers, setSigners] = useState<Signer[]>([
+    { name: event?.authorId?.name || "", role: "Responsável Técnico" }
+  ]);
 
   if (!isOpen || !event) return null;
 
   const allAttachments = event?.metadata?.attachments || (event as any)?.attachments || [];
-  // Extrai as imagens que JÁ FORAM salvas na Timeline, ignorando PDFs (pois jsPDF desenha imagens)
   const existingImages = allAttachments.filter((url: string) => !url.toLowerCase().includes('.pdf'));
+
+  const addSigner = () => {
+    setSigners([...signers, { name: "", role: "" }]);
+  };
+
+  const removeSigner = (index: number) => {
+    if (signers.length > 1) {
+      setSigners(signers.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateSigner = (index: number, field: keyof Signer, value: string) => {
+    const newSigners = [...signers];
+    newSigners[index][field] = value;
+    setSigners(newSigners);
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setPhotos((prev) => [...prev, ...newFiles].slice(0, 4));
+      setPhotos((prev) => [...prev, ...newFiles].slice(0, 4)); // Limite de 4 fotos
     }
   };
 
   const removePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index));
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const generatePDF = async () => {
@@ -107,7 +129,6 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
         const maxHeaderH = 40;
         const finalHeaderH = headerH > maxHeaderH ? maxHeaderH : headerH;
         const finalHeaderW = (headerImg.width * finalHeaderH) / headerImg.height;
-
         pdf.addImage(headerImg, "PNG", margin, yPos - 10, finalHeaderW, finalHeaderH);
         yPos += finalHeaderH + 5;
       } else {
@@ -119,18 +140,14 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
             const logoW = (logoImg.width * logoH) / logoImg.height;
             pdf.addImage(logoImg, "PNG", margin, margin, logoW, logoH);
             logoLoaded = true;
-          } catch (e) {
-            console.warn("Falha ao carregar Logo Image.");
-          }
+          } catch (e) { }
         }
-
         if (!logoLoaded) {
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(16);
           pdf.setTextColor(20, 20, 20);
           pdf.text(orgName, margin, margin + 6);
         }
-
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9);
         pdf.setTextColor(100, 100, 100);
@@ -147,76 +164,87 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
       pdf.setFontSize(12);
       pdf.setTextColor(30, 30, 30);
       pdf.text(`Parecer Técnico ${codeStr}`, margin, yPos);
-
       yPos += 6;
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(11);
       pdf.setTextColor(80, 80, 80);
       pdf.text(dataExtenso, margin, yPos);
-
       yPos += 12;
 
       pdf.setTextColor(40, 40, 40);
       pdf.setFontSize(11);
-
       const paragraphs = event.description.split('\n');
-paragraphs.forEach(para => {
-    // Verifica se o parágrafo vazio para evitar pulo de linha desnecessário
-    if (para.trim().length === 0) {
-        yPos += 6; 
-        return;
-    }
 
-    // O jsPDF calcula as quebras automaticamente com o maxWidth
-    // O align: "justify" distribui os espaços
-        const lines: string[] = pdf.splitTextToSize(para, contentWidth);
-    
-    lines.forEach((line: string, index: number) => { // Tipagem adicionada aqui
-        if (yPos > bottomLimit) {
-            pdf.addPage();
-            yPos = margin + 10;
+      paragraphs.forEach(para => {
+        if (!para.trim()) { yPos += 6; return; }
+        const lines = pdf.splitTextToSize(para, contentWidth);
+        const paraHeight = lines.length * 5;
+        if (yPos + paraHeight > bottomLimit) {
+          if (paraHeight > (bottomLimit - margin - 10)) {
+            lines.forEach((line: string) => {
+              if (yPos > bottomLimit) { pdf.addPage(); yPos = margin + 10; }
+              pdf.text(line, margin, yPos);
+              yPos += 6;
+            });
+            return;
+          } else { pdf.addPage(); yPos = margin + 10; }
         }
+        pdf.text(para, margin, yPos, { maxWidth: contentWidth, align: "justify" });
+        yPos += paraHeight; 
+      });
 
-        const isLastLine = index === lines.length - 1;
-        
-        pdf.text(line, margin, yPos, { 
-            align: isLastLine ? "left" : "justify", 
-            maxWidth: contentWidth 
-        });
-        
-        yPos += 6;
-    });
-});
+      // ----------------------------------------------------
+      // MOTOR DE ASSINATURAS EM COLUNAS
+      // ----------------------------------------------------
+      yPos += 15;
 
-      yPos += 20;
-      if (yPos > bottomLimit) {
+      // Calcula a altura necessária para as assinaturas (linhas de 2 em 2)
+      const rows = Math.ceil(signers.length / 2);
+      const signatureBlockHeight = rows * 30; //
+
+      if (yPos + signatureBlockHeight > bottomLimit) {
         pdf.addPage();
         yPos = margin + 20;
       }
 
-      pdf.setDrawColor(0, 0, 0);
-      pdf.setLineWidth(0.5);
-      pdf.line(70, yPos, 140, yPos);
+      signers.forEach((signer, index) => {
+        const isSecondColumn = index % 2 !== 0;
+        const currentRow = Math.floor(index / 2);
+        const currentY = yPos + (currentRow * 30);
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(event.authorId?.name || "Responsável Técnico", 105, yPos + 6, { align: "center" });
+        let xPos;
+        let align: "center" | "left" | "right" = "center";
 
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text("Responsável Técnico", 105, yPos + 11, { align: "center" });
+        if (signers.length === 1) {
+          xPos = 105; // Centralizado se for apenas 1
+        } else {
+          // Layout de duas colunas
+          xPos = isSecondColumn ? 147.5 : 62.5;
+        }
+
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.3);
+        // Desenha a linha de assinatura (80mm de largura)
+        pdf.line(xPos - 35, currentY, xPos + 35, currentY);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text(signer.name || "NOME DO ASSINANTE", xPos, currentY + 5, { align: "center" });
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(signer.role || "FUNÇÃO / CARGO", xPos, currentY + 9, { align: "center" });
+      });
 
       // ----------------------------------------------------
-      // MOTOR UNIFICADO DE FOTOS (Do Banco + Do Modal)
+      // ANEXOS FOTOGRÁFICOS
       // ----------------------------------------------------
       const totalPhotos = photos.length + existingImages.length;
-
       if (totalPhotos > 0) {
         let photoIndex = 1;
+        const allPhotoUrls = [...existingImages, ...photos.map(p => URL.createObjectURL(p))];
 
-        // 1. Desenha as fotos que já vieram do banco (do EmitParecerModal)
-        for (let i = 0; i < existingImages.length; i++) {
+        for (const url of allPhotoUrls) {
           pdf.addPage();
           pdf.setFontSize(12);
           pdf.setFont("helvetica", "bold");
@@ -228,7 +256,7 @@ paragraphs.forEach(para => {
           pdf.text(`Ref: ${codeStr}`, margin, margin + 6);
 
           try {
-            const img = await loadImage(existingImages[i]);
+            const img = await loadImage(url);
             const maxW = contentWidth;
             const maxH = 297 - margin - (margin + 15) - footerHeight - 15;
             let finalW = maxW;
@@ -241,45 +269,10 @@ paragraphs.forEach(para => {
             const xOffset = margin + ((contentWidth - finalW) / 2);
             pdf.addImage(img, "JPEG", xOffset, margin + 15, finalW, finalH);
             photoIndex++;
-          } catch (e) {
-            console.error("Erro ao carregar foto do banco no PDF", e);
-          }
-        }
-
-        // 2. Desenha as fotos adicionadas apenas neste PDF
-        for (let i = 0; i < photos.length; i++) {
-          pdf.addPage();
-          pdf.setFontSize(12);
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(30, 30, 30);
-          pdf.text(`Anexo Fotográfico - ${photoIndex}`, margin, margin);
-          pdf.setFontSize(10);
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(100, 100, 100);
-          pdf.text(`Ref: ${codeStr} (Complemento)`, margin, margin + 6);
-
-          try {
-            const photoUrl = URL.createObjectURL(photos[i]);
-            const img = await loadImage(photoUrl);
-            const maxW = contentWidth;
-            const maxH = 297 - margin - (margin + 15) - footerHeight - 15;
-            let finalW = maxW;
-            let finalH = (img.height * maxW) / img.width;
-
-            if (finalH > maxH) {
-              finalH = maxH;
-              finalW = (img.width * maxH) / img.height;
-            }
-            const xOffset = margin + ((contentWidth - finalW) / 2);
-            pdf.addImage(img, "JPEG", xOffset, margin + 15, finalW, finalH);
-            photoIndex++;
-          } catch (e) {
-            console.error("Erro ao carregar foto local no PDF", e);
-          }
+          } catch (e) { console.error("Erro ao carregar foto", e); }
         }
       }
 
-      // Rodapé
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
@@ -294,13 +287,7 @@ paragraphs.forEach(para => {
       }
 
       pdf.save(`Parecer_${codeStr}.pdf`);
-
-      setTimeout(() => {
-        setStep("ASK");
-        setPhotos([]);
-        onClose();
-      }, 500);
-
+      setTimeout(() => { setStep("ASK"); setPhotos([]); onClose(); }, 500);
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
       alert("Houve um erro ao montar o arquivo PDF.");
@@ -310,47 +297,99 @@ paragraphs.forEach(para => {
 
   const modalContent = (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-background w-full max-w-md rounded-lg shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-background w-full max-w-2xl rounded-lg shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
           <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" /> Exportar Relatório
+            <FileText className="w-5 h-5 text-primary" /> Exportar Relatório Técnico
           </h2>
           <button onClick={onClose} disabled={step === "GENERATING"} className="p-1.5 text-muted-foreground hover:bg-muted rounded-md">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto max-h-[80vh]">
           {step === "ASK" && (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                <ImageIcon className="w-8 h-8" />
+            <div className="flex flex-col space-y-6">
+
+              {/* SEÇÃO DE ASSINANTES DINÂMICOS */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold flex items-center gap-2 text-foreground uppercase tracking-wider">
+                    <PenTool className="w-4 h-4 text-primary" /> Assinaturas no Documento
+                  </h3>
+                  <button
+                    onClick={addSigner}
+                    className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+                  >
+                    <Plus className="w-3 h-3" /> Adicionar Assinante
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {signers.map((signer, idx) => (
+                    <div key={idx} className="relative bg-muted/30 p-4 rounded-lg border border-border group">
+                      {signers.length > 1 && (
+                        <button
+                          onClick={() => removeSigner(idx)}
+                          className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full border border-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Nome do Assinante {idx + 1}</label>
+                          <input
+                            type="text"
+                            value={signer.name}
+                            onChange={(e) => updateSigner(idx, 'name', e.target.value)}
+                            placeholder="Ex: João da Silva"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-primary"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Cargo / Função</label>
+                          <input
+                            type="text"
+                            value={signer.role}
+                            onChange={(e) => updateSigner(idx, 'role', e.target.value)}
+                            placeholder="Ex: Engenheiro Civil - CREA 123"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-primary"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-semibold">
+
+              {/* OPÇÕES DE FOTOS */}
+              <div className="text-center space-y-3 pt-4 border-t border-border">
+                <h3 className="text-sm font-semibold">
                   {existingImages.length > 0
-                    ? `O parecer possui ${existingImages.length} imagem(ns) anexa(s).`
+                    ? `Detectamos ${existingImages.length} imagem(ns) vinculada(s) ao parecer.`
                     : "Deseja anexar fotos extras?"}
                 </h3>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground">
                   {existingImages.length > 0
-                    ? "Elas serão inseridas no PDF automaticamente. Você pode adicionar mais fotos se desejar."
-                    : "Você pode incluir fotos do seu computador para ilustrar este parecer no PDF."}
+                    ? "Elas serão inseridas no PDF automaticamente. Você pode complementar com mais fotos se desejar."
+                    : "Ilustre o laudo com fotos do seu dispositivo para dar mais clareza técnica."}
                 </p>
               </div>
-              <div className="flex flex-col gap-3 pt-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => setStep("PHOTOS")}
-                  className="w-full h-10 bg-primary text-primary-foreground font-bold rounded-md hover:bg-primary/90 transition-colors"
+                  className="w-full h-10 bg-muted text-foreground border border-border font-bold rounded-md hover:bg-muted/80 transition-colors flex items-center justify-center gap-2"
                 >
-                  Adicionar fotos extras
+                  <ImageIcon className="w-4 h-4" /> Escolher fotos extras
                 </button>
                 <button
                   onClick={generatePDF}
-                  className="w-full h-10 bg-background border border-border text-foreground font-bold rounded-md hover:bg-muted transition-colors"
+                  className="w-full h-10 bg-primary text-primary-foreground font-bold rounded-md hover:bg-primary/90 transition-colors"
                 >
-                  {existingImages.length > 0 ? "Gerar PDF com fotos do banco" : "Gerar apenas texto"}
+                  Gerar Documento Oficial
                 </button>
               </div>
             </div>
@@ -393,10 +432,12 @@ paragraphs.forEach(para => {
           )}
 
           {step === "GENERATING" && (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
-              <h3 className="font-bold text-lg">Montando Documento...</h3>
-              <p className="text-sm text-muted-foreground text-center">Processando anexos, papel timbrado e formatando o relatório.</p>
+              <div className="text-center">
+                <h3 className="font-bold text-lg">Processando Laudo Técnico...</h3>
+                <p className="text-sm text-muted-foreground">Calculando grid de assinaturas, justificando textos e otimizando imagens.</p>
+              </div>
             </div>
           )}
         </div>
