@@ -169,16 +169,16 @@ paragraphs.forEach(para => {
 
     // O jsPDF calcula as quebras automaticamente com o maxWidth
     // O align: "justify" distribui os espaços
-    const lines = pdf.splitTextToSize(para, contentWidth);
+        const lines: string[] = pdf.splitTextToSize(para, contentWidth);
     
-    lines.forEach((line, index) => {
+    lines.forEach((line: string, index: number) => { // Tipagem adicionada aqui
         if (yPos > bottomLimit) {
             pdf.addPage();
             yPos = margin + 10;
         }
 
-        // Justifica todas as linhas, exceto a última do parágrafo (padrão tipográfico)
         const isLastLine = index === lines.length - 1;
+        
         pdf.text(line, margin, yPos, { 
             align: isLastLine ? "left" : "justify", 
             maxWidth: contentWidth 
@@ -186,7 +186,6 @@ paragraphs.forEach(para => {
         
         yPos += 6;
     });
-    yPos += 2; // Espaço extra entre parágrafos
 });
 
       yPos += 20;
