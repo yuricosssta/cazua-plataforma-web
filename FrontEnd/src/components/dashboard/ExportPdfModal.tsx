@@ -160,18 +160,34 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
       pdf.setFontSize(11);
 
       const paragraphs = event.description.split('\n');
+paragraphs.forEach(para => {
+    // Verifica se o parágrafo vazio para evitar pulo de linha desnecessário
+    if (para.trim().length === 0) {
+        yPos += 6; 
+        return;
+    }
 
-      paragraphs.forEach(para => {
-        const lines = pdf.splitTextToSize(para, contentWidth);
-        lines.forEach((line: string) => {
-          if (yPos > bottomLimit) {
+    // O jsPDF calcula as quebras automaticamente com o maxWidth
+    // O align: "justify" distribui os espaços
+    const lines = pdf.splitTextToSize(para, contentWidth);
+    
+    lines.forEach((line, index) => {
+        if (yPos > bottomLimit) {
             pdf.addPage();
             yPos = margin + 10;
-          }
-          pdf.text(line, margin, yPos);
-          yPos += 6;
+        }
+
+        // Justifica todas as linhas, exceto a última do parágrafo (padrão tipográfico)
+        const isLastLine = index === lines.length - 1;
+        pdf.text(line, margin, yPos, { 
+            align: isLastLine ? "left" : "justify", 
+            maxWidth: contentWidth 
         });
-      });
+        
+        yPos += 6;
+    });
+    yPos += 2; // Espaço extra entre parágrafos
+});
 
       yPos += 20;
       if (yPos > bottomLimit) {
