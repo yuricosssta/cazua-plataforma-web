@@ -6,7 +6,12 @@ import { useSelector } from "react-redux";
 import { UserPlus, Settings, Loader2, Save, Trash2, ShieldAlert, X } from "lucide-react";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { RootState } from "@/lib/redux/store";
-import axiosInstance from "@/lib/api/axiosInstance";
+import {
+  apiGetOrgMembers,
+  apiCreateOrgMember,
+  apiUpdateOrgMemberRole,
+  apiRemoveOrgMember
+} from "@/lib/services/organizationService";
 
 interface UserData {
   _id: string;
@@ -35,7 +40,6 @@ export function OrganizationPeople() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", password: "", membership: { role: "MEMBER" } });
 
-  // Estado para o Modal de Edição de Membro
   const [editingMember, setEditingMember] = useState<UserData | null>(null);
   const [editRole, setEditRole] = useState("");
   const [isUpdatingAction, setIsUpdatingAction] = useState(false);
@@ -44,8 +48,8 @@ export function OrganizationPeople() {
     if (!orgId) return;
     try {
       setIsLoading(true);
-      const response = await axiosInstance.get(`/organizations/${orgId}/members`);
-      setMembers(response.data);
+      const data = await apiGetOrgMembers(orgId);
+      setMembers(data);
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
     } finally {
@@ -62,29 +66,28 @@ export function OrganizationPeople() {
     if (!formData.name || !formData.email || !formData.password || !orgId) return;
     try {
       setIsSubmitting(true);
-      await axiosInstance.post(`/organizations/${orgId}/members`, {
+      await apiCreateOrgMember(orgId, {
         name: formData.name, email: formData.email, password: formData.password, role: formData.membership.role
       });
       setFormData({ name: "", email: "", password: "", membership: { role: "MEMBER" } });
       fetchMembers();
       alert("Usuário criado com sucesso!");
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro ao cadastrar usuário.");
+      alert(error.message || "Erro ao cadastrar usuário.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- AÇÕES DE GOVERNANÇA ---
   const handleUpdateRole = async () => {
     if (!editingMember || !orgId) return;
     try {
       setIsUpdatingAction(true);
-      await axiosInstance.patch(`/organizations/${orgId}/members/${editingMember._id}/role`, { role: editRole });
+      await apiUpdateOrgMemberRole(orgId, editingMember._id, editRole);
       setEditingMember(null);
       fetchMembers();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro ao atualizar cargo.");
+      alert(error.message || "Erro ao atualizar cargo.");
     } finally {
       setIsUpdatingAction(false);
     }
@@ -93,14 +96,14 @@ export function OrganizationPeople() {
   const handleRemoveMember = async () => {
     if (!editingMember || !orgId) return;
     if (!confirm(`Tem certeza que deseja remover ${editingMember.name} da construtora? Ele perderá acesso a todas as demandas.`)) return;
-    
+
     try {
       setIsUpdatingAction(true);
-      await axiosInstance.delete(`/organizations/${orgId}/members/${editingMember._id}`);
+      await apiRemoveOrgMember(orgId, editingMember._id);
       setEditingMember(null);
       fetchMembers();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro ao remover usuário.");
+      alert(error.message || "Erro ao remover usuário.");
     } finally {
       setIsUpdatingAction(false);
     }
@@ -110,8 +113,6 @@ export function OrganizationPeople() {
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-8 text-foreground pb-10">
-
-      {/* Cabeçalho e Formulário (Mantidos inalterados visualmente) */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Gestão de Equipe</h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -122,15 +123,10 @@ export function OrganizationPeople() {
       {isCurrentUserAdmin && (
         <div className="p-5 border border-border bg-card rounded-lg shadow-sm">
           <div className="mb-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <UserPlus className="w-4 h-4" /> Cadastrar Novo Colaborador
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Crie a conta global e forneça a senha provisória para o primeiro acesso.
-            </p>
+            <h3 className="text-sm font-semibold flex items-center gap-2"><UserPlus className="w-4 h-4" /> Cadastrar Novo Colaborador</h3>
+            <p className="text-xs text-muted-foreground mt-1">Crie a conta global e forneça a senha provisória para o primeiro acesso.</p>
           </div>
           <form onSubmit={handleCreateUser} className="flex flex-col sm:flex-row gap-3 items-end">
-             {/* ... (seus inputs de name, email, password continuam idênticos aqui) ... */}
             <div className="flex-1 w-full space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Nome</label>
               <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary" />
@@ -192,7 +188,7 @@ export function OrganizationPeople() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {isCurrentUserAdmin && member.membership.role !== 'OWNER' && (
-                        <button 
+                        <button
                           onClick={() => { setEditingMember(member); setEditRole(member.membership.role); }}
                           className="text-primary hover:text-primary/80 transition-colors p-1.5 rounded-md hover:bg-primary/10 flex items-center gap-2 ml-auto text-xs font-bold"
                         >
@@ -216,7 +212,7 @@ export function OrganizationPeople() {
               <h3 className="font-semibold text-sm">Gerenciar Acesso</h3>
               <button onClick={() => setEditingMember(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground"><X className="w-4 h-4" /></button>
             </div>
-            
+
             <div className="p-5 space-y-5">
               <div>
                 <p className="text-sm font-bold text-foreground">{editingMember.name}</p>
@@ -229,7 +225,7 @@ export function OrganizationPeople() {
                   <option value="MEMBER">Membro (Padrão)</option>
                   <option value="ADMIN">Administrador</option>
                 </select>
-                <button 
+                <button
                   onClick={handleUpdateRole} disabled={isUpdatingAction || editRole === editingMember.membership.role}
                   className="w-full h-9 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50 mt-2 flex items-center justify-center"
                 >
@@ -238,7 +234,7 @@ export function OrganizationPeople() {
               </div>
 
               <div className="border-t border-border pt-4">
-                <button 
+                <button
                   onClick={handleRemoveMember} disabled={isUpdatingAction}
                   className="w-full h-9 bg-red-50 text-red-600 border border-red-200 rounded-md text-sm font-bold hover:bg-red-100 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -249,7 +245,6 @@ export function OrganizationPeople() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { Project, ProjectSchema } from './schemas/project.schema';
 import { TimelineEvent, TimelineEventSchema } from './schemas/timeline-event.schema';
 import { Counter, CounterSchema } from './schemas/counter.schema';
 import { OrganizationModule } from  '../organization/organization.module';
+import { TimelineService } from './services/timeline.service';
+import { ProjectMemberService } from './services/project-member.service';
 
 @Module({
   imports: [
@@ -19,7 +21,11 @@ import { OrganizationModule } from  '../organization/organization.module';
     OrganizationModule
   ],
   controllers: [ProjectsController],
-  providers: [ProjectsService],
+  providers: [
+    ProjectsService,
+    TimelineService, 
+    ProjectMemberService
+  ],
   exports: [ProjectsService]
 })
 export class ProjectsModule {} 

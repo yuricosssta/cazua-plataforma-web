@@ -1,4 +1,4 @@
-// src/app/dashboard/projects/[id]/page.tsx
+//src/app/(main)/dashboard/projects/[id]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -8,8 +8,8 @@ import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
-  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Plus, Network, Users,
-  LinkIcon
+  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Network, Users,
+  LogOut // <-- Ícone importado
 } from "lucide-react";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
@@ -19,6 +19,7 @@ import { ProjectStatus, TimelineEventType } from "@/types/project";
 import { Project } from "@/types/project";
 import { TimelineEventCard } from "@/components/dashboard/TimelineEventCard";
 import { ExportPdfModal } from "@/components/dashboard/ExportPdfModal";
+import { apiRemoveMember } from "@/lib/services/projectService";
 
 interface TimelineEvent {
   _id: string;
@@ -57,8 +58,6 @@ export default function ProjectDetailsPage() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isParecerOpen, setIsParecerOpen] = useState(false);
-  const [isDiarioOpen, setIsDiarioOpen] = useState(false);
-  const [isEapOpen, setIsEapOpen] = useState(false);
   const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
 
   const fetchProjectDetails = async (showFullLoader = true) => {
@@ -67,8 +66,7 @@ export default function ProjectDetailsPage() {
     try {
       if (showFullLoader) setIsLoading(true);
 
-      const response = await axiosInstance.get(
-        `/organizations/${orgId}/projects/${projectId}`);
+      const response = await axiosInstance.get(`/organizations/${orgId}/projects/${projectId}`);
       setProject(response.data.project);
       setTimeline(response.data.timeline);
     } catch (error) {
@@ -81,8 +79,34 @@ export default function ProjectDetailsPage() {
   };
 
   useEffect(() => {
-    fetchProjectDetails(true); // 'true' porque é o primeiro carregamento da tela
+    fetchProjectDetails(true);
   }, [orgId, token, projectId, router]);
+
+  const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
+  const currentUserName = user?.name || (user as any)?.displayName || "Usuário";
+
+  const isAssigned = project?.assignedMembers?.some((m: any) => {
+    if (typeof m === 'string') return m === currentUserId;
+    if (m && typeof m === 'object') return String(m._id || m.id || "") === currentUserId;
+    return false;
+  }) || false;
+
+  const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
+  const hasPermission = isOrgAdmin || isAssigned;
+
+  const handleLeaveProject = async () => {
+    const confirmLeave = window.confirm("Tem certeza que deseja encerrar sua participação nesta obra? Ela deixará de aparecer no seu painel principal.");
+    if (!confirmLeave) return;
+
+    try {
+      await apiRemoveMember(orgId, projectId, currentUserId, currentUserName);
+      alert("Participação encerrada com sucesso.");
+      router.push(`/dashboard/projects`);
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Falha ao sair da obra.");
+    }
+  };
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
@@ -103,22 +127,6 @@ export default function ProjectDetailsPage() {
     return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" };
   };
 
-  const getEventConfig = (type: TimelineEventType) => {
-    switch (type) {
-      case "COMMENT": return { icon: MessageSquare, color: "text-blue-500", bg: "bg-blue-100" };
-      case "STATUS_CHANGE": return { icon: ArrowRightCircle, color: "text-orange-500", bg: "bg-orange-100" };
-      case "DOCUMENT": return { icon: FileText, color: "text-purple-500", bg: "bg-purple-100" };
-      case "REPORT": return { icon: ClipboardList, color: "text-emerald-500", bg: "bg-emerald-100" };
-      default: return { icon: Activity, color: "text-gray-500", bg: "bg-gray-100" };
-    }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("pt-BR", {
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-    });
-  };
-
   if (isLoading || !project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
@@ -128,23 +136,6 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
-  const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
-
-  const isAssigned = project.assignedMembers?.some((m: any) => {
-    if (typeof m === 'string') {
-      return m === currentUserId;
-    }
-
-    if (m && typeof m === 'object') {
-      const memberId = String(m._id || m.id || "");
-      return memberId === currentUserId;
-    }
-    return false;
-  });
-
-  const hasPermission = isOrgAdmin || isAssigned;
-
   const statusConfig = getStatusConfig(project.status);
   const priorityConfig = getPriorityConfig(project.priorityScore);
   const StatusIcon = statusConfig.icon;
@@ -153,10 +144,8 @@ export default function ProjectDetailsPage() {
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-8 text-foreground pb-24 relative min-h-screen">
 
-      {/* 1. CABEÇALHO DE COMANDO (Top Bar) */}
+      {/* CABEÇALHO DE COMANDO */}
       <div className="flex flex-col gap-5">
-
-        {/* Linha Superior: Título e Botões de Ação */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
 
           <div className="flex items-start gap-4">
@@ -174,9 +163,9 @@ export default function ProjectDetailsPage() {
               )}
               <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground mt-2 text-sm font-medium">
-                <span className="flex items-center gap-1.5"
+                <span className="flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors"
                   onClick={(e) => {
-                    e.stopPropagation(); // Evita de abrir a demanda
+                    e.stopPropagation();
                     setMapLocationView(project.location || "");
                   }}
                 ><MapPin className="w-4 h-4" /> {project.location}</span>
@@ -199,8 +188,7 @@ export default function ProjectDetailsPage() {
                 onClick={() => setIsTeamDrawerOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold transition-colors border border-border"
               >
-                <Users className="w-4 h-4" />
-                Equipe
+                <Users className="w-4 h-4" /> Equipe
               </button>
             )}
 
@@ -213,8 +201,7 @@ export default function ProjectDetailsPage() {
                 }`}
               title={!hasPermission ? "Você não está alocado neste projeto." : ""}
             >
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
-              Parecer Técnico
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
 
             <button
@@ -224,8 +211,7 @@ export default function ProjectDetailsPage() {
                 : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
                 }`}
             >
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />}
-              Diário de Obra
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} Diário de Obra
             </button>
 
             <button
@@ -235,25 +221,30 @@ export default function ProjectDetailsPage() {
                 : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
                 }`}
             >
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <Network className="w-4 h-4" />}
-              EAP / Orçamento
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <Network className="w-4 h-4" />} EAP / Orçamento
             </button>
 
+            {/* BOTÃO NOVO: Sair da Obra */}
+            {isAssigned && (
+              <button
+                onClick={handleLeaveProject}
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-semibold transition-colors border border-red-200 ml-auto md:ml-0"
+                title="Encerrar participação nesta demanda"
+              >
+                <LogOut className="w-4 h-4" /> Encerrar Participação
+              </button>
+            )}
           </div>
         </div>
 
-
-        {/* Barra de Metadados (Badges, GUT, Progresso) */}
+        {/* Barra de Metadados */}
         <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-sm ml-0 md:ml-12">
-
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
-            <StatusIcon className="w-4 h-4" />
-            {statusConfig.label}
+            <StatusIcon className="w-4 h-4" /> {statusConfig.label}
           </div>
 
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${priorityConfig.bg} ${priorityConfig.color}`}>
-            <PriorityIcon className="w-4 h-4" />
-            {priorityConfig.label}
+            <PriorityIcon className="w-4 h-4" /> {priorityConfig.label}
           </div>
 
           {project.priorityDetails && (
@@ -278,7 +269,7 @@ export default function ProjectDetailsPage() {
         </div>
       </div>
 
-      {/* 2. O MOTOR: TIMELINE CENTRALIZADA E FOCADA NO CONTEÚDO */}
+      {/* MOTOR TIMELINE */}
       <div className="ml-4 md:ml-16 relative border-l-2 border-muted pb-8 mt-4">
         {timeline.length === 0 ? (
           <p className="text-muted-foreground text-sm ml-8">Nenhum evento registrado ainda.</p>
@@ -288,33 +279,27 @@ export default function ProjectDetailsPage() {
               key={event._id}
               event={event as any}
               isLatest={index === 0}
-              onExportPdf={(eventData) => {
-                setPdfEventTarget(eventData);
-              }}
+              onExportPdf={(eventData) => setPdfEventTarget(eventData)}
             />
           ))
         )}
       </div>
 
+      {/* MODAIS */}
       <EmitParecerModal
         isOpen={isParecerOpen}
         onClose={() => setIsParecerOpen(false)}
         project={{ id: project._id || project.id, title: project.title, status: project.status }}
-        onSuccess={() => {
-          fetchProjectDetails(false);
-        }}
+        onSuccess={() => fetchProjectDetails(false)}
       />
 
-      {/* A GAVETA DE EQUIPE */}
       <ManageTeamDrawer
         isOpen={isTeamDrawerOpen}
         onClose={() => setIsTeamDrawerOpen(false)}
         orgId={orgId}
         projectId={project._id || project.id}
         currentAssignedMembers={project.assignedMembers || []}
-        onSuccess={() => {
-          fetchProjectDetails(false);
-        }}
+        onSuccess={() => fetchProjectDetails(false)}
       />
 
       <MapViewerModal
@@ -329,7 +314,6 @@ export default function ProjectDetailsPage() {
         event={pdfEventTarget}
         currentOrg={currentOrg}
       />
-
     </div>
   );
 }

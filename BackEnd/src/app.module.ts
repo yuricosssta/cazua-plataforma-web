@@ -7,13 +7,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/user.module';
-import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard } from './auth/auth.guard';
 import { TranscriptionModule } from './transcription/transcription.module';
 import { SummaryModule } from './summary/summary.module';
 import { OrganizationModule } from './organization/organization.module';
 import { ProjectsModule } from './projects/project.module';
 import { StorageModule } from './storage/storage.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -26,6 +25,7 @@ import { StorageModule } from './storage/storage.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
     }),
+    EventEmitterModule.forRoot(),
     UsersModule,
     AuthModule,
     PostModule,

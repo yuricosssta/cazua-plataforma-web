@@ -1,14 +1,13 @@
-// BackEnd/src/projects/services/project.service.ts
-
+//src/projects/services/project.service.ts
 import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter'; // <-- NOVO IMPORT
 import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
 import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../schemas/timeline-event.schema';
 import { BulkImportDto, CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
 import { Counter, CounterDocument } from '../schemas/counter.schema';
 import { Organization, OrganizationDocument } from '../../organization/schemas/organization.schema';
-import { IUser } from '../../users/schemas/models/user.interface';
 
 @Injectable()
 export class ProjectsService {
@@ -17,6 +16,7 @@ export class ProjectsService {
     @InjectModel(TimelineEvent.name) private timelineEventModel: Model<TimelineEventDocument>,
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
     @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
+    private eventEmitter: EventEmitter2 
   ) { }
 
   private async validatePlanLimitAndGetPrefix(orgId: string, incomingItemsCount: number = 1) {
@@ -44,18 +44,15 @@ export class ProjectsService {
     return { org, plan, prefixoOrg };
   }
 
-  // Mecanismo de Smart Lock: Para planos FREE, apenas as 2 demandas mais antigas podem ser editadas. As demais ficam congeladas em modo Somente Leitura.
   private async enforceSmartLock(orgId: string, projectId: string) {
     const org = await this.orgModel.findById(orgId).exec();
     const plan = (org as any)?.plan || 'FREE';
 
-    // Se for PRO ou ENTERPRISE, passe livre para qualquer obra
     if (plan !== 'FREE') return;
 
-    // Se for FREE, pegamos as 2 demandas MAIS ANTIGAS (criadas primeiro)
     const oldestProjects = await this.projectModel
       .find({ organizationId: new Types.ObjectId(String(orgId)) })
-      .sort({ createdAt: 1 }) // 1 = ascendente (mais antigas)
+      .sort({ createdAt: 1 })
       .limit(2)
       .select('_id')
       .lean()
@@ -63,20 +60,18 @@ export class ProjectsService {
 
     const allowedIds = oldestProjects.map(p => String(p._id));
 
-    // Se o ID da obra que ele está tentando mexer NÃO estiver entre as 2 mais antigas, bloqueia
     if (!allowedIds.includes(String(projectId))) {
       throw new ForbiddenException('SMART_LOCK: Esta demanda está congelada em modo Somente Leitura. Faça o upgrade para o plano PRO para voltar a operá-la.');
     }
   }
 
-  // Calcula a pontuação final multiplicando os valores (ex: 5 x 4 x 2 = 40)
   private calculatePriorityScore(details: Record<string, number>): number {
     const values = Object.values(details);
     if (values.length === 0) return 0;
     return values.reduce((acc, curr) => acc * curr, 1);
   }
 
-  // CRIAÇÃO DA DEMANDA INICIAL
+  // CRIAÇÃO DA DEMANDA INICIAL (Com Auto-Assign)
   async createProject(orgId: string, userId: string, data: CreateProjectDto) {
     try {
       const year = new Date().getFullYear();
@@ -87,15 +82,13 @@ export class ProjectsService {
       const counterId = `DEMAND_${orgId}_${year}${month}`;
       const counter = await this.counterModel.findByIdAndUpdate(
         counterId,
-        { $inc: { seq: 1 } }, // Incrementa +1 de forma bloqueante (atômica)
-        { new: true, upsert: true } // Se não existir, cria começando no 1
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
       );
 
-      // MONTAGEM DO CÓDIGO: [Org].[AnoMês].[000X]
       const sequencia = String(counter.seq).padStart(4, '0');
       const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
 
-      // Cria a demanda com o código gerado
       const newProject = new this.projectModel({
         organizationId: new Types.ObjectId(String(orgId)),
         createdBy: new Types.ObjectId(String(userId)),
@@ -107,40 +100,40 @@ export class ProjectsService {
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         attachments: data.attachments || [],
+        assignedMembers: [new Types.ObjectId(String(userId))] // O CRIADOR ENTRA NA EQUIPE AUTOMATICAMENTE
       });
 
       const savedProject = await newProject.save();
 
-      // Regista o nascimento na Timeline (AGORA COMO UM DOCUMENTO OFICIAL)
+      // Grava o primeiro evento diretamente para pegar o ID na hora
       const firstEvent = new this.timelineEventModel({
         projectId: savedProject._id,
         organizationId: new Types.ObjectId(String(orgId)),
         authorId: new Types.ObjectId(String(userId)),
-        type: TimelineEventType.DOCUMENT, // CORREÇÃO: Usando a enumeração oficial
-        description: data.description, // O corpo do documento é a descrição real
+        type: TimelineEventType.DOCUMENT,
+        description: data.description,
         referenceCode: referenceCode,
         metadata: {
           newStatus: savedProject.status,
-          isInitialDemand: true, // Tag para identificar que é a abertura
+          isInitialDemand: true,
+          labelOverride: "Descrição Inicial", // TAG PARA O FRONT-END
           attachments: data.attachments || []
         }
       });
 
       const savedEvent = await firstEvent.save();
 
-      // Denormalização para performance
       savedProject.lastEventId = savedEvent._id as any;
       await savedProject.save();
 
       return savedProject;
     } catch (error) {
       console.error('Erro ao criar demanda:', error);
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Falha estrutural ao registrar a demanda.');
     }
   }
+
 
   // IMPORTAÇÃO EM MASSA (BULK)
   async bulkImportProjects(orgId: string, userId: string, projectsData: any[]) {
@@ -252,20 +245,16 @@ export class ProjectsService {
     }
   }
 
-  // EMISSÃO DO PARECER TÉCNICO E DEFINIÇÃO DE PRIORIDADE (COM GUT OPCIONAL)
+  // EMISSÃO DO PARECER TÉCNICO
   async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: any, userRole?: string) {
     const project = await this.projectModel.findOne({
       _id: new Types.ObjectId(String(projectId)),
       organizationId: new Types.ObjectId(String(orgId))
     });
 
-    if (!project) {
-      throw new NotFoundException('Demanda/Projeto não encontrada.');
-    }
+    if (!project) throw new NotFoundException('Demanda/Projeto não encontrada.');
 
-    // Código pai da demanda (Ex: CAZ.202603.0001). Se não tiver, usa o ID como fallback
     const referenceCode = project.referenceCode || String(project._id).substring(0, 8).toUpperCase();
-
     const isAssigned = project.assignedMembers?.some(memberId => memberId.toString() === userId.toString()) || false;
     const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
     const isCreator = project.createdBy && project.createdBy.toString() === userId.toString();
@@ -274,18 +263,14 @@ export class ProjectsService {
       throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
     }
 
-    // A chave única do contador será: PRC_[ID_DA_OBRA]
     const counterId = `PRC_${projectId}`;
     const counter = await this.counterModel.findByIdAndUpdate(
       counterId,
-      { $inc: { seq: 1 } }, // Incrementa atômico +1
-      { new: true, upsert: true } // Se for o 1º parecer, ele cria o contador começando no 1
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
     );
 
-    // Formata o sequencial do parecer com 4 dígitos (ex: 0001, 0002)
     const sequenciaParecer = String(counter.seq).padStart(4, '0');
-
-    // Ex: CAZ.202603.0001.PRC.0001
     const parecerCode = `${referenceCode}.PRC.${sequenciaParecer}`;
 
     try {
@@ -304,7 +289,6 @@ export class ProjectsService {
         statusChanged: statusChanged ? project.status : null
       };
 
-      // Salvar os Anexos (Fotos/PDFs) da Cloudflare
       if (data.attachments && data.attachments.length > 0) {
         metadata.attachments = data.attachments;
       }
@@ -318,7 +302,6 @@ export class ProjectsService {
         metadata.priorityDetails = data.priorityDetails;
       }
 
-      // Regista o Parecer na Timeline
       const parecerEvent = new this.timelineEventModel({
         projectId: project._id,
         organizationId: new Types.ObjectId(String(orgId)),
@@ -413,72 +396,5 @@ export class ProjectsService {
       project: { ...project, isReadOnly },
       timeline
     };
-  }
-
-  async getOrganizationTimeline(orgId: string) {
-    return this.timelineEventModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
-      .sort({ createdAt: -1 })
-      .limit(15)
-      .populate('authorId', 'name avatarUrl')
-      .populate('projectId', 'title referenceCode')
-      .exec();
-  }
-
-
-  // ALOCAÇÃO DE EQUIPE
-  async assignMember(orgId: string, projectId: string, memberId: string) {
-    const project = await this.projectModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(String(projectId)),
-        organizationId: new Types.ObjectId(String(orgId))
-      },
-      { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
-      { new: true }
-    )
-      // .populate('assignedMembers', 'name') 
-      .exec();
-
-    if (!project) {
-      throw new NotFoundException('Projeto não encontrado nesta organização.');
-    }
-
-    const timelineEvent = new this.timelineEventModel({
-      projectId: project._id,
-      organizationId: new Types.ObjectId(String(orgId)),
-      authorId: new Types.ObjectId(String(memberId)),
-      type: TimelineEventType.STATUS_CHANGE,
-      description: `Membro adicionado à equipe.`,
-    });
-    await timelineEvent.save();
-
-    return project;
-  }
-
-  // DESALOCAÇÃO DE EQUIPE
-  async removeMember(orgId: string, projectId: string, memberId: string) {
-    const project = await this.projectModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(String(projectId)),
-        organizationId: new Types.ObjectId(String(orgId))
-      },
-      { $pull: { assignedMembers: new Types.ObjectId(String(memberId)) } },
-      { new: true }
-    ).exec();
-
-    if (!project) {
-      throw new NotFoundException('Projeto não encontrado nesta organização.');
-    }
-
-    const timelineEvent = new this.timelineEventModel({
-      projectId: project._id,
-      organizationId: new Types.ObjectId(String(orgId)),
-      authorId: new Types.ObjectId(String(memberId)),
-      type: TimelineEventType.STATUS_CHANGE,
-      description: 'Membro removido da equipe.',
-    });
-    await timelineEvent.save();
-
-    return project;
   }
 }

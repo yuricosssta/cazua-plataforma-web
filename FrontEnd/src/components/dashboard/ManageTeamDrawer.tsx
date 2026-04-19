@@ -7,6 +7,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { IUser } from "@/types/user";
+import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService"; // <-- IMPORTANDO O BFF
 
 
 interface ManageTeamDrawerProps {
@@ -46,15 +47,12 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
         fetchOrgMembers();
     }, [isOpen, orgId, token]);
 
-    // Função para Alocar no projeto
-    const handleAssign = async (userId: string) => {
+    // Função para Alocar no projeto (Usando BFF)
+    const handleAssign = async (userId: string, userName: string) => {
         try {
             setProcessingId(userId);
-            await axios.post(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${projectId}/members`,
-                { userId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            // Chama o serviço passando orgId, projectId, ID do membro e Nome do membro
+            await apiAssignMember(orgId, projectId, userId, userName);
             onSuccess();
         } catch (error) {
             console.error("Erro ao alocar membro:", error);
@@ -64,14 +62,12 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
         }
     };
 
-    // Função para Remover do projeto
-    const handleRemove = async (userId: string) => {
+    // Função para Remover do projeto (Usando BFF)
+    const handleRemove = async (userId: string, userName: string) => {
         try {
             setProcessingId(userId);
-            await axios.delete(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/${projectId}/members/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            // Chama o serviço passando orgId, projectId, ID do membro e Nome do membro
+            await apiRemoveMember(orgId, projectId, userId, userName);
             onSuccess();
         } catch (error) {
             console.error("Erro ao remover membro:", error);
@@ -131,7 +127,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                     ) : (
                         <div className="space-y-3">
                             {orgMembers.map((member) => {
-                                // Opcional: Se assignedMembers for array de strings ou de objetos (populate)
+                                // Verifica se o usuário atual do map está no array currentAssignedMembers
                                 const isAssigned = currentAssignedMembers?.some((m: any) =>
                                     m === member._id || m._id === member._id
                                 );
@@ -155,7 +151,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                                         {/* Botão de Ação */}
                                         <button
                                             disabled={isProcessing}
-                                            onClick={() => isAssigned ? handleRemove(member._id) : handleAssign(member._id)}
+                                            onClick={() => isAssigned ? handleRemove(member._id, member.name) : handleAssign(member._id, member.name)}
                                             className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors flex-shrink-0 ${isProcessing ? 'bg-muted text-muted-foreground cursor-not-allowed' :
                                                     isAssigned
                                                         ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-100'

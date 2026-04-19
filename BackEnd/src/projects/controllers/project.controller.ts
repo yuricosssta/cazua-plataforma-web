@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from '../services/project.service';
+import { ProjectMemberService } from '../services/project-member.service';
+import { TimelineService } from '../services/timeline.service';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 import {
@@ -25,10 +27,14 @@ import {
 @Controller('organizations/:orgId/projects')
 @UseGuards(AuthGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly projectMemberService: ProjectMemberService,
+    private readonly timelineService: TimelineService
+  ) { }
 
   // Função auxiliar para extrair o ID com segurança
-  private extractUserId(req: any): string { 
+  private extractUserId(req: any): string {
     return req.user?.sub || req.user?._id || req.user?.id;
   }
 
@@ -74,9 +80,10 @@ export class ProjectsController {
     return this.projectsService.findAllByOrganization(orgId);
   }
 
+  // TIMELINE GERAL DA EMPRESA (Dashboard)
   @Get('timeline')
   async getOrgTimeline(@Param('orgId') orgId: string) {
-    return this.projectsService.getOrganizationTimeline(orgId);
+    return this.timelineService.getOrganizationTimeline(orgId);
   }
 
   // EMITIR PARECER TÉCNICO (E GERAR A PRIORIDADE)
@@ -102,23 +109,28 @@ export class ProjectsController {
     return this.projectsService.findOneWithTimeline(orgId, projectId);
   }
 
-  // ALOCAR MEMBRO NA OBRA
+  // Adicionar Membro
   @Post(':projectId/members')
-  async assignMemberToProject(
+  async assignMember(
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
-    @Body('userId') userId: string,
+    @Req() req: any,
+    @Body() body: { memberId: string; memberName: string }
   ) {
-    return this.projectsService.assignMember(orgId, projectId, userId);
+    const actionByUserId = this.extractUserId(req);
+    return this.projectMemberService.assignMember(orgId, projectId, body.memberId, actionByUserId, body.memberName);
   }
 
-  // REMOVER MEMBRO DA OBRA
-  @Delete(':projectId/members/:userId')
-  async removeMemberFromProject(
+  // Remover Membro
+  @Delete(':projectId/members/:memberId')
+  async removeMember(
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
-    @Param('userId') userId: string,
+    @Param('memberId') memberId: string,
+    @Req() req: any,
+    @Body() body: { memberName: string }
   ) {
-    return this.projectsService.removeMember(orgId, projectId, userId);
+    const actionByUserId = this.extractUserId(req);
+    return this.projectMemberService.removeMember(orgId, projectId, memberId, actionByUserId, body.memberName);
   }
 }

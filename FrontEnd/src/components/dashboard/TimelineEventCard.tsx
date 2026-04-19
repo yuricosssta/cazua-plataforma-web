@@ -1,4 +1,4 @@
-// src/components/dashboard/TimelineEventCard.tsx
+//src/components/dashboard/TimelineEventCard.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -19,7 +19,7 @@ interface TimelineEvent {
   };
   createdAt: string;
   metadata?: Record<string, any>;
-  attachments?: string[]; // Fallback caso o backend salve na raiz
+  attachments?: string[]; 
 }
 
 interface TimelineEventCardProps {
@@ -58,11 +58,21 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
     });
   };
 
+  const formatSystemEventText = (desc: string) => {
+    if (desc.includes('foi adicionado')) {
+      // Pega qualquer coisa entre "Membro " e " foi adicionado"
+      return desc.replace(/Membro (.*?) foi adicionado.*/, 'adicionou $1 à equipe');
+    }
+    if (desc.includes('foi removido')) {
+      return desc.replace(/Membro (.*?) foi removido.*/, 'removeu $1 da equipe');
+    }
+    return `alterou o status da demanda: ${desc}`;
+  };
+
   const eventConfig = getEventConfig(event.type);
   const EventIcon = eventConfig.icon;
   const isDocumentStyle = event.type === "COMMENT" || event.type === "REPORT" || event.type === "DOCUMENT";
 
-  // Busca os anexos onde quer que o backend os tenha salvo
   const attachments = event.metadata?.attachments || event.attachments || [];
 
   return (
@@ -106,7 +116,9 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
             <div className="flex items-center gap-3">
               {isDocumentStyle && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">Parecer Técnico</span>
+                  <span className="text-sm font-bold text-foreground">
+                    {event.metadata?.labelOverride || "Parecer Técnico"}
+                  </span>
                   {event.parecerCode && <span className="text-sm font-bold text-foreground">{event.parecerCode}</span>}
                 </div>
               )}
@@ -137,16 +149,26 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
         </div>
 
         <div className={`text-base text-foreground/90 mb-4 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
-          {event.description.split('\n').map((line, i) => (
-            <React.Fragment key={i}>{line}<br /></React.Fragment>
-          ))}
+          {isDocumentStyle ? (
+            event.description.split('\n').map((line, i) => (
+              <React.Fragment key={i}>{line}<br /></React.Fragment>
+            ))
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-bold text-foreground">
+                {event.authorId?.name || "Usuário"}
+              </span>
+              <span className="text-muted-foreground">
+                {formatSystemEventText(event.description)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* MURAL DE ANEXOS RENDERIZADO */}
         {attachments.length > 0 && (
           <div className="w-full mb-6 border-t border-border pt-4">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-              Anexos do Parecer ({attachments.length})
+              Anexos ({attachments.length})
             </span>
             <div className="flex gap-3 flex-wrap">
               {attachments.map((link: string, idx: number) => {
@@ -171,9 +193,11 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
           </div>
         )}
 
-        <span className="text-sm font-bold text-foreground">
-          {event.authorId?.name || "Usuário Desconhecido"}
-        </span>
+        {isDocumentStyle && (
+          <span className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-2">
+            {event.authorId?.name || "Usuário Desconhecido"}
+          </span>
+        )}
       </div>
     </div>
   );
