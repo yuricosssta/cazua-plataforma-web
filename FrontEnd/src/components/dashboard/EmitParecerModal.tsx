@@ -101,8 +101,9 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
         view: new View({ center: fromLonLat([-43.76, -21.22]), zoom: 13 }),
       });
 
-      const latMatch = location.match(/Lat:\s*(-?\d+\.\d+)/);
-      const lngMatch = location.match(/Lng:\s*(-?\d+\.\d+)/);
+      const latMatch = location.match(/Lat:\s*(-?\d+\.\d+)/) || location.match(/\s*(-?\d+\.\d+,)/);
+      const lngMatch = location.match(/Lng:\s*(-?\d+\.\d+)/) || location.match(/,\s*(-?\d+\.\d+)/);
+
       if (latMatch && lngMatch) {
         const coords = fromLonLat([parseFloat(lngMatch[1]), parseFloat(latMatch[1])]);
         mapInstance.current.getView().setCenter(coords);
