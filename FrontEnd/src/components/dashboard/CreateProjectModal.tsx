@@ -82,8 +82,8 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
       });
 
       // Se já tiver uma coordenada no input, tenta centralizar o mapa nela por pino
-      const latMatch = formData.location.match(/Lat:\s*(-?\d+\.\d+)/);
-      const lngMatch = formData.location.match(/Lng:\s*(-?\d+\.\d+)/);
+      const latMatch = formData.location.match(/Lat:\s*(-?\d+\.\d+)/) || formData.location.match(/\s*(-?\d+\.\d+,)/);
+      const lngMatch = formData.location.match(/Lng:\s*(-?\d+\.\d+)/) || formData.location.match(/,\s*(-?\d+\.\d+)/);
       if (latMatch && lngMatch) {
         const coords = fromLonLat([parseFloat(lngMatch[1]), parseFloat(latMatch[1])]);
         mapInstance.current.getView().setCenter(coords);
