@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -21,10 +21,14 @@ export function ProjectsList() {
   const urlTab = searchParams.get("tab") as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>("MINE");
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // NOVO ESTADO: Filtro de Ordenação
+  const [sortBy, setSortBy] = useState<"PRIORITY_DESC" | "PRIORITY_ASC" | "NEWEST" | "OLDEST">("PRIORITY_DESC");
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<Project | null>(null);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<any[]>([]); // Usando any temporário para suportar o createdAt numérico
   const [isLoading, setIsLoading] = useState(true);
 
   const currentOrg = useSelector(selectCurrentOrg);
@@ -51,7 +55,7 @@ export function ProjectsList() {
       setIsLoading(true);
       const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
 
-      const formattedProjects: Project[] = response.data.map((p: any) => {
+      const formattedProjects = response.data.map((p: any) => {
         const formatDate = (dateString?: string) => {
           if (!dateString) return undefined;
           return new Date(dateString).toLocaleDateString('pt-BR');
@@ -67,7 +71,8 @@ export function ProjectsList() {
           location: p.location,
           startDate: formatDate(p.startDate),
           endDate: formatDate(p.endDate),
-          priorityScore: p.priorityScore,
+          priorityScore: p.priorityScore || 0,
+          createdAt: new Date(p.createdAt || new Date()).getTime(), // Injetando o timestamp para ordenação
           assignedMembers: p.assignedMembers || [],
           attachments: p.attachments || [],
           lastUpdate: p.lastEventId ? {
@@ -108,18 +113,11 @@ export function ProjectsList() {
 
   const isUserAssigned = (assignedMembers: any[]) => {
     const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
-
     if (!currentUserId || currentUserId === "undefined") return false;
 
     return assignedMembers?.some((m: any) => {
-      if (typeof m === 'string') {
-        return m === currentUserId;
-      }
-
-      if (m && typeof m === 'object') {
-        const memberId = String(m._id || m.id || "");
-        return memberId === currentUserId;
-      }
+      if (typeof m === 'string') return m === currentUserId;
+      if (m && typeof m === 'object') return String(m._id || m.id || "") === currentUserId;
       return false;
     });
   };
@@ -134,6 +132,7 @@ export function ProjectsList() {
     INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
+  // MOTOR DE BUSCA E ORDENAÇÃO
   const filteredProjects = projects.filter((p) => {
     let matchesTab = false;
     if (activeTab === "ALL") matchesTab = true;
@@ -148,7 +147,16 @@ export function ProjectsList() {
       (p.location && p.location.toLowerCase().includes(term));
 
     return matchesTab && matchesSearch;
-  }).sort((a, b) => (b.priorityScore || 0) - (a.priorityScore || 0));
+  }).sort((a, b) => {
+    // Aplica a regra de ordenação escolhida no Select
+    switch (sortBy) {
+      case "PRIORITY_DESC": return b.priorityScore - a.priorityScore; // Maior prioridade primeiro
+      case "PRIORITY_ASC": return a.priorityScore - b.priorityScore;  // Menor prioridade primeiro
+      case "NEWEST": return b.createdAt - a.createdAt;                // Mais recentes primeiro
+      case "OLDEST": return a.createdAt - b.createdAt;                // Mais antigos primeiro
+      default: return 0;
+    }
+  });
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
@@ -181,7 +189,7 @@ export function ProjectsList() {
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
-      {/* CABEÇALHO REFORMULADO */}
+      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Demandas e Projetos</h1>
@@ -199,18 +207,38 @@ export function ProjectsList() {
         </button>
       </div>
 
-      {/* BARRA DE PESQUISA */}
-      <div className="relative w-full md:max-w-md">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-muted-foreground" />
+      {/* BARRA DE PESQUISA E FILTRO DE ORDENAÇÃO */}
+      <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+        {/* Input de Busca */}
+        <div className="relative w-full md:max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar por código, título ou local..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm transition-all"
+          />
         </div>
-        <input
-          type="text"
-          placeholder="Buscar por código, título ou local..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm transition-all"
-        />
+
+        {/* Dropdown de Ordenação */}
+        <div className="relative w-full md:w-auto flex items-center gap-2 ml-auto">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e: any) => setSortBy(e.target.value)}
+            className="flex h-10 w-full md:w-[220px] rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm appearance-none cursor-pointer"
+          >
+            <option value="PRIORITY_DESC">Maior Prioridade</option>
+            <option value="PRIORITY_ASC">Menor Prioridade</option>
+            <option value="NEWEST">Mais Recentes</option>
+            <option value="OLDEST">Mais Antigas</option>
+          </select>
+        </div>
       </div>
 
       {/* NAVEGAÇÃO POR ABAS */}
@@ -398,7 +426,6 @@ export function ProjectsList() {
         onSuccess={() => fetchProjects()}
       />
 
-      {/* O TypeScript agora entende perfeitamente o 'projectForParecer' */}
       <EmitParecerModal
         isOpen={!!projectForParecer}
         onClose={() => setProjectForParecer(null)}
