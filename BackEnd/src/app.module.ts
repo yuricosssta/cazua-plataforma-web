@@ -13,6 +13,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { ProjectsModule } from './projects/project.module';
 import { StorageModule } from './storage/storage.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ResourcesModule } from './resources/resources.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     SummaryModule,
     OrganizationModule,
     ProjectsModule,
-    StorageModule, 
+    StorageModule,
+    ResourcesModule, 
   ],
   controllers: [AppController],
   providers: [AppService],// { provide: APP_GUARD, useClass: AuthGuard }],
