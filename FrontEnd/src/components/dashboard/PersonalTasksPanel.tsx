@@ -92,7 +92,7 @@ export function PersonalTasksPanel() {
   return (
     <div className="bg-card border border-border rounded-sm shadow-sm flex flex-col h-[350px] overflow-hidden">
       
-      {/* Cabeçalho (Design Sóbrio) */}
+      {/* Cabeçalho */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2 uppercase">
@@ -108,7 +108,7 @@ export function PersonalTasksPanel() {
       </div>
 
       {/* Input de Nova Tarefa (Minimalista) */}
-      <div className="p-3 border-b border-border bg-background">
+      <div className="p-3 bg-background">
         <form onSubmit={handleAddTask} className="relative flex items-center gap-2">
           <input
             type="text"
