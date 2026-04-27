@@ -1,3 +1,4 @@
+//src/resources/resources.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ResourcesController } from './controllers/resources.controller';
@@ -17,8 +18,8 @@ import { ResourceTransaction, ResourceTransactionSchema } from './schemas/resour
   controllers: [ResourcesController],
   providers: [
     ResourcesService,
-    ResourceRepository,            // <-- ESSENCIAL PARA O NESTJS INJETAR
-    ResourceTransactionRepository  // <-- ESSENCIAL PARA O NESTJS INJETAR
+    ResourceRepository,            
+    ResourceTransactionRepository  
   ],
   exports: [ResourcesService],
 })
