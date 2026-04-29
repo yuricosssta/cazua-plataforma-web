@@ -11,3 +11,9 @@ export enum TransactionType {
   ALLOCATION = 'ALLOCATION', // Envio para uma Obra específica
   RETURN = 'RETURN',         // Devolução da Obra para o Almoxarifado
 }
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',   // Solicitado pela obra, aguardando almoxarifado
+  APPROVED = 'APPROVED', // Aprovado e baixado do estoque
+  REJECTED = 'REJECTED', // Negado pelo almoxarifado
+}

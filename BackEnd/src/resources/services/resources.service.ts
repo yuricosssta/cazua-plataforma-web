@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResourceRepository } from '../repositories/resource.repository';
 import { ResourceTransactionRepository } from '../repositories/resource-transaction.repository';
-import { ResourceType, TransactionType } from '../types/resource-enums';
+import { ResourceType, TransactionStatus, TransactionType } from '../types/resource-enums';
 import { Types } from 'mongoose';
 import { CreateResourceDto } from '../validations/resource.zod';
 
@@ -28,8 +28,8 @@ export class ResourcesService {
     return this.resourceRepo.findAllByOrganization(orgId);
   }
 
-  // 3. ALOCAÇÃO NO PROJETO
-  async allocateToProject(data: {
+  // 3. ENGENHEIRO PEDE MATERIAL (Requisição PENDING - Não mexe no estoque)
+  async requestAllocation(data: {
     orgId: string;
     projectId: string;
     authorId: string;
@@ -38,51 +38,88 @@ export class ResourcesService {
     origin?: string;
     attachments?: string[];
   }) {
-    // 1. Consulta o recurso no catálogo
     const resource = await this.resourceRepo.findById(data.resourceId);
 
-    // 2. Calcula se vai ficar negativo (Apenas para MATERIAIS ou EQUIPAMENTOS)
-    let isStockNegative = false;
-    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
-      if (resource.currentStock - data.quantity < 0) {
-        isStockNegative = true;
-      }
-      // Atualiza o saldo no almoxarifado central (subtrai)
-      await this.resourceRepo.updateStock(data.resourceId, -data.quantity);
-    }
-
-    // 3. Registra a Transação com o Custo daquele exato momento
     const transaction = await this.transactionRepo.create({
       organizationId: new Types.ObjectId(data.orgId),
       projectId: new Types.ObjectId(data.projectId),
       resourceId: new Types.ObjectId(data.resourceId),
       authorId: new Types.ObjectId(data.authorId),
       type: TransactionType.ALLOCATION,
+      status: TransactionStatus.PENDING,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
-      totalCost: data.quantity * resource.standardCost,
+      totalCost: 0, // Custo zero até ser aprovado
       origin: data.origin,
       attachments: data.attachments || [],
-      isStockNegative: isStockNegative,
+      isStockNegative: false,
     });
 
-    // 4. EMITE A TIMELINE
-    // Enviamos os anexos e os dados financeiros dentro do metadata
+    // Opcional: Você pode emitir um evento para avisar o almoxarife aqui
+
+    return transaction;
+  }
+
+  // ALMOXARIFADO APROVA E LIBERA MATERIAL (Mexe no estoque e Timeline)
+  async approveRequest(transactionId: string, authorId: string, approvedQuantity: number) {
+    const transaction = await this.transactionRepo.findById(transactionId);
+    if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
+
+    const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
+
+    // Calcula estoque negativo
+    let isStockNegative = false;
+    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
+      if (resource.currentStock - approvedQuantity < 0) {
+        isStockNegative = true;
+      }
+      // Dá baixa no estoque
+      await this.resourceRepo.updateStock(transaction.resourceId.toString(), -approvedQuantity);
+    }
+
+    // Calcula custo final
+    const finalTotalCost = approvedQuantity * transaction.unitCostSnapshot;
+
+    // Atualiza transação
+    const approvedTx = await this.transactionRepo.updateRequestStatus(
+      transactionId,
+      TransactionStatus.APPROVED,
+      authorId,
+      approvedQuantity,
+      finalTotalCost
+    );
+
+    // Grita na Timeline da Obra que o material foi liberado!
     this.eventEmitter.emit('timeline.create', {
-      orgId: data.orgId,
-      projectId: data.projectId,
-      authorId: data.authorId,
-      type: 'REPORT', // Ou 'DOCUMENT', o Front-end vai tratar pelo tipo
-      description: `Alocação de Recurso: ${data.quantity} ${resource.unit} de ${resource.name}.`,
+      orgId: transaction.organizationId.toString(),
+      projectId: transaction.projectId.toString(),
+      authorId: authorId,
+      type: 'REPORT',
+      description: `Alocação Aprovada: ${approvedQuantity} ${resource.unit} de ${resource.name} enviados para a obra.`,
       metadata: {
-        totalCost: transaction.totalCost,
+        totalCost: finalTotalCost,
         resourceName: resource.name,
         isStockNegative: isStockNegative,
-        attachments: data.attachments || [],
+        attachments: transaction.attachments || [],
       },
     });
 
-    return transaction;
+    return approvedTx;
+  }
+
+  // 3.2 ALMOXARIFADO REJEITA PEDIDO
+  async rejectRequest(transactionId: string, authorId: string, reason: string) {
+    const transaction = await this.transactionRepo.findById(transactionId);
+    if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
+
+    return this.transactionRepo.updateRequestStatus(
+      transactionId,
+      TransactionStatus.REJECTED,
+      authorId,
+      transaction.quantity,
+      0,
+      reason
+    );
   }
 
   // 4. ENTRADA NO ESTOQUE / APORTE (COMPRA)

@@ -1,6 +1,7 @@
+//src/resources/schemas/resource-transaction.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { TransactionType } from '../types/resource-enums';
+import { TransactionType, TransactionStatus } from '../types/resource-enums';
 
 export type ResourceTransactionDocument = ResourceTransaction & Document;
 
@@ -9,36 +10,47 @@ export class ResourceTransaction {
   @Prop({ type: Types.ObjectId, required: true, ref: 'Organization' })
   organizationId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Project' }) // Null se for entrada geral no estoque
+  @Prop({ type: Types.ObjectId, ref: 'Project' })
   projectId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, required: true, ref: 'Resource' })
   resourceId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
-  authorId: Types.ObjectId;
+  authorId: Types.ObjectId; 
 
   @Prop({ type: String, enum: TransactionType, required: true })
   type: TransactionType;
 
-  @Prop({ type: Number, required: true })
-  quantity: number;
+  @Prop({ type: String, enum: TransactionStatus, default: TransactionStatus.APPROVED })
+  status: TransactionStatus; 
 
   @Prop({ type: Number, required: true })
-  unitCostSnapshot: number; // Preço do recurso no momento da transação
+  quantity: number; 
 
   @Prop({ type: Number, required: true })
-  totalCost: number; // quantity * unitCostSnapshot
+  unitCostSnapshot: number;
+
+  @Prop({ type: Number, required: true })
+  totalCost: number;
 
   @Prop()
-  origin?: string; // Ex: "Nota Fiscal 450", "Aporte Sócio X", "Saldo Inicial"
+  origin?: string;
 
   @Prop({ type: Boolean, default: false })
-  isStockNegative: boolean; // Flag para o aviso que você solicitou
+  isStockNegative: boolean;
 
   @Prop({ type: [String], default: [] })
-  attachments: string[]; // anexos
+  attachments: string[];
 
+  // --- CAMPOS DE AUDITORIA DE REQUISIÇÃO (RM) ---
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  approvedBy?: Types.ObjectId; // Quem do almoxarifado aprovou
+
+  @Prop()
+  rejectedReason?: string; 
+
+  // --- CAMPOS DE ESTORNO ---
   @Prop({ type: Boolean, default: false })
   isCanceled: boolean;
 

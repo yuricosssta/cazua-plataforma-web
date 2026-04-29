@@ -40,8 +40,19 @@ export const cancelTransactionSchema = z.object({
   reason: z.string().min(5, "O motivo do cancelamento é obrigatório e deve ser descritivo"),
 });
 
+export const approveRequestSchema = z.object({
+  approvedQuantity: z.number().positive("A quantidade aprovada deve ser maior que zero"),
+});
+
+export const rejectRequestSchema = z.object({
+  reason: z.string().min(5, "O motivo da rejeição é obrigatório"),
+});
+
+
 export type CreateResourceDto = z.infer<typeof createResourceSchema>;
 export type AllocateResourceDto = z.infer<typeof allocateResourceSchema>;
 export type AddStockDto = z.infer<typeof addStockSchema>;
 export type ReturnResourceDto = z.infer<typeof returnResourceSchema>;
 export type CancelTransactionDto = z.infer<typeof cancelTransactionSchema>;
+export type ApproveRequestDto = z.infer<typeof approveRequestSchema>;
+export type RejectRequestDto = z.infer<typeof rejectRequestSchema>;

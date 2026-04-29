@@ -13,7 +13,11 @@ import {
   returnResourceSchema,
   ReturnResourceDto,
   cancelTransactionSchema,
-  CancelTransactionDto
+  CancelTransactionDto,
+  RejectRequestDto,
+  approveRequestSchema,
+  ApproveRequestDto,
+  rejectRequestSchema
 } from '../validations/resource.zod';
 
 @Controller('organizations/:orgId/resources')
@@ -41,25 +45,43 @@ export class ResourcesController {
     return this.resourcesService.findAllByOrganization(orgId);
   }
 
-  // 3. ALOCAR RECURSO NA OBRA (Retira do estoque e joga na Timeline)
-  @Post('allocate/:projectId')
-  async allocateToProject(
+  // 3. ENGENHEIRO PEDE RECURSO (Cai na fila do Almoxarifado)
+  @Post('request/:projectId')
+  async requestAllocation(
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
     @Req() req: any,
     @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
   ) {
-    const authorId = this.extractUserId(req);
-
-    return this.resourcesService.allocateToProject({
+    return this.resourcesService.requestAllocation({
       orgId,
       projectId,
-      authorId,
+      authorId: this.extractUserId(req),
       resourceId: data.resourceId,
       quantity: data.quantity,
       origin: data.origin,
       attachments: data.attachments,
     });
+  }
+
+  // 3.1 ALMOXARIFE APROVA PEDIDO
+  @Post('transactions/:transactionId/approve')
+  async approveRequest(
+    @Param('transactionId') transactionId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(approveRequestSchema)) data: ApproveRequestDto,
+  ) {
+    return this.resourcesService.approveRequest(transactionId, this.extractUserId(req), data.approvedQuantity);
+  }
+
+  // 3.2 ALMOXARIFE REJEITA PEDIDO
+  @Post('transactions/:transactionId/reject')
+  async rejectRequest(
+    @Param('transactionId') transactionId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(rejectRequestSchema)) data: RejectRequestDto,
+  ) {
+    return this.resourcesService.rejectRequest(transactionId, this.extractUserId(req), data.reason);
   }
 
   // 4. DAR ENTRADA NO ESTOQUE (Compra / Aporte)
