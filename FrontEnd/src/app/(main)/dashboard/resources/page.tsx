@@ -8,6 +8,7 @@ import { CreateResourceModal } from "@/components/resources/CreateResourceModal"
 import { AddStockModal } from "@/components/resources/AddStockModal";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
+import { TransactionHistory } from "@/components/resources/TransactionHistory";
 // Importaremos os subcomponentes aqui no futuro:
 // import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
 // import { PendingRequests } from "@/components/resources/PendingRequests";
@@ -115,7 +116,7 @@ export default function ResourcesPage() {
 
                 {activeTab === "history" && (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
-                        <p>Componente [TransactionHistory] será renderizado aqui.</p>
+                        <TransactionHistory refreshKey={refreshKey} />
                     </div>
                 )}
             </div>

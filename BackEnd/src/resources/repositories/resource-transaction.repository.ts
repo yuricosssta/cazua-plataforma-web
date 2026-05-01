@@ -75,4 +75,12 @@ export class ResourceTransactionRepository {
     return updated;
   }
 
+  async findAllByOrganization(orgId: string): Promise<ResourceTransaction[]> {
+    return this.model
+      .find({ organizationId: new Types.ObjectId(orgId) })
+      .sort({ createdAt: -1 }) 
+      .populate('resourceId', 'name unit') 
+      .populate('projectId', 'title') 
+      .exec();
+  }
 }

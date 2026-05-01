@@ -126,4 +126,10 @@ export const resourceService = {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/cancel`, data);
     return response.data;
   },
+
+  // 6. Livro Razão
+  listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
+    const response = await axiosInstance.get(`/organizations/${orgId}/resources/transactions`);
+    return response.data;
+  },
 };

@@ -3,10 +3,10 @@ import { Controller, Post, Get, Body, Param, Req, UseGuards, Headers } from '@ne
 import { ResourcesService } from '../services/resources.service';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
-import { 
-  createResourceSchema, 
-  CreateResourceDto, 
-  allocateResourceSchema, 
+import {
+  createResourceSchema,
+  CreateResourceDto,
+  allocateResourceSchema,
   AllocateResourceDto,
   addStockSchema,
   AddStockDto,
@@ -113,5 +113,11 @@ export class ResourcesController {
     @Body(new ZodValidationPipe(cancelTransactionSchema)) data: CancelTransactionDto,
   ) {
     return this.resourcesService.cancelTransaction(transactionId, this.extractUserId(req), data.reason);
+  }
+
+  // LISTAR O HISTÓRICO DE TRANSAÇÕES
+  @Get('transactions')
+  async listTransactions(@Param('orgId') orgId: string) {
+    return this.resourcesService.listTransactions(orgId);
   }
 }
