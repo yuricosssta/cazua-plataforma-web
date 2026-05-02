@@ -238,7 +238,7 @@ export default function ProjectDetailsPage() {
         </div>
 
         {/* Barra de Metadados */}
-        <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-sm ml-0 md:ml-12">
+        <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-md p-3 shadow-sm ml-0 md:ml-12">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
             <StatusIcon className="w-4 h-4" /> {statusConfig.label}
           </div>

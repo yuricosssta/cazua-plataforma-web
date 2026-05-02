@@ -143,7 +143,7 @@ export default function LoginPage() {
           </h2>
           <div className="space-y-6 text-zinc-400">
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 text-zinc-300">
+              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
                 <Activity className="w-5 h-5" />
               </div>
               <div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 text-zinc-300">
+              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
@@ -161,7 +161,7 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 text-zinc-300">
+              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
                 <HardHat className="w-5 h-5" />
               </div>
               <div>

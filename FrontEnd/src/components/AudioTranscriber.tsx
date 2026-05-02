@@ -88,7 +88,7 @@ export const AudioTranscriber = () => {
       <div className="flex items-start gap-4">
         {/* Área de Arrastar e Soltar */}
         <div
-          className={`flex-1 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+          className={`flex-1 border-2 border-dashed rounded-md p-8 text-center cursor-pointer
             ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
             ${file ? 'border-green-500 bg-green-50' : ''}`}
           onDragOver={handleDragOver}
@@ -130,7 +130,7 @@ export const AudioTranscriber = () => {
           disabled={!file || isLoading}
           type="button"
           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2"            
-          // className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md
+          // className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md
           //            hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Transcrevendo...' : 'Transcrever Áudio'}

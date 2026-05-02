@@ -201,7 +201,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             <div ref={mapRef} className="w-full h-full cursor-crosshair" />
 
             {/* Overlay com a coordenada selecionada e botão Confirmar */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-border rounded-lg p-3 flex items-center gap-4 w-11/12 max-w-md">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-border rounded-md p-3 flex items-center gap-4 w-11/12 max-w-md">
               <div className="flex-1 overflow-hidden">
                 <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider block mb-0.5">Coordenada Marcada</span>
                 <p className="text-sm font-semibold truncate text-foreground">{formData.location || "Nenhum ponto selecionado"}</p>

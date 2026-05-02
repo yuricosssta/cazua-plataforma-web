@@ -121,7 +121,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                             <p className="text-sm">Buscando quadro de funcionários...</p>
                         </div>
                     ) : orgMembers.length === 0 ? (
-                        <div className="text-center py-10 bg-muted/20 rounded-lg border border-dashed border-border">
+                        <div className="text-center py-10 bg-muted/20 rounded-md border border-dashed border-border">
                             <p className="text-sm text-muted-foreground">Nenhum membro encontrado na organização.</p>
                         </div>
                     ) : (
@@ -135,7 +135,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                                 const isProcessing = processingId === member._id;
 
                                 return (
-                                    <div key={member._id} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${isAssigned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
+                                    <div key={member._id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isAssigned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
 
                                         {/* Info do Usuário */}
                                         <div className="flex items-center gap-3 overflow-hidden">

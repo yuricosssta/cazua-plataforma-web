@@ -86,11 +86,11 @@ export function LandingPage() {
             Elimine o caos de planilhas e o telefone sem fio. Centralize demandas, pareces técnicos e diários de obra em uma <span className="text-foreground font-semibold">Timeline centralizada</span> para engenheiros, gestores e stakeholders.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="flex items-center gap-2 px-8 py-3.5 text-lg font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-transform hover:scale-105 shadow-md">
+            <Link href="/signup" className="flex items-center gap-2 px-8 py-3.5 text-lg font-bold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-transform hover:scale-105 shadow-md">
               Começar agora
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link href="/learn-more" className="flex items-center gap-2 px-8 py-3.5 text-lg font-medium text-foreground hover:bg-accent rounded-lg transition-colors">
+            <Link href="/learn-more" className="flex items-center gap-2 px-8 py-3.5 text-lg font-medium text-foreground hover:bg-accent rounded-md transition-colors">
               Como funciona?
             </Link>
           </div>
@@ -118,7 +118,7 @@ export function LandingPage() {
               const Icon = feature.icon;
               return (
                 <div key={feature.title} className="bg-card border border-border rounded-sm p-8 shadow-sm flex flex-col gap-6 hover:border-primary/50 hover:shadow-md transition-all">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
                     <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-2xl font-bold tracking-tight text-foreground">{feature.title}</h3>
@@ -164,7 +164,7 @@ export function LandingPage() {
           <p className="text-lg text-muted-foreground mb-12 max-w-lg mx-auto leading-relaxed">
             Cadastre-se grátis hoje e comece a mapear suas demandas e obras em uma linha do tempo profissional e segura.
           </p>
-          <Link href="/signup" className="flex items-center gap-2 px-8 py-3.5 text-lg font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-transform hover:scale-105 shadow-md mx-auto inline-flex">
+          <Link href="/signup" className="flex items-center gap-2 px-8 py-3.5 text-lg font-bold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-transform hover:scale-105 shadow-md mx-auto inline-flex">
             Criar minha conta grátis
             <ArrowRight className="w-5 h-5" />
           </Link>

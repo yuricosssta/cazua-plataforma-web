@@ -45,7 +45,7 @@ export const SessionExpiredModal = () => {
 
           <button
             onClick={handleClose}
-            className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2"
+            className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-md hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2"
           >
             <LogIn className="w-4 h-4" />
             Ir para a tela de Login

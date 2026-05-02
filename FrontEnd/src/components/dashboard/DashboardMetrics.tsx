@@ -107,7 +107,7 @@ export function DashboardMetrics() {
         
         <Link href="/dashboard/projects?tab=ALL" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-primary/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
+            <div className="p-2 bg-primary/10 text-primary rounded-md group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Total</span>
           </div>
           <div className="text-3xl font-black text-foreground">{totalDemandas}</div>
@@ -115,7 +115,7 @@ export function DashboardMetrics() {
 
         <Link href="/dashboard/projects?tab=PLANNING" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg group-hover:bg-blue-500 group-hover:text-white transition-colors"><AlertCircle className="w-4 h-4" /></div>
+            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-md group-hover:bg-blue-500 group-hover:text-white transition-colors"><AlertCircle className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Planejamento</span>
           </div>
           <div className="text-3xl font-black text-foreground">{emPlanejamento}</div>
@@ -123,7 +123,7 @@ export function DashboardMetrics() {
 
         <Link href="/dashboard/projects?tab=EXECUTION" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-amber-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-colors"><HardHat className="w-4 h-4" /></div>
+            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-md group-hover:bg-amber-500 group-hover:text-white transition-colors"><HardHat className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Em Execução</span>
           </div>
           <div className="text-3xl font-black text-foreground">{emExecucao}</div>
@@ -131,7 +131,7 @@ export function DashboardMetrics() {
 
         <Link href="/dashboard/projects?tab=COMPLETED" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-emerald-500/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors"><CheckCircle className="w-4 h-4" /></div>
+            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-md group-hover:bg-emerald-500 group-hover:text-white transition-colors"><CheckCircle className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Concluídas ({currentYear})</span>
           </div>
           <div className="text-3xl font-black text-foreground">{concluidasEsteAno}</div>

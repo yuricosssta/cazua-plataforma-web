@@ -209,4 +209,9 @@ export class ResourcesService {
 
     return canceledTx;
   }
+
+  // 7. LISTAR O HISTÓRICO (RAZÃO) DA EMPRESA
+  async listTransactions(orgId: string) {
+    return this.transactionRepo.findAllByOrganization(orgId);
+  }
 }

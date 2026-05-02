@@ -273,7 +273,7 @@ export function ProjectsList() {
             <p className="text-sm text-muted-foreground">Sincronizando com o canteiro...</p>
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border flex flex-col items-center justify-center">
+          <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center">
             {activeTab === "MINE" && !searchTerm ? (
               <>
                 <UserCircle className="w-12 h-12 text-muted-foreground/30 mb-3" />
@@ -356,7 +356,7 @@ export function ProjectsList() {
                 )}
 
                 {project.lastUpdate && (
-                  <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                  <div className="bg-muted/30 rounded-md p-3 border border-border/50">
                     <div className="flex items-center gap-2 mb-1">
                       <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Última Atualização</span>

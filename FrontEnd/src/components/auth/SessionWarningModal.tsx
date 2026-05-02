@@ -92,7 +92,7 @@ export const SessionWarningModal = () => {
           <button
             onClick={handleRenew}
             disabled={isRenewing}
-            className="w-full h-11 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
+            className="w-full h-11 bg-amber-500 text-white font-bold rounded-md hover:bg-amber-600 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {isRenewing ? (
               <RefreshCw className="w-4 h-4 animate-spin" />

@@ -110,7 +110,7 @@ export function MapViewerModal({ isOpen, onClose, locationString }: MapViewerMod
           
           {/* Aviso se não houver coordenadas exatas */}
           {!hasCoords && locationString && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-amber-500/50 rounded-lg p-3 text-center w-11/12 max-w-sm">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-amber-500/50 rounded-md p-3 text-center w-11/12 max-w-sm">
               <p className="text-xs font-bold uppercase text-amber-500 tracking-wider mb-1">Atenção</p>
               <p className="text-sm font-medium text-foreground">Este projeto não possui coordenadas GPS exatas cadastradas.</p>
             </div>

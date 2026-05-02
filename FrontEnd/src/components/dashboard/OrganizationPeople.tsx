@@ -121,7 +121,7 @@ export function OrganizationPeople() {
       </div>
 
       {isCurrentUserAdmin && (
-        <div className="p-5 border border-border bg-card rounded-lg shadow-sm">
+        <div className="p-5 border border-border bg-card rounded-md shadow-sm">
           <div className="mb-4">
             <h3 className="text-sm font-semibold flex items-center gap-2"><UserPlus className="w-4 h-4" /> Cadastrar Novo Colaborador</h3>
             <p className="text-xs text-muted-foreground mt-1">Crie a conta global e forneça a senha provisória para o primeiro acesso.</p>

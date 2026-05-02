@@ -114,7 +114,7 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
 //         <h1 className="text-3xl md:text-4xl font-bold tracking-tighter leading-tight mb-4">
 //           {post.title}
 //         </h1>
-//         <img src={post.image} alt={post.title} className="w-full h-auto rounded-lg mt-4" />
+//         <img src={post.image} alt={post.title} className="w-full h-auto rounded-md mt-4" />
 //         {/* <article className="prose lg:prose-xl dark:prose-invert max-w-none"> */}
 //           <MarkdownPreview markdown={post.content || "Algo deu errado..."} /> 
 //         {/* </article> */}
