@@ -48,7 +48,7 @@ function ResetPasswordContent() { // isolado
   if (!token) {
     return (
       <div className="text-center space-y-4">
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
           <p className="text-sm font-semibold text-red-800">Link Inválido</p>
           <p className="text-xs text-red-600 mt-1">Não encontramos o token de segurança na URL. Por favor, solicite a recuperação novamente.</p>
@@ -63,7 +63,7 @@ function ResetPasswordContent() { // isolado
   if (isSuccess) {
     return (
       <div className="text-center space-y-4 animate-in zoom-in-95 duration-300">
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-md">
           <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
           <p className="text-sm font-semibold text-emerald-800">Senha Redefinida!</p>
           <p className="text-xs text-emerald-600 mt-1">Sua nova senha foi salva. Redirecionando para o login...</p>

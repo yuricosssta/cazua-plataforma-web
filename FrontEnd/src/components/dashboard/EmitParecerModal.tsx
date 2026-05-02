@@ -272,7 +272,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
         {showMap ? (
           <div className="flex-1 flex flex-col relative bg-muted min-h-[50vh]">
             <div ref={mapRef} className="w-full h-full cursor-crosshair" />
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-border rounded-lg p-3 flex items-center gap-4 w-11/12 max-w-md">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur shadow-xl border border-border rounded-md p-3 flex items-center gap-4 w-11/12 max-w-md">
               <div className="flex-1 overflow-hidden">
                 <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider block mb-0.5">Coordenada Marcada</span>
                 <p className="text-sm font-semibold truncate text-foreground">{location || "Nenhum ponto selecionado"}</p>
@@ -333,7 +333,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                     </span>
                   </label>
                   {updateGUT && (
-                    <div className="space-y-5 bg-card border border-border rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-5 bg-card border border-border rounded-md p-4 animate-in fade-in slide-in-from-top-2">
                       <div className="flex justify-between items-center pb-2 mb-2 border-b border-dashed border-border">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Nova prioridade</span>
                         <p className={`text-xl font-black leading-none ${currentScore >= 60 ? 'text-red-500' : 'text-primary'}`}>{currentScore}</p>

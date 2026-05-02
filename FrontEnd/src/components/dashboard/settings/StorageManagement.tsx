@@ -146,7 +146,7 @@ export function StorageManagement() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center p-10 border border-border rounded-lg bg-card">
+            <div className="flex flex-col items-center justify-center p-10 border border-border rounded-md bg-card">
                 <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
                 <p className="text-sm font-medium text-muted-foreground">Calculando espaço em disco...</p>
             </div>
@@ -154,7 +154,7 @@ export function StorageManagement() {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-5 border border-border rounded-lg bg-card shadow-sm">
+        <div className="flex flex-col gap-6 p-5 border border-border rounded-md bg-card shadow-sm">
 
             {/* HEADER E PROGRESS BAR */}
             <div className="space-y-4">

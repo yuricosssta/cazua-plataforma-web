@@ -297,7 +297,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
 
   const modalContent = (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-background w-full max-w-2xl rounded-lg shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-background w-full max-w-2xl rounded-md shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
           <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
@@ -328,7 +328,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
 
                 <div className="grid grid-cols-1 gap-4">
                   {signers.map((signer, idx) => (
-                    <div key={idx} className="relative bg-muted/30 p-4 rounded-lg border border-border group">
+                    <div key={idx} className="relative bg-muted/30 p-4 rounded-md border border-border group">
                       {signers.length > 1 && (
                         <button
                           onClick={() => removeSigner(idx)}
@@ -397,7 +397,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
 
           {step === "PHOTOS" && (
             <div className="space-y-4">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/50 rounded-md bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors">
                 <UploadCloud className="w-8 h-8 text-primary mb-2" />
                 <span className="text-sm font-semibold text-primary">Clique para anexar extras (Máx. 4)</span>
                 <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />

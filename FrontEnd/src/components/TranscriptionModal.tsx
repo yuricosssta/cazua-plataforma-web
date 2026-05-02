@@ -23,7 +23,7 @@ export const TranscriptionModal = ({ text, onClose }: TranscriptionModalProps) =
     // Overlay
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       {/* Modal */}
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+      <div className="bg-white rounded-md shadow-xl max-w-lg w-full p-6">
         <h2 className="text-xl font-bold mb-4">Transcrição Concluída</h2>
         
         {/* Área do Texto */}

@@ -146,7 +146,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
           <label className="text-sm font-medium leading-none text-foreground">Conteúdo</label>
         </div>
 
-        <div className="p-4 border border-dashed border-border rounded-lg bg-muted/30">
+        <div className="p-4 border border-dashed border-border rounded-md bg-muted/30">
           <AudioTranscriber />
         </div>
 
@@ -412,7 +412,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
 //         </div>
 
 //         {/* Transcritor de Áudio */}
-//         <div className="p-4 border border-dashed border-border rounded-lg bg-muted/30">
+//         <div className="p-4 border border-dashed border-border rounded-md bg-muted/30">
 //           <AudioTranscriber />
 //         </div>
 

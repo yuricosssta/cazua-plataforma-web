@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
 
         {isSuccess ? (
           <div className="text-center space-y-4 animate-in zoom-in-95 duration-300">
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-md">
               <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
               <p className="text-sm font-semibold text-emerald-800">Pronto! Verifique sua caixa de entrada.</p>
               <p className="text-xs text-emerald-600 mt-1">Se o e-mail existir em nossa base, você receberá o link em instantes.</p>

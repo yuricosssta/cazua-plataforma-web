@@ -29,7 +29,7 @@ export function EmailsAndAuth() {
           </div>
 
           {/* Listagem do Email Atual (Com as Badges da referência) */}
-          <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-card/50 hover:bg-muted/20 transition-colors">
+          <div className="flex items-center justify-between p-3 border border-border rounded-md bg-card/50 hover:bg-muted/20 transition-colors">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm font-medium text-foreground">{email}</span>
               <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-0.5 text-xs font-semibold text-foreground">

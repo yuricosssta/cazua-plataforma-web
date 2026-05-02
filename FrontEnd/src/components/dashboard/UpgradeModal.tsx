@@ -74,7 +74,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
             <MessageCircle className="w-5 h-5" />
             Falar com Consultor no WhatsApp

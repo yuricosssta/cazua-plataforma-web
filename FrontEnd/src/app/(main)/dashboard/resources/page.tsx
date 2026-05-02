@@ -9,6 +9,7 @@ import { AddStockModal } from "@/components/resources/AddStockModal";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { TransactionHistory } from "@/components/resources/TransactionHistory";
+import { PendingRequests } from "@/components/resources/PendingRequests";
 // Importaremos os subcomponentes aqui no futuro:
 // import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
 // import { PendingRequests } from "@/components/resources/PendingRequests";
@@ -81,7 +82,7 @@ export default function ResourcesPage() {
                     >
                         <ClipboardList className="w-4 h-4" />
                         Fila de Requisições
-                        {/* Badge de notificação mockada - depois ligaremos ao Back-end */}
+                        {/* Badge de notificação mockada */}
                         <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
                             3
                         </span>
@@ -101,17 +102,18 @@ export default function ResourcesPage() {
             </div>
 
             {/* ÁREA DE CONTEÚDO (RENDERIZAÇÃO CONDICIONAL) */}
-            <div className="flex-1 bg-card border border-border rounded-lg shadow-sm min-h-[400px] p-6">
+            <div className="flex-1 bg-card border border-border rounded-md shadow-sm min-h-[400px] p-6">
                 {activeTab === "catalog" && (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
-                        <ResourceCatalog refreshKey={refreshKey}/>
+                        <ResourceCatalog refreshKey={refreshKey} />
                     </div>
                 )}
 
                 {activeTab === "requests" && (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
-                        <p>Componente [PendingRequests] será renderizado aqui.</p>
-                    </div>
+                    <PendingRequests
+                        refreshKey={refreshKey}
+                        onActionComplete={triggerRefresh}
+                    />
                 )}
 
                 {activeTab === "history" && (
