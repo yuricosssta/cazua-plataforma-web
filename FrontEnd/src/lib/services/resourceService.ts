@@ -110,6 +110,12 @@ export const resourceService = {
     return response.data;
   },
 
+  // 3.3 Saída Direta (Almoxarifado -> Obra)
+  allocateDirectly: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/allocate-direct/${projectId}`, data);
+    return response.data;
+  },
+
   // 4. Entradas e Devoluções de Estoque
   addStock: async (orgId: string, data: AddStockData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/stock`, data);

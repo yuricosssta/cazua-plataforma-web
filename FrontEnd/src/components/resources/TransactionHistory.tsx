@@ -75,7 +75,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
       case "ALLOCATION":
         return (
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium border border-orange-200">
-            <ArrowUpRight className="w-3.5 h-3.5" /> Saída (Obra)
+            <ArrowUpRight className="w-3.5 h-3.5" /> Saída (destino)
           </span>
         );
       case "RETURN":
@@ -150,7 +150,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">
                 {tx.projectId ? (
-                  <span className="font-medium text-foreground">Obra: {tx.projectId.title}</span>
+                  <span className="font-medium text-foreground">Destino: {tx.projectId.title}</span>
                 ) : (
                   <span>{tx.origin || "Estoque Central"}</span>
                 )}

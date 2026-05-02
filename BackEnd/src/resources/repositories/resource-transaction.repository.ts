@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ResourceTransaction, ResourceTransactionDocument } from '../schemas/resource-transaction.schema';
+import { TransactionStatus } from '../types/resource-enums';
 
 @Injectable()
 export class ResourceTransactionRepository {
@@ -36,7 +37,6 @@ export class ResourceTransactionRepository {
     return updated;
   }
 
-
   // Busca todas as requisições pendentes de uma organização
   async findPendingRequests(orgId: string): Promise<ResourceTransaction[]> {
     return this.model
@@ -46,14 +46,14 @@ export class ResourceTransactionRepository {
         status: 'PENDING',
         isCanceled: false
       })
-      .sort({ createdAt: 1 }) // Mais antigos primeiro (Fila)
+      .sort({ createdAt: 1 }) 
       .exec();
   }
 
   // Atualiza o status da requisição
   async updateRequestStatus(
     id: string,
-    status: 'APPROVED' | 'REJECTED',
+    status: TransactionStatus,
     userId: string,
     approvedQuantity: number,
     totalCost: number,

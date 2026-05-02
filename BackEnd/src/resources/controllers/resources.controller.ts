@@ -1,5 +1,4 @@
-//src/resources/controllers/resources.controller.ts
-import { Controller, Post, Get, Body, Param, Req, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { ResourcesService } from '../services/resources.service';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
@@ -84,6 +83,23 @@ export class ResourcesController {
     return this.resourcesService.rejectRequest(transactionId, this.extractUserId(req), data.reason);
   }
 
+  // 3.3 SAÍDA DIRETA DO ALMOXARIFADO PARA A OBRA
+  @Post('allocate-direct/:projectId')
+  async allocateDirectly(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
+  ) {
+    return this.resourcesService.allocateDirectly(orgId, this.extractUserId(req), {
+      projectId: projectId,
+      resourceId: data.resourceId,
+      quantity: data.quantity,
+      origin: data.origin,
+      attachments: data.attachments,
+    });
+  }
+
   // 4. DAR ENTRADA NO ESTOQUE (Compra / Aporte)
   @Post('stock')
   async addStock(
@@ -115,7 +131,7 @@ export class ResourcesController {
     return this.resourcesService.cancelTransaction(transactionId, this.extractUserId(req), data.reason);
   }
 
-  // LISTAR O HISTÓRICO DE TRANSAÇÕES
+  // 7. LISTAR O HISTÓRICO DE TRANSAÇÕES
   @Get('transactions')
   async listTransactions(@Param('orgId') orgId: string) {
     return this.resourcesService.listTransactions(orgId);

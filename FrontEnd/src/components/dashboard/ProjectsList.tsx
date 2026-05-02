@@ -13,7 +13,7 @@ import { EmitParecerModal } from "./EmitParecerModal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MapViewerModal } from "../ui/MapViewer";
 import { ProjectStatus, Project, TabType } from "@/types/project";
-import axiosInstance from "@/lib/api/axiosInstance";
+import { listProjects } from "@/lib/services/projectService";
 
 export function ProjectsList() {
   const router = useRouter();
@@ -21,10 +21,9 @@ export function ProjectsList() {
   const urlTab = searchParams.get("tab") as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>("MINE");
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // NOVO ESTADO: Filtro de Ordenação
+
   const [sortBy, setSortBy] = useState<"PRIORITY_DESC" | "PRIORITY_ASC" | "NEWEST" | "OLDEST">("PRIORITY_DESC");
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<Project | null>(null);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
@@ -53,9 +52,10 @@ export function ProjectsList() {
 
     try {
       setIsLoading(true);
-      const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
 
-      const formattedProjects = response.data.map((p: any) => {
+      const rawData = await listProjects(orgId);
+
+      const formattedProjects = rawData.map((p: any) => {
         const formatDate = (dateString?: string) => {
           if (!dateString) return undefined;
           return new Date(dateString).toLocaleDateString('pt-BR');
@@ -72,7 +72,7 @@ export function ProjectsList() {
           startDate: formatDate(p.startDate),
           endDate: formatDate(p.endDate),
           priorityScore: p.priorityScore || 0,
-          createdAt: new Date(p.createdAt || new Date()).getTime(), // Injetando o timestamp para ordenação
+          createdAt: new Date(p.createdAt || new Date()).getTime(),
           assignedMembers: p.assignedMembers || [],
           attachments: p.attachments || [],
           lastUpdate: p.lastEventId ? {
@@ -317,7 +317,7 @@ export function ProjectsList() {
                     <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMapLocationView(project.location || null); 
+                        setMapLocationView(project.location || null);
                       }}
                     >
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
@@ -429,7 +429,7 @@ export function ProjectsList() {
       <EmitParecerModal
         isOpen={!!projectForParecer}
         onClose={() => setProjectForParecer(null)}
-        project={projectForParecer as any} 
+        project={projectForParecer as any}
         onSuccess={() => fetchProjects()}
       />
 
