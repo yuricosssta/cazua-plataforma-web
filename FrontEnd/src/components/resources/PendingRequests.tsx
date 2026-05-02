@@ -177,7 +177,7 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                             onChange={(e) => setActionData({ ...actionData, quantity: Number(e.target.value) })}
                             className="w-full px-3 py-2 text-sm border border-input rounded-md focus:ring-2 focus:ring-emerald-500/50"
                           />
-                          <p className="text-xs text-muted-foreground">Ajuste o valor caso não haja saldo suficiente para atender toda a RM.</p>
+                          <p className="text-xs text-muted-foreground">Ajuste o valor caso não haja saldo suficiente.</p>
                         </div>
                       ) : (
                         <div className="flex-1 w-full space-y-1.5">

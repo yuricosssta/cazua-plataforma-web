@@ -148,7 +148,7 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
           )}
         </div>
 
-        <div className={`text-base text-foreground/90 mb-4 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-lg border border-transparent'}`}>
+        <div className={`text-base text-foreground/90 mb-4 leading-relaxed ${!isDocumentStyle && 'bg-muted/30 p-4 rounded-md border border-transparent'}`}>
           {isDocumentStyle ? (
             event.description.split('\n').map((line, i) => (
               <React.Fragment key={i}>{line}<br /></React.Fragment>

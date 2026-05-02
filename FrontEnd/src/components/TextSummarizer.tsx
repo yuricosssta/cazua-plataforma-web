@@ -37,7 +37,7 @@ export const TextSummarizer = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 border rounded-lg shadow-md bg-white">
+    <div className="w-full max-w-2xl mx-auto p-4 border rounded-md shadow-md bg-white">
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Resumidor de Texto</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -65,11 +65,11 @@ export const TextSummarizer = () => {
       {/* Área de Resultado */}
       <div className="mt-6">
         {/* Exibe o erro, se houver */}
-        {error && <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>}
+        {error && <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-md">{error}</div>}
 
         {/* Exibe o resumo, se houver */}
         {summary && (
-          <div className="p-4 bg-gray-50 rounded-lg border">
+          <div className="p-4 bg-gray-50 rounded-md border">
             <h3 className="text-lg font-semibold mb-2 text-gray-800">Texto organizado:</h3>
             <article className="prose prose-sm max-w-none text-gray-700">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

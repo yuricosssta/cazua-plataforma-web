@@ -62,7 +62,7 @@ export function OrganizationSettings() {
 
         {/* Zona de Perigo (Danger Zone) */}
         <section className="pt-4">
-          <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-lg">
+          <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-md">
             <h3 className="text-sm font-semibold text-destructive flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
               Zona de Perigo

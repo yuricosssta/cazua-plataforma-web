@@ -62,7 +62,7 @@ export function CreateResourceModal({ isOpen, onClose, orgId, onSuccess }: Creat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border w-full max-w-md rounded-lg shadow-xl flex flex-col overflow-hidden">
+      <div className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden">
         
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">

@@ -63,7 +63,7 @@ export function BrandingSettings() {
     const loading = isLoading[fieldName];
 
     return (
-      <div className="flex flex-col gap-3 p-5 border border-border rounded-lg bg-card shadow-sm">
+      <div className="flex flex-col gap-3 p-5 border border-border rounded-md bg-card shadow-sm">
         <div>
           <h3 className="font-bold text-foreground">{title}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>

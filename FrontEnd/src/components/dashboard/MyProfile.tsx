@@ -153,7 +153,7 @@ export function MyProfile() {
             <p className="text-xs text-muted-foreground mt-1">Mantenha sua conta segura utilizando senhas fortes.</p>
           </div>
           <div className="sm:w-2/3 max-w-sm w-full">
-            <form onSubmit={handleUpdatePassword} className="space-y-4 bg-muted/30 p-5 rounded-lg border border-border/50">
+            <form onSubmit={handleUpdatePassword} className="space-y-4 bg-muted/30 p-5 rounded-md border border-border/50">
               {passError && <div className="p-2 bg-red-50 text-red-600 text-xs font-bold rounded border border-red-200">{passError}</div>}
               {passSuccess && <div className="p-2 bg-emerald-50 text-emerald-600 text-xs font-bold rounded border border-emerald-200">Senha alterada com sucesso!</div>}
 
