@@ -137,12 +137,16 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
                 {formatCurrency(resource.standardCost)}
               </td>
               <td className="px-4 py-3 text-right">
-                {/* Lógica condicional: Mão de obra e capital não possuem estoque físico controlável da mesma forma */}
+                {/* Lógica condicional tripla: Mão de obra, Capital e Materiais físicos */}
                 {resource.type === ResourceType.LABOR ? (
                   <span className="text-muted-foreground text-xs italic">N/A</span>
+                ) : resource.type === ResourceType.CAPITAL ? (
+                  <span className={`font-semibold ${resource.currentStock < 0 ? 'text-destructive' : 'text-emerald-600'}`}>
+                    {formatCurrency(resource.currentStock)}
+                  </span>
                 ) : (
                   <span className={`font-semibold ${resource.currentStock <= 0 ? 'text-destructive' : 'text-foreground'}`}>
-                    {resource.currentStock} {resource.unit}
+                    {resource.currentStock} <span className="uppercase text-xs ml-0.5">{resource.unit}</span>
                   </span>
                 )}
               </td>

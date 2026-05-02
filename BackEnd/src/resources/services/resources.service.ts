@@ -69,7 +69,11 @@ export class ResourcesService {
 
     // Calcula estoque negativo
     let isStockNegative = false;
-    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
+    if (
+      resource.type === ResourceType.MATERIAL || 
+      resource.type === ResourceType.EQUIPMENT ||
+      resource.type === ResourceType.CAPITAL
+    ) {
       if (resource.currentStock - approvedQuantity < 0) {
         isStockNegative = true;
       }
@@ -126,92 +130,96 @@ export class ResourcesService {
   async addStock(orgId: string, authorId: string, data: any) {
     const resource = await this.resourceRepo.findById(data.resourceId);
 
-    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
+    if (
+      resource.type === ResourceType.MATERIAL || 
+      resource.type === ResourceType.EQUIPMENT ||
+      resource.type === ResourceType.CAPITAL
+    ) {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
     }
 
     return this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
-      type: TransactionType.ENTRY,
-      quantity: data.quantity,
-      unitCostSnapshot: data.unitCostSnapshot || resource.standardCost,
-      totalCost: data.quantity * (data.unitCostSnapshot || resource.standardCost),
-      origin: data.origin,
-      attachments: data.attachments || [],
-    });
+    organizationId: new Types.ObjectId(orgId),
+    resourceId: new Types.ObjectId(data.resourceId),
+    authorId: new Types.ObjectId(authorId),
+    type: TransactionType.ENTRY,
+    quantity: data.quantity,
+    unitCostSnapshot: data.unitCostSnapshot || resource.standardCost,
+    totalCost: data.quantity * (data.unitCostSnapshot || resource.standardCost),
+    origin: data.origin,
+    attachments: data.attachments || [],
+  });
   }
 
   // 5. DEVOLUÇÃO DA OBRA (Sobrou material na obra e voltou pro galpão)
   async returnFromProject(orgId: string, projectId: string, authorId: string, data: any) {
-    const resource = await this.resourceRepo.findById(data.resourceId);
+  const resource = await this.resourceRepo.findById(data.resourceId);
 
-    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
-      await this.resourceRepo.updateStock(data.resourceId, data.quantity); // Soma de volta
-    }
-
-    const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      projectId: new Types.ObjectId(projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
-      type: TransactionType.RETURN,
-      quantity: data.quantity,
-      unitCostSnapshot: resource.standardCost, // Congela o custo atual
-      totalCost: data.quantity * resource.standardCost,
-      origin: data.origin,
-      attachments: data.attachments || [],
-    });
-
-    this.eventEmitter.emit('timeline.create', {
-      orgId, projectId, authorId,
-      type: 'REPORT',
-      description: `Devolução de Recurso: ${data.quantity} ${resource.unit} de ${resource.name} voltaram para o estoque.`,
-      metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isReturn: true, attachments: data.attachments || [] },
-    });
-
-    return transaction;
+  if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
+    await this.resourceRepo.updateStock(data.resourceId, data.quantity); // Soma de volta
   }
+
+  const transaction = await this.transactionRepo.create({
+    organizationId: new Types.ObjectId(orgId),
+    projectId: new Types.ObjectId(projectId),
+    resourceId: new Types.ObjectId(data.resourceId),
+    authorId: new Types.ObjectId(authorId),
+    type: TransactionType.RETURN,
+    quantity: data.quantity,
+    unitCostSnapshot: resource.standardCost, // Congela o custo atual
+    totalCost: data.quantity * resource.standardCost,
+    origin: data.origin,
+    attachments: data.attachments || [],
+  });
+
+  this.eventEmitter.emit('timeline.create', {
+    orgId, projectId, authorId,
+    type: 'REPORT',
+    description: `Devolução de Recurso: ${data.quantity} ${resource.unit} de ${resource.name} voltaram para o estoque.`,
+    metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isReturn: true, attachments: data.attachments || [] },
+  });
+
+  return transaction;
+}
 
   // 6. O ESTORNO DE SEGURANÇA (AUDITORIA)
   async cancelTransaction(transactionId: string, authorId: string, reason: string) {
-    const transaction = await this.transactionRepo.findById(transactionId);
+  const transaction = await this.transactionRepo.findById(transactionId);
 
-    if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
+  if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
 
-    // Matemática Reversa de Estoque (Apenas para MATERIAIS ou EQUIPAMENTOS)
-    const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
+  // Matemática Reversa de Estoque (Apenas para MATERIAIS ou EQUIPAMENTOS)
+  const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
 
-    if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
-      if (transaction.type === TransactionType.ENTRY || transaction.type === TransactionType.RETURN) {
-        // Se era uma entrada, a correção é tirar do estoque
-        await this.resourceRepo.updateStock(transaction.resourceId.toString(), -transaction.quantity);
-      } else if (transaction.type === TransactionType.ALLOCATION) {
-        // Se era uma alocação (tirou do estoque), a correção é devolver pro estoque
-        await this.resourceRepo.updateStock(transaction.resourceId.toString(), transaction.quantity);
-      }
+  if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
+    if (transaction.type === TransactionType.ENTRY || transaction.type === TransactionType.RETURN) {
+      // Se era uma entrada, a correção é tirar do estoque
+      await this.resourceRepo.updateStock(transaction.resourceId.toString(), -transaction.quantity);
+    } else if (transaction.type === TransactionType.ALLOCATION) {
+      // Se era uma alocação (tirou do estoque), a correção é devolver pro estoque
+      await this.resourceRepo.updateStock(transaction.resourceId.toString(), transaction.quantity);
     }
-
-    // Marca como cancelado
-    const canceledTx = await this.transactionRepo.markAsCanceled(transactionId, authorId, reason);
-
-    // Se a transação afetou uma obra, avisa na Timeline que foi estornada!
-    if (transaction.projectId) {
-      this.eventEmitter.emit('timeline.create', {
-        orgId: transaction.organizationId.toString(),
-        projectId: transaction.projectId.toString(),
-        authorId: authorId,
-        type: 'STATUS_CHANGE',
-        description: `Estorno de Lançamento: Uma movimentação de ${transaction.quantity} ${resource.unit} de ${resource.name} foi estornada. Motivo: ${reason}`,
-      });
-    }
-
-    return canceledTx;
   }
+
+  // Marca como cancelado
+  const canceledTx = await this.transactionRepo.markAsCanceled(transactionId, authorId, reason);
+
+  // Se a transação afetou uma obra, avisa na Timeline que foi estornada!
+  if (transaction.projectId) {
+    this.eventEmitter.emit('timeline.create', {
+      orgId: transaction.organizationId.toString(),
+      projectId: transaction.projectId.toString(),
+      authorId: authorId,
+      type: 'STATUS_CHANGE',
+      description: `Estorno de Lançamento: Uma movimentação de ${transaction.quantity} ${resource.unit} de ${resource.name} foi estornada. Motivo: ${reason}`,
+    });
+  }
+
+  return canceledTx;
+}
 
   // 7. LISTAR O HISTÓRICO (RAZÃO) DA EMPRESA
   async listTransactions(orgId: string) {
-    return this.transactionRepo.findAllByOrganization(orgId);
-  }
+  return this.transactionRepo.findAllByOrganization(orgId);
+}
 }

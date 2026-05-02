@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { resourceService, Resource } from "@/lib/services/resourceService";
+import { resourceService, Resource, ResourceType } from "@/lib/services/resourceService";
 
 interface AddStockModalProps {
   isOpen: boolean;
@@ -21,22 +21,26 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
   const [formData, setFormData] = useState({
     resourceId: "",
     quantity: 0,
-    unitCostSnapshot: "", // Tratado como string no input para evitar o zero inicial, convertido no envio
+    unitCostSnapshot: "",
     origin: "",
   });
 
-  // Carrega o catálogo para popular o select
+  // Carrega o lista para popular o select
   useEffect(() => {
     if (isOpen && orgId) {
       setIsLoading(true);
       resourceService.listResources(orgId)
         .then(setResources)
-        .catch(() => setError("Erro ao carregar catálogo de recursos."))
+        .catch(() => setError("Erro ao carregar lista de recursos."))
         .finally(() => setIsLoading(false));
     }
   }, [isOpen, orgId]);
 
   if (!isOpen) return null;
+
+  // Lógica para identificar se o recurso selecionado é financeiro (CAPITAL)
+  const selectedResource = resources.find((r) => r._id === formData.resourceId);
+  const isCapital = selectedResource?.type === ResourceType.CAPITAL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,18 +51,30 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
       return;
     }
     if (formData.quantity <= 0) {
-      setError("A quantidade deve ser maior que zero.");
+      setError(isCapital ? "O valor deve ser maior que zero." : "A quantidade deve ser maior que zero.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await resourceService.addStock(orgId, {
+      
+      // Constrói o payload respeitando a regra de negócio do Capital
+      const payload: any = {
         resourceId: formData.resourceId,
         quantity: Number(formData.quantity),
         origin: formData.origin,
-        ...(formData.unitCostSnapshot ? { unitCostSnapshot: Number(formData.unitCostSnapshot) } : {}),
-      });
+      };
+
+      if (isCapital) {
+        payload.unitCostSnapshot = 1; // Dinheiro sempre custa 1
+      } else if (formData.unitCostSnapshot) {
+        payload.unitCostSnapshot = Number(formData.unitCostSnapshot);
+      }
+
+      await resourceService.addStock(orgId, payload);
+      
+      // Reseta o formulário
+      setFormData({ resourceId: "", quantity: 0, unitCostSnapshot: "", origin: "" });
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -93,13 +109,15 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
             <label className="text-sm font-medium text-foreground">Item / Recurso</label>
             <select
               value={formData.resourceId}
-              onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, resourceId: e.target.value, unitCostSnapshot: "" });
+              }}
               disabled={isLoading}
               className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
               required
             >
               <option value="" disabled>
-                {isLoading ? "Carregando catálogo..." : "Selecione o recurso recebido"}
+                {isLoading ? "Carregando lista..." : "Selecione o recurso recebido"}
               </option>
               {resources.map((res) => (
                 <option key={res._id} value={res._id}>
@@ -109,9 +127,11 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isCapital ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Quantidade Recebida</label>
+              <label className="text-sm font-medium text-foreground">
+                {isCapital ? "Valor do Aporte (R$)" : "Quantidade Recebida"}
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -123,18 +143,20 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Custo Unitário NF (Opcional)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.unitCostSnapshot}
-                onChange={(e) => setFormData({ ...formData, unitCostSnapshot: e.target.value })}
-                placeholder="R$ Padrão"
-                className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
+            {!isCapital && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Custo Unitário NF (Opcional)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.unitCostSnapshot}
+                  onChange={(e) => setFormData({ ...formData, unitCostSnapshot: e.target.value })}
+                  placeholder="R$ Padrão"
+                  className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -143,7 +165,7 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
               type="text"
               value={formData.origin}
               onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-              placeholder="Ex: Nota Fiscal nº 12345 / Fornecedor XPTO"
+              placeholder={isCapital ? "Ex: Comprovante de PIX, Transferência Sócio X" : "Ex: Nota Fiscal nº 12345 / Fornecedor XPTO"}
               className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
