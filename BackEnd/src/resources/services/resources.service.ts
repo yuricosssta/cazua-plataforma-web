@@ -15,6 +15,16 @@ export class ResourcesService {
     private readonly eventEmitter: EventEmitter2
   ) { }
 
+  // Verifica se o recurso sofre baixa/entrada de saldo contábil ou físico
+  private isStockableResource(type: ResourceType): boolean {
+    return [ResourceType.MATERIAL, ResourceType.EQUIPMENT, ResourceType.CAPITAL].includes(type);
+  }
+
+  // Padroniza a emissão de eventos para o módulo de projetos
+  private emitTimelineEvent(data: { orgId: string, projectId: string, authorId: string, type: string, description: string, metadata?: any }) {
+    this.eventEmitter.emit('timeline.create', data);
+  }
+
   // 1. CRIAR RECURSO NO CATÁLOGO
   async createResource(orgId: string, data: CreateResourceDto) {
     return this.resourceRepo.create({
@@ -28,7 +38,7 @@ export class ResourcesService {
     return this.resourceRepo.findAllByOrganization(orgId);
   }
 
-  // 3. ENGENHEIRO PEDE MATERIAL (Requisição PENDING - Não mexe no estoque)
+  // 3. ENGENHEIRO PEDE MATERIAL (Requisição PENDING)
   async requestAllocation(data: {
     orgId: string;
     projectId: string;
@@ -40,7 +50,7 @@ export class ResourcesService {
   }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
 
-    const transaction = await this.transactionRepo.create({
+    return this.transactionRepo.create({
       organizationId: new Types.ObjectId(data.orgId),
       projectId: new Types.ObjectId(data.projectId),
       resourceId: new Types.ObjectId(data.resourceId),
@@ -49,42 +59,28 @@ export class ResourcesService {
       status: TransactionStatus.PENDING,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
-      totalCost: 0, // Custo zero até ser aprovado
+      totalCost: 0, 
       origin: data.origin,
       attachments: data.attachments || [],
       isStockNegative: false,
     });
-
-    // Opcional: Você pode emitir um evento para avisar o almoxarife aqui
-
-    return transaction;
   }
 
-  // ALMOXARIFADO APROVA E LIBERA MATERIAL (Mexe no estoque e Timeline)
+  // 3.1 ALMOXARIFADO APROVA E LIBERA
   async approveRequest(transactionId: string, authorId: string, approvedQuantity: number) {
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
 
     const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
-
-    // Calcula estoque negativo
     let isStockNegative = false;
-    if (
-      resource.type === ResourceType.MATERIAL || 
-      resource.type === ResourceType.EQUIPMENT ||
-      resource.type === ResourceType.CAPITAL
-    ) {
-      if (resource.currentStock - approvedQuantity < 0) {
-        isStockNegative = true;
-      }
-      // Dá baixa no estoque
+
+    if (this.isStockableResource(resource.type)) {
+      if (resource.currentStock - approvedQuantity < 0) isStockNegative = true;
       await this.resourceRepo.updateStock(transaction.resourceId.toString(), -approvedQuantity);
     }
 
-    // Calcula custo final
     const finalTotalCost = approvedQuantity * transaction.unitCostSnapshot;
 
-    // Atualiza transação
     const approvedTx = await this.transactionRepo.updateRequestStatus(
       transactionId,
       TransactionStatus.APPROVED,
@@ -93,19 +89,13 @@ export class ResourcesService {
       finalTotalCost
     );
 
-    // Grita na Timeline da Obra que o material foi liberado!
-    this.eventEmitter.emit('timeline.create', {
+    this.emitTimelineEvent({
       orgId: transaction.organizationId.toString(),
       projectId: transaction.projectId.toString(),
-      authorId: authorId,
+      authorId,
       type: 'REPORT',
-      description: `Alocação Aprovada: ${approvedQuantity} ${resource.unit} de ${resource.name} enviados para a obra.`,
-      metadata: {
-        totalCost: finalTotalCost,
-        resourceName: resource.name,
-        isStockNegative: isStockNegative,
-        attachments: transaction.attachments || [],
-      },
+      description: `Alocação Aprovada: ${approvedQuantity} ${resource.unit} de ${resource.name} enviados ao destino.`,
+      metadata: { totalCost: finalTotalCost, resourceName: resource.name, isStockNegative, attachments: transaction.attachments || [] },
     });
 
     return approvedTx;
@@ -126,100 +116,135 @@ export class ResourcesService {
     );
   }
 
-  // 4. ENTRADA NO ESTOQUE / APORTE (COMPRA)
+  // 3.3 SAÍDA DIRETA (Almoxarifado -> Obra)
+  async allocateDirectly(orgId: string, authorId: string, data: {
+    projectId: string;
+    resourceId: string;
+    quantity: number;
+    origin?: string;
+    attachments?: string[];
+  }) {
+    const resource = await this.resourceRepo.findById(data.resourceId);
+    let isStockNegative = false;
+
+    if (this.isStockableResource(resource.type)) {
+      if (resource.currentStock - data.quantity < 0) isStockNegative = true;
+      await this.resourceRepo.updateStock(data.resourceId, -data.quantity);
+    }
+
+    const transaction = await this.transactionRepo.create({
+      organizationId: new Types.ObjectId(orgId),
+      projectId: new Types.ObjectId(data.projectId),
+      resourceId: new Types.ObjectId(data.resourceId),
+      authorId: new Types.ObjectId(authorId),
+      type: TransactionType.ALLOCATION,
+      status: TransactionStatus.APPROVED,
+      quantity: data.quantity,
+      unitCostSnapshot: resource.standardCost,
+      totalCost: data.quantity * resource.standardCost,
+      origin: data.origin,
+      attachments: data.attachments || [],
+      isStockNegative,
+    });
+
+    this.emitTimelineEvent({
+      orgId,
+      projectId: data.projectId,
+      authorId,
+      type: 'REPORT',
+      description: `Saída Direta: ${data.quantity} ${resource.unit} de ${resource.name} alocados ao destino.`,
+      metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isStockNegative, attachments: data.attachments || [] },
+    });
+
+    return transaction;
+  }
+
+  // 4. ENTRADA NO ESTOQUE / APORTE
   async addStock(orgId: string, authorId: string, data: any) {
     const resource = await this.resourceRepo.findById(data.resourceId);
 
-    if (
-      resource.type === ResourceType.MATERIAL || 
-      resource.type === ResourceType.EQUIPMENT ||
-      resource.type === ResourceType.CAPITAL
-    ) {
+    if (this.isStockableResource(resource.type)) {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
     }
 
     return this.transactionRepo.create({
-    organizationId: new Types.ObjectId(orgId),
-    resourceId: new Types.ObjectId(data.resourceId),
-    authorId: new Types.ObjectId(authorId),
-    type: TransactionType.ENTRY,
-    quantity: data.quantity,
-    unitCostSnapshot: data.unitCostSnapshot || resource.standardCost,
-    totalCost: data.quantity * (data.unitCostSnapshot || resource.standardCost),
-    origin: data.origin,
-    attachments: data.attachments || [],
-  });
-  }
-
-  // 5. DEVOLUÇÃO DA OBRA (Sobrou material na obra e voltou pro galpão)
-  async returnFromProject(orgId: string, projectId: string, authorId: string, data: any) {
-  const resource = await this.resourceRepo.findById(data.resourceId);
-
-  if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
-    await this.resourceRepo.updateStock(data.resourceId, data.quantity); // Soma de volta
-  }
-
-  const transaction = await this.transactionRepo.create({
-    organizationId: new Types.ObjectId(orgId),
-    projectId: new Types.ObjectId(projectId),
-    resourceId: new Types.ObjectId(data.resourceId),
-    authorId: new Types.ObjectId(authorId),
-    type: TransactionType.RETURN,
-    quantity: data.quantity,
-    unitCostSnapshot: resource.standardCost, // Congela o custo atual
-    totalCost: data.quantity * resource.standardCost,
-    origin: data.origin,
-    attachments: data.attachments || [],
-  });
-
-  this.eventEmitter.emit('timeline.create', {
-    orgId, projectId, authorId,
-    type: 'REPORT',
-    description: `Devolução de Recurso: ${data.quantity} ${resource.unit} de ${resource.name} voltaram para o estoque.`,
-    metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isReturn: true, attachments: data.attachments || [] },
-  });
-
-  return transaction;
-}
-
-  // 6. O ESTORNO DE SEGURANÇA (AUDITORIA)
-  async cancelTransaction(transactionId: string, authorId: string, reason: string) {
-  const transaction = await this.transactionRepo.findById(transactionId);
-
-  if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
-
-  // Matemática Reversa de Estoque (Apenas para MATERIAIS ou EQUIPAMENTOS)
-  const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
-
-  if (resource.type === ResourceType.MATERIAL || resource.type === ResourceType.EQUIPMENT) {
-    if (transaction.type === TransactionType.ENTRY || transaction.type === TransactionType.RETURN) {
-      // Se era uma entrada, a correção é tirar do estoque
-      await this.resourceRepo.updateStock(transaction.resourceId.toString(), -transaction.quantity);
-    } else if (transaction.type === TransactionType.ALLOCATION) {
-      // Se era uma alocação (tirou do estoque), a correção é devolver pro estoque
-      await this.resourceRepo.updateStock(transaction.resourceId.toString(), transaction.quantity);
-    }
-  }
-
-  // Marca como cancelado
-  const canceledTx = await this.transactionRepo.markAsCanceled(transactionId, authorId, reason);
-
-  // Se a transação afetou uma obra, avisa na Timeline que foi estornada!
-  if (transaction.projectId) {
-    this.eventEmitter.emit('timeline.create', {
-      orgId: transaction.organizationId.toString(),
-      projectId: transaction.projectId.toString(),
-      authorId: authorId,
-      type: 'STATUS_CHANGE',
-      description: `Estorno de Lançamento: Uma movimentação de ${transaction.quantity} ${resource.unit} de ${resource.name} foi estornada. Motivo: ${reason}`,
+      organizationId: new Types.ObjectId(orgId),
+      resourceId: new Types.ObjectId(data.resourceId),
+      authorId: new Types.ObjectId(authorId),
+      type: TransactionType.ENTRY,
+      quantity: data.quantity,
+      unitCostSnapshot: data.unitCostSnapshot || resource.standardCost,
+      totalCost: data.quantity * (data.unitCostSnapshot || resource.standardCost),
+      origin: data.origin,
+      attachments: data.attachments || [],
     });
   }
 
-  return canceledTx;
-}
+  // 5. DEVOLUÇÃO DA OBRA
+  async returnFromProject(orgId: string, projectId: string, authorId: string, data: any) {
+    const resource = await this.resourceRepo.findById(data.resourceId);
 
-  // 7. LISTAR O HISTÓRICO (RAZÃO) DA EMPRESA
+    if (this.isStockableResource(resource.type)) {
+      await this.resourceRepo.updateStock(data.resourceId, data.quantity);
+    }
+
+    const transaction = await this.transactionRepo.create({
+      organizationId: new Types.ObjectId(orgId),
+      projectId: new Types.ObjectId(projectId),
+      resourceId: new Types.ObjectId(data.resourceId),
+      authorId: new Types.ObjectId(authorId),
+      type: TransactionType.RETURN,
+      quantity: data.quantity,
+      unitCostSnapshot: resource.standardCost,
+      totalCost: data.quantity * resource.standardCost,
+      origin: data.origin,
+      attachments: data.attachments || [],
+    });
+
+    this.emitTimelineEvent({
+      orgId,
+      projectId,
+      authorId,
+      type: 'REPORT',
+      description: `Devolução: ${data.quantity} ${resource.unit} de ${resource.name} voltaram para o estoque/caixa.`,
+      metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isReturn: true, attachments: data.attachments || [] },
+    });
+
+    return transaction;
+  }
+
+  // 6. ESTORNO DE SEGURANÇA (AUDITORIA)
+  async cancelTransaction(transactionId: string, authorId: string, reason: string) {
+    const transaction = await this.transactionRepo.findById(transactionId);
+    if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
+
+    const resource = await this.resourceRepo.findById(transaction.resourceId.toString());
+
+    if (this.isStockableResource(resource.type)) {
+      if (transaction.type === TransactionType.ENTRY || transaction.type === TransactionType.RETURN) {
+        await this.resourceRepo.updateStock(transaction.resourceId.toString(), -transaction.quantity);
+      } else if (transaction.type === TransactionType.ALLOCATION) {
+        await this.resourceRepo.updateStock(transaction.resourceId.toString(), transaction.quantity);
+      }
+    }
+
+    const canceledTx = await this.transactionRepo.markAsCanceled(transactionId, authorId, reason);
+
+    if (transaction.projectId) {
+      this.emitTimelineEvent({
+        orgId: transaction.organizationId.toString(),
+        projectId: transaction.projectId.toString(),
+        authorId,
+        type: 'STATUS_CHANGE',
+        description: `Estorno: Lançamento de ${transaction.quantity} ${resource.unit} de ${resource.name} estornado. Motivo: ${reason}`,
+      });
+    }
+
+    return canceledTx;
+  }
+
+  // 7. LISTAR O HISTÓRICO
   async listTransactions(orgId: string) {
-  return this.transactionRepo.findAllByOrganization(orgId);
-}
+    return this.transactionRepo.findAllByOrganization(orgId);
+  }
 }

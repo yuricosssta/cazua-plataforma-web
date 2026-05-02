@@ -10,6 +10,8 @@ import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { TransactionHistory } from "@/components/resources/TransactionHistory";
 import { PendingRequests } from "@/components/resources/PendingRequests";
+import { AllocateDirectlyModal } from "@/components/resources/AllocateDirectlyModal";
+import { Send } from "lucide-react"; // Ícone sugerido para o botão
 // Importaremos os subcomponentes aqui no futuro:
 // import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
 // import { PendingRequests } from "@/components/resources/PendingRequests";
@@ -22,6 +24,7 @@ export default function ResourcesPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
 
     const currentOrg = useSelector(selectCurrentOrg);
     const orgId = typeof currentOrg?.organizationId === "object"
@@ -47,7 +50,15 @@ export default function ResourcesPage() {
                         onClick={() => setIsAddStockModalOpen(true)}
                         className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10">
                         <ArrowDownToLine className="w-4 h-4" />
-                        Entrada de Estoque
+                        Entrada de Recurso
+                    </button>
+
+                    <button
+                        onClick={() => setIsAllocateModalOpen(true)}
+                        className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10"
+                    >
+                        <Send className="w-4 h-4" />
+                        Saída de Recurso
                     </button>
 
                     <button
@@ -133,6 +144,12 @@ export default function ResourcesPage() {
                     <AddStockModal
                         isOpen={isAddStockModalOpen}
                         onClose={() => setIsAddStockModalOpen(false)}
+                        orgId={orgId}
+                        onSuccess={triggerRefresh}
+                    />
+                    <AllocateDirectlyModal
+                        isOpen={isAllocateModalOpen}
+                        onClose={() => setIsAllocateModalOpen(false)}
                         orgId={orgId}
                         onSuccess={triggerRefresh}
                     />
