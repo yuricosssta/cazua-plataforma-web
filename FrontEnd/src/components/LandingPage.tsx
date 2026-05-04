@@ -60,11 +60,11 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <LogoBloco />
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Entrar
-            </Link>
-            <Link href="/signup" className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
+            <Link href="/signup" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Criar Conta Grátis
+            </Link>
+            <Link href="/login" className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
+              Entrar
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
