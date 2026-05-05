@@ -28,10 +28,20 @@ export const apiAssignMember = async (orgId: string, projectId: string, memberId
 export const apiRemoveMember = async (orgId: string, projectId: string, memberId: string, memberName: string) => {
   try {
     const response = await axiosInstance.delete(`/organizations/${orgId}/projects/${projectId}/members/${memberId}`, {
-      data: { memberName } 
+      data: { memberName }
     });
     return response.data;
   } catch (error: any) {
     throw error.response?.data || 'Erro ao remover membro';
+  }
+};
+
+// BUSCA DETALHES DE UM PROJETO ESPECÍFICO
+export const getProjectDetails = async (orgId: string, projectId: string) => {
+  try {
+    const response = await axiosInstance.get(`/organizations/${orgId}/projects/${projectId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || 'Erro ao buscar detalhes do projeto';
   }
 };

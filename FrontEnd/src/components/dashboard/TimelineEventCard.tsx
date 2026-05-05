@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  MessageSquare, ArrowRightCircle, FileText, ClipboardList, Activity, Clock, 
-  LinkIcon, MoreVertical, FileDown 
+import {
+  MessageSquare, ArrowRightCircle, FileText, ClipboardList, Activity, Clock,
+  LinkIcon, MoreVertical, FileDown
 } from "lucide-react";
 import { TimelineEventType } from "@/types/project";
 
@@ -14,12 +14,12 @@ interface TimelineEvent {
   description: string;
   parecerCode?: string;
   authorId: {
-    _id: string; 
+    _id: string;
     name: string;
   };
   createdAt: string;
   metadata?: Record<string, any>;
-  attachments?: string[]; 
+  attachments?: string[];
 }
 
 interface TimelineEventCardProps {
@@ -66,7 +66,8 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
     if (desc.includes('foi removido')) {
       return desc.replace(/Membro (.*?) foi removido.*/, 'removeu $1 da equipe');
     }
-    return `alterou o status da demanda: ${desc}`;
+    return ` ${desc}`;
+    // return `alterou o status da demanda: ${desc}`;
   };
 
   const eventConfig = getEventConfig(event.type);
@@ -82,20 +83,20 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
       </span>
 
       <div className={`flex flex-col relative ${isDocumentStyle ? 'bg-card border border-border shadow-md rounded-sm p-6 md:p-10' : 'pt-5'}`}>
-        
+
         {isDocumentStyle && (
           <div className="absolute top-4 right-4" ref={menuRef}>
-            <button 
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors"
             >
               <MoreVertical className="w-5 h-5" />
             </button>
-            
+
             {isMenuOpen && (
               <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-lg z-10 animate-in fade-in zoom-in-95 duration-100">
                 <div className="py-1">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       onExportPdf(event);
