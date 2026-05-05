@@ -11,11 +11,7 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { TransactionHistory } from "@/components/resources/TransactionHistory";
 import { PendingRequests } from "@/components/resources/PendingRequests";
 import { AllocateDirectlyModal } from "@/components/resources/AllocateDirectlyModal";
-import { Send } from "lucide-react"; // Ícone sugerido para o botão
-// Importaremos os subcomponentes aqui no futuro:
-// import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
-// import { PendingRequests } from "@/components/resources/PendingRequests";
-// import { TransactionHistory } from "@/components/resources/TransactionHistory";
+import { Send } from "lucide-react"; 
 
 type TabType = "catalog" | "requests" | "history";
 

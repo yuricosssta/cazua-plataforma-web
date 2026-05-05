@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import { resourceService, ResourceTransaction } from "@/lib/services/resourceService";
+import { resourceService } from "@/lib/services/resourceService";
 import { CheckCircle, XCircle, AlertCircle, ClipboardList, Loader2 } from "lucide-react";
 
 interface PendingRequestsProps {
@@ -17,7 +17,6 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para os fluxos de Aprovação/Rejeição
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"APPROVE" | "REJECT" | null>(null);
   const [actionData, setActionData] = useState({ quantity: 0, reason: "" });
@@ -33,8 +32,7 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
       try {
         setIsLoading(true);
         const data = await resourceService.listTransactions(orgId);
-        // Filtra apenas as transações pendentes
-        const pendingData = data.filter((tx) => tx.status === "PENDING" && !tx.isCanceled);
+        const pendingData = data.filter((tx: any) => tx.status === "PENDING" && !tx.isCanceled);
         setRequests(pendingData);
         setError(null);
       } catch (err) {
@@ -56,6 +54,14 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(dateString));
+  };
+
+  const formatCurrency = (value?: number) => {
+    if (value === undefined || value === null) return "-";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   const handleOpenAction = (id: string, type: "APPROVE" | "REJECT", defaultQuantity: number = 0) => {
@@ -82,7 +88,7 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
       }
 
       handleCancelAction();
-      onActionComplete(); // Aciona o gatilho para recarregar a tabela e abas globais
+      onActionComplete(); 
     } catch (err: any) {
       alert(err.message || err.response?.data?.message || "Erro ao processar a requisição.");
     }
@@ -118,13 +124,15 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
 
   return (
     <div className="w-full overflow-x-auto pb-10">
-      <table className="w-full text-left text-sm border-collapse">
+      <table className="w-full text-left text-sm border-collapse min-w-[900px]">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-muted-foreground">Data da Solicitação</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Data da Solicitação</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground">Projeto / Destino</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground">Recurso Requisitado</th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground text-center">Qtd. Solicitada</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground">Justificativa</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground text-center">Qtd.</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground text-right whitespace-nowrap">Valor Previsto</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Ação</th>
           </tr>
         </thead>
@@ -135,16 +143,23 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                 <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                   {formatDate(req.createdAt)}
                 </td>
-                <td className="px-4 py-3 font-medium text-foreground">
+                <td className="px-4 py-3 font-medium text-foreground min-w-[150px]">
                   {req.projectId?.title || "Projeto não identificado"}
                 </td>
-                <td className="px-4 py-3 font-medium">
+                <td className="px-4 py-3 font-medium whitespace-nowrap">
                   {req.resourceId?.name} <span className="text-xs font-normal text-muted-foreground">({req.resourceId?.unit})</span>
+                </td>
+                {/* Alteração aplicada nesta célula */}
+                <td className="px-4 py-3 text-muted-foreground text-xs min-w-[250px] max-w-[400px] whitespace-normal break-words">
+                  {req.origin || "Não informada"}
                 </td>
                 <td className="px-4 py-3 text-center font-semibold text-orange-600">
                   {req.quantity}
                 </td>
-                <td className="px-4 py-3 text-right space-x-2">
+                <td className="px-4 py-3 text-right font-medium text-muted-foreground">
+                  {formatCurrency(req.quantity * (req.unitCostSnapshot || 0))}
+                </td>
+                <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                   <button
                     onClick={() => handleOpenAction(req._id, "REJECT")}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md hover:bg-destructive/20 transition-colors"
@@ -160,10 +175,9 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                 </td>
               </tr>
 
-              {/* Linha Expansível para Ação (Aprovar ou Rejeitar) */}
               {processingId === req._id && (
                 <tr className="bg-muted/10 border-b border-border">
-                  <td colSpan={5} className="px-4 py-4">
+                  <td colSpan={7} className="px-4 py-4">
                     <div className="flex flex-col sm:flex-row items-end gap-4 p-4 border border-border rounded-md bg-card shadow-sm">
                       
                       {actionType === "APPROVE" ? (
