@@ -1,5 +1,5 @@
 //src/resources/services/resources.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResourceRepository } from '../repositories/resource.repository';
 import { ResourceTransactionRepository } from '../repositories/resource-transaction.repository';
@@ -27,17 +27,14 @@ export class ResourcesService {
     return description;
   }
   
-  // Verifica se o recurso sofre baixa/entrada de saldo contábil ou físico
   private isStockableResource(type: ResourceType): boolean {
     return [ResourceType.MATERIAL, ResourceType.EQUIPMENT, ResourceType.CAPITAL].includes(type);
   }
 
-  // Padroniza a emissão de eventos para o módulo de projetos
   private emitTimelineEvent(data: { orgId: string, projectId: string, authorId: string, type: string, description: string, metadata?: any }) {
     this.eventEmitter.emit('timeline.create', data); 
   }
 
-  // 1. CRIAR RECURSO NO CATÁLOGO
   async createResource(orgId: string, data: CreateResourceDto) {
     return this.resourceRepo.create({
       ...data,
@@ -45,12 +42,47 @@ export class ResourcesService {
     });
   }
 
-  // 2. LISTAR CATÁLOGO DA EMPRESA
   async findAllByOrganization(orgId: string) {
     return this.resourceRepo.findAllByOrganization(orgId);
   }
 
-  // 3. ENGENHEIRO PEDE MATERIAL (Requisição PENDING)
+  // 8. ATUALIZAR RECURSO (Edição Controlada)
+  async updateResource(orgId: string, resourceId: string, data: Partial<CreateResourceDto>) {
+    const resource = await this.resourceRepo.findById(resourceId);
+
+    if (resource.organizationId.toString() !== orgId) {
+      throw new UnauthorizedException('Acesso negado a este recurso.');
+    }
+
+    // Trava de segurança estrutural
+    if (resource.currentStock !== 0) {
+      if (data.type && data.type !== resource.type) {
+        throw new BadRequestException('Não é possível alterar a categoria de um recurso que possui saldo no almoxarifado.');
+      }
+      if (data.unit && data.unit !== resource.unit) {
+        throw new BadRequestException('Não é possível alterar a unidade de medida de um recurso que possui saldo no almoxarifado.');
+      }
+    }
+
+    return this.resourceRepo.update(resourceId, data);
+  }
+
+  // 9. INATIVAR RECURSO (Soft Delete)
+  async inactivateResource(orgId: string, resourceId: string) {
+    const resource = await this.resourceRepo.findById(resourceId);
+
+    if (resource.organizationId.toString() !== orgId) {
+      throw new UnauthorizedException('Acesso negado a este recurso.');
+    }
+
+    // Trava contábil: Não pode esconder recurso com dinheiro/material pendente
+    if (resource.currentStock !== 0) {
+      throw new BadRequestException('Zere o saldo deste recurso (via estorno ou saída) antes de inativá-lo.');
+    }
+
+    return this.resourceRepo.inactivate(resourceId);
+  }
+
   async requestAllocation(data: {
     orgId: string;
     projectId: string;
@@ -61,6 +93,7 @@ export class ResourcesService {
     attachments?: string[];
   }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
+    if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode ser solicitado.');
 
     const transaction = await this.transactionRepo.create({
       organizationId: new Types.ObjectId(data.orgId),
@@ -77,25 +110,17 @@ export class ResourcesService {
       isStockNegative: false,
     });
 
-    // let description: string;
-    // if (resource.type === ResourceType.CAPITAL) {
-    //   description = `solicitou ${resource.unit} ${data.quantity} de ${resource.name}. Aguardando Almoxarifado.`;    
-    // } else {
-    //   description = `solicitou ${data.quantity} ${resource.unit} de ${resource.name}. Aguardando Almoxarifado.`;
-    // };
-
     this.emitTimelineEvent({
       orgId: data.orgId,
       projectId: data.projectId,
       authorId: data.authorId,
-      type: TimelineEventType.STATUS_CHANGE, // REPORT
+      type: TimelineEventType.STATUS_CHANGE,
       description: this.getResourceDescription(resource, data),
       metadata: { resourceName: resource.name, status: 'PENDING' },
     });
     return transaction;
   }
 
-  // 3.1 ALMOXARIFADO APROVA E LIBERA
   async approveRequest(transactionId: string, authorId: string, approvedQuantity: number) {
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
@@ -130,7 +155,6 @@ export class ResourcesService {
     return approvedTx;
   }
 
-  // 3.2 ALMOXARIFADO REJEITA PEDIDO
   async rejectRequest(transactionId: string, authorId: string, reason: string) {
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
@@ -145,7 +169,6 @@ export class ResourcesService {
     );
   }
 
-  // 3.3 SAÍDA DIRETA (Almoxarifado -> Obra)
   async allocateDirectly(orgId: string, authorId: string, data: {
     projectId: string;
     resourceId: string;
@@ -154,6 +177,8 @@ export class ResourcesService {
     attachments?: string[];
   }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
+    if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo.');
+    
     let isStockNegative = false;
 
     if (this.isStockableResource(resource.type)) {
@@ -188,9 +213,9 @@ export class ResourcesService {
     return transaction;
   }
 
-  // 4. ENTRADA NO ESTOQUE / APORTE
   async addStock(orgId: string, authorId: string, data: any) {
     const resource = await this.resourceRepo.findById(data.resourceId);
+    if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode receber novas entradas.');
 
     if (this.isStockableResource(resource.type)) {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
@@ -209,7 +234,6 @@ export class ResourcesService {
     });
   }
 
-  // 5. DEVOLUÇÃO DA OBRA
   async returnFromProject(orgId: string, projectId: string, authorId: string, data: any) {
     const resource = await this.resourceRepo.findById(data.resourceId);
 
@@ -242,7 +266,6 @@ export class ResourcesService {
     return transaction;
   }
 
-  // 6. ESTORNO DE SEGURANÇA (AUDITORIA)
   async cancelTransaction(transactionId: string, authorId: string, reason: string) {
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
@@ -272,7 +295,6 @@ export class ResourcesService {
     return canceledTx;
   }
 
-  // 7. LISTAR O HISTÓRICO
   async listTransactions(orgId: string) {
     return this.transactionRepo.findAllByOrganization(orgId);
   }

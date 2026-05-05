@@ -16,10 +16,17 @@ export class ResourceRepository {
     return newResource.save();
   }
 
-  // BUSCAR TODOS OS RECURSOS DA EMPRESA (Ordenados por nome)
-  async findAllByOrganization(orgId: string): Promise<Resource[]> {
+  // BUSCAR RECURSOS DA EMPRESA (Traz apenas os ativos por padrão)
+  async findAllByOrganization(orgId: string, includeInactive = false): Promise<Resource[]> {
+    const query: any = { organizationId: new Types.ObjectId(orgId) };
+    
+    if (!includeInactive) {
+      // $ne: false garante compatibilidade com registros antigos que não possuíam a flag
+      query.isActive = { $ne: false }; 
+    }
+
     return this.model
-      .find({ organizationId: new Types.ObjectId(orgId) })
+      .find(query)
       .sort({ name: 1 })
       .exec();
   }
@@ -31,10 +38,33 @@ export class ResourceRepository {
   }
 
   async updateStock(id: string, quantityChange: number): Promise<Resource> {
-    // Incrementa ou decrementa o estoque de forma atômica
     const updated = await this.model.findByIdAndUpdate(
       id,
       { $inc: { currentStock: quantityChange } },
+      { new: true }
+    ).exec();
+    
+    if (!updated) throw new NotFoundException('Recurso não encontrado.');
+    return updated;
+  }
+
+  // ATUALIZAR DADOS DO RECURSO (Edição)
+  async update(id: string, data: Partial<Resource>): Promise<Resource> {
+    const updated = await this.model.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true }
+    ).exec();
+    
+    if (!updated) throw new NotFoundException('Recurso não encontrado.');
+    return updated;
+  }
+
+  // INATIVAR RECURSO (Soft Delete)
+  async inactivate(id: string): Promise<Resource> {
+    const updated = await this.model.findByIdAndUpdate(
+      id,
+      { $set: { isActive: false } },
       { new: true }
     ).exec();
     

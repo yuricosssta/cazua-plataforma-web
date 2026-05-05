@@ -1,3 +1,4 @@
+//src/resources/schemas/resource.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { ResourceType } from '../types/resource-enums';
@@ -23,6 +24,10 @@ export class Resource {
 
   @Prop({ type: Number, default: 0 })
   currentStock: number; // Saldo atual no Almoxarifado Central
+
+  // Controle de Soft Delete / Arquivamento
+  @Prop({ type: Boolean, default: true })
+  isActive: boolean; 
 }
 
 export const ResourceSchema = SchemaFactory.createForClass(Resource);
