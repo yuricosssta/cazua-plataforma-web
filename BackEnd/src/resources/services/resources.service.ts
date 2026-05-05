@@ -34,7 +34,7 @@ export class ResourcesService {
 
   // Padroniza a emissão de eventos para o módulo de projetos
   private emitTimelineEvent(data: { orgId: string, projectId: string, authorId: string, type: string, description: string, metadata?: any }) {
-    this.eventEmitter.emit('timeline.create', data);
+    this.eventEmitter.emit('timeline.create', data); 
   }
 
   // 1. CRIAR RECURSO NO CATÁLOGO
@@ -123,7 +123,7 @@ export class ResourcesService {
       projectId: transaction.projectId.toString(),
       authorId,
       type: TimelineEventType.STATUS_CHANGE,
-      description: `adicionou ${approvedQuantity} ${resource.unit} de ${resource.name} ao destino.`,
+      description: `adicionou ${approvedQuantity} ${resource.unit} de ${resource.name} ao projeto.`,
       metadata: { totalCost: finalTotalCost, resourceName: resource.name, isStockNegative, attachments: transaction.attachments || [] },
     });
 
@@ -181,7 +181,7 @@ export class ResourcesService {
       projectId: data.projectId,
       authorId,
       type: TimelineEventType.STATUS_CHANGE,
-      description: `Saída de ${data.quantity} ${resource.unit} de ${resource.name} alocados ao destino.`,
+      description: `Movimento de ${data.quantity} ${resource.unit} de ${resource.name} alocados ao projeto.`,
       metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isStockNegative, attachments: data.attachments || [] },
     });
 

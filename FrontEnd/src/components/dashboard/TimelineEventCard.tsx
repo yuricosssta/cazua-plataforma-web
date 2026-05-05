@@ -6,7 +6,7 @@ import {
   MessageSquare, ArrowRightCircle, FileText, ClipboardList, Activity, Clock,
   LinkIcon, MoreVertical, FileDown
 } from "lucide-react";
-import { TimelineEventType } from "@/types/project";
+import { TimelineEventType } from "@/types/project"; 
 
 interface TimelineEvent {
   _id: string;

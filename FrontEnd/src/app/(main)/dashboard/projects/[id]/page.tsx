@@ -63,7 +63,7 @@ export default function ProjectDetailsPage() {
     if (!orgId || !token || !projectId) return;
     try {
       if (showFullLoader) setIsLoading(true);
-      const data = await getProjectDetails(orgId, projectId); // Usando a refatoração via BFF
+      const data = await getProjectDetails(orgId, projectId);
       setProject(data.project);
       setTimeline(data.timeline);
     } catch (error) {
@@ -212,7 +212,7 @@ export default function ProjectDetailsPage() {
           onClick={() => setActiveTab("RESOURCES")}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === "RESOURCES" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
         >
-          <Package className="w-4 h-4" /> Recursos
+          <Package className="w-4 h-4" /> Movimentações de Recursos
         </button>
       </div>
 

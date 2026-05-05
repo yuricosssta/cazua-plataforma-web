@@ -46,12 +46,20 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
     }
   };
 
+  const formatCurrency = (value?: number) => {
+    if (value === undefined || value === null) return "-";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
   return (
     <div className="flex flex-col space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold">Movimentação de Recursos</h2>
-          <p className="text-sm text-muted-foreground">Histórico de materiais, mão de obra e verbas alocadas neste projeto.</p>
+          <p className="text-sm text-muted-foreground">Histórico de requisições de insumos, mão de obra e verbas alocadas neste projeto.</p>
         </div>
         <button
           disabled={!hasPermission}
@@ -73,30 +81,40 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
             <p className="text-sm">Nenhum recurso movimentado ou solicitado para este projeto.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="bg-muted/30 border-b border-border">
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Data</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Recurso</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Qtd</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {transactions.map((tx) => (
-                <tr key={tx._id} className="hover:bg-muted/10">
-                  <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                    {new Date(tx.createdAt).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {tx.resourceId?.name} <span className="text-xs font-normal text-muted-foreground">({tx.resourceId?.unit})</span>
-                  </td>
-                  <td className="px-4 py-3 font-semibold">{tx.quantity}</td>
-                  <td className="px-4 py-3 text-right">{getStatusBadge(tx.status)}</td>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-muted/30 border-b border-border">
+                  <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Data</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Recurso</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Justificativa</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground text-center">Qtd</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground text-right whitespace-nowrap">Custo Total</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {transactions.map((tx) => (
+                  <tr key={tx._id} className="hover:bg-muted/10 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {new Date(tx.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {tx.resourceId?.name} <span className="text-xs font-normal text-muted-foreground">({tx.resourceId?.unit})</span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate" title={tx.origin}>
+                      {tx.origin || "Não informada"}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-center">{tx.quantity}</td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {tx.status === 'APPROVED' ? formatCurrency(tx.totalCost) : <span className="text-muted-foreground">-</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right">{getStatusBadge(tx.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
