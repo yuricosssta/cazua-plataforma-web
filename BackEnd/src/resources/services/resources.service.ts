@@ -6,6 +6,7 @@ import { ResourceTransactionRepository } from '../repositories/resource-transact
 import { ResourceType, TransactionStatus, TransactionType } from '../types/resource-enums';
 import { Types } from 'mongoose';
 import { CreateResourceDto } from '../validations/resource.zod';
+import { TimelineEventType } from 'src/projects/schemas/timeline-event.schema';
 
 @Injectable()
 export class ResourcesService {
@@ -15,6 +16,17 @@ export class ResourcesService {
     private readonly eventEmitter: EventEmitter2
   ) { }
 
+  private getResourceDescription(resource: any, data: any): string {
+    let description: string;
+    if (resource.type === ResourceType.CAPITAL) {
+      description = `solicitou ${resource.unit} ${data.quantity} de ${resource.name}. Aguardando Almoxarifado.`;    
+    } else {
+      description = `solicitou ${data.quantity} ${resource.unit} de ${resource.name}. Aguardando Almoxarifado.`;
+    };
+    
+    return description;
+  }
+  
   // Verifica se o recurso sofre baixa/entrada de saldo contábil ou físico
   private isStockableResource(type: ResourceType): boolean {
     return [ResourceType.MATERIAL, ResourceType.EQUIPMENT, ResourceType.CAPITAL].includes(type);
@@ -22,7 +34,7 @@ export class ResourcesService {
 
   // Padroniza a emissão de eventos para o módulo de projetos
   private emitTimelineEvent(data: { orgId: string, projectId: string, authorId: string, type: string, description: string, metadata?: any }) {
-    this.eventEmitter.emit('timeline.create', data);
+    this.eventEmitter.emit('timeline.create', data); 
   }
 
   // 1. CRIAR RECURSO NO CATÁLOGO
@@ -50,7 +62,7 @@ export class ResourcesService {
   }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
 
-    return this.transactionRepo.create({
+    const transaction = await this.transactionRepo.create({
       organizationId: new Types.ObjectId(data.orgId),
       projectId: new Types.ObjectId(data.projectId),
       resourceId: new Types.ObjectId(data.resourceId),
@@ -59,11 +71,28 @@ export class ResourcesService {
       status: TransactionStatus.PENDING,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
-      totalCost: 0, 
+      totalCost: 0,
       origin: data.origin,
       attachments: data.attachments || [],
       isStockNegative: false,
     });
+
+    // let description: string;
+    // if (resource.type === ResourceType.CAPITAL) {
+    //   description = `solicitou ${resource.unit} ${data.quantity} de ${resource.name}. Aguardando Almoxarifado.`;    
+    // } else {
+    //   description = `solicitou ${data.quantity} ${resource.unit} de ${resource.name}. Aguardando Almoxarifado.`;
+    // };
+
+    this.emitTimelineEvent({
+      orgId: data.orgId,
+      projectId: data.projectId,
+      authorId: data.authorId,
+      type: TimelineEventType.STATUS_CHANGE, // REPORT
+      description: this.getResourceDescription(resource, data),
+      metadata: { resourceName: resource.name, status: 'PENDING' },
+    });
+    return transaction;
   }
 
   // 3.1 ALMOXARIFADO APROVA E LIBERA
@@ -93,8 +122,8 @@ export class ResourcesService {
       orgId: transaction.organizationId.toString(),
       projectId: transaction.projectId.toString(),
       authorId,
-      type: 'REPORT',
-      description: `Alocação Aprovada: ${approvedQuantity} ${resource.unit} de ${resource.name} enviados ao destino.`,
+      type: TimelineEventType.STATUS_CHANGE,
+      description: `adicionou ${approvedQuantity} ${resource.unit} de ${resource.name} ao projeto.`,
       metadata: { totalCost: finalTotalCost, resourceName: resource.name, isStockNegative, attachments: transaction.attachments || [] },
     });
 
@@ -151,8 +180,8 @@ export class ResourcesService {
       orgId,
       projectId: data.projectId,
       authorId,
-      type: 'REPORT',
-      description: `Saída Direta: ${data.quantity} ${resource.unit} de ${resource.name} alocados ao destino.`,
+      type: TimelineEventType.STATUS_CHANGE,
+      description: `Movimento de ${data.quantity} ${resource.unit} de ${resource.name} alocados ao projeto.`,
       metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isStockNegative, attachments: data.attachments || [] },
     });
 
@@ -205,8 +234,8 @@ export class ResourcesService {
       orgId,
       projectId,
       authorId,
-      type: 'REPORT',
-      description: `Devolução: ${data.quantity} ${resource.unit} de ${resource.name} voltaram para o estoque/caixa.`,
+      type: TimelineEventType.STATUS_CHANGE,
+      description: `devolveu ${data.quantity} ${resource.unit} de ${resource.name} para o estoque/caixa.`,
       metadata: { totalCost: transaction.totalCost, resourceName: resource.name, isReturn: true, attachments: data.attachments || [] },
     });
 
@@ -235,8 +264,8 @@ export class ResourcesService {
         orgId: transaction.organizationId.toString(),
         projectId: transaction.projectId.toString(),
         authorId,
-        type: 'STATUS_CHANGE',
-        description: `Estorno: Lançamento de ${transaction.quantity} ${resource.unit} de ${resource.name} estornado. Motivo: ${reason}`,
+        type: TimelineEventType.STATUS_CHANGE,
+        description: `estornou lançamento de ${transaction.quantity} ${resource.unit} de ${resource.name}. Motivo: ${reason}`,
       });
     }
 

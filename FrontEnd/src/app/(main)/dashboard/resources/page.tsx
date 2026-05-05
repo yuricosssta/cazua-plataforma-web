@@ -11,11 +11,7 @@ import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { TransactionHistory } from "@/components/resources/TransactionHistory";
 import { PendingRequests } from "@/components/resources/PendingRequests";
 import { AllocateDirectlyModal } from "@/components/resources/AllocateDirectlyModal";
-import { Send } from "lucide-react"; // Ícone sugerido para o botão
-// Importaremos os subcomponentes aqui no futuro:
-// import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
-// import { PendingRequests } from "@/components/resources/PendingRequests";
-// import { TransactionHistory } from "@/components/resources/TransactionHistory";
+import { Send } from "lucide-react"; 
 
 type TabType = "catalog" | "requests" | "history";
 
@@ -113,9 +109,9 @@ export default function ResourcesPage() {
             </div>
 
             {/* ÁREA DE CONTEÚDO (RENDERIZAÇÃO CONDICIONAL) */}
-            <div className="flex-1 bg-card border border-border rounded-sm shadow-sm min-h-[400px] p-6">
+            <div className="flex-1 bg-card shadow-sm min-h-[400px] p-1">
                 {activeTab === "catalog" && (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
+                    <div className="flex flex-col items-center justify-start h-full text-muted-foreground opacity-60">
                         <ResourceCatalog refreshKey={refreshKey} />
                     </div>
                 )}
@@ -128,7 +124,7 @@ export default function ResourcesPage() {
                 )}
 
                 {activeTab === "history" && (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
+                    <div className="flex flex-col items-center justify-start h-full text-muted-foreground opacity-60">
                         <TransactionHistory refreshKey={refreshKey} />
                     </div>
                 )}

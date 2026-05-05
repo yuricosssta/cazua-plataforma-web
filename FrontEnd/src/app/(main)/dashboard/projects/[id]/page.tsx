@@ -6,30 +6,27 @@ import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import {
-  ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
-  Flame, Activity, MessageSquare, ArrowRightCircle, Clock, Loader2, ClipboardList, Network, Users,
-  LogOut // <-- Ícone importado
-} from "lucide-react";
+import { getProjectDetails, apiRemoveMember } from "@/lib/services/projectService";
+import { ProjectStatus, TimelineEventType, Project } from "@/types/project";
+import { TimelineEventCard } from "@/components/dashboard/TimelineEventCard";
+import { ExportPdfModal } from "@/components/dashboard/ExportPdfModal";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
 import { MapViewerModal } from "@/components/ui/MapViewer";
-import axiosInstance from "@/lib/api/axiosInstance";
-import { ProjectStatus, TimelineEventType } from "@/types/project";
-import { Project } from "@/types/project";
-import { TimelineEventCard } from "@/components/dashboard/TimelineEventCard";
-import { ExportPdfModal } from "@/components/dashboard/ExportPdfModal";
-import { apiRemoveMember } from "@/lib/services/projectService";
+import { ProjectResourcesTab } from "@/components/resources/ProjectResourcesTab";
+import {
+  ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
+  Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package
+} from "lucide-react";
+
+type DetailTabType = "TIMELINE" | "RESOURCES";
 
 interface TimelineEvent {
   _id: string;
   type: TimelineEventType;
   description: string;
   parecerCode?: string;
-  authorId: {
-    _id: string;
-    name: string;
-  };
+  authorId: { _id: string; name: string; };
   createdAt: string;
   metadata?: Record<string, any>;
 }
@@ -42,6 +39,8 @@ export default function ProjectDetailsPage() {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
+
+  const [activeTab, setActiveTab] = useState<DetailTabType>("TIMELINE");
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
   const [pdfEventTarget, setPdfEventTarget] = useState<any>(null);
 
@@ -60,15 +59,13 @@ export default function ProjectDetailsPage() {
   const [isParecerOpen, setIsParecerOpen] = useState(false);
   const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
 
-  const fetchProjectDetails = async (showFullLoader = true) => {
+  const fetchDetails = async (showFullLoader = true) => {
     if (!orgId || !token || !projectId) return;
-
     try {
       if (showFullLoader) setIsLoading(true);
-
-      const response = await axiosInstance.get(`/organizations/${orgId}/projects/${projectId}`);
-      setProject(response.data.project);
-      setTimeline(response.data.timeline);
+      const data = await getProjectDetails(orgId, projectId);
+      setProject(data.project);
+      setTimeline(data.timeline);
     } catch (error) {
       console.error("Erro ao buscar detalhes:", error);
       alert("Não foi possível carregar os detalhes do projeto.");
@@ -79,8 +76,8 @@ export default function ProjectDetailsPage() {
   };
 
   useEffect(() => {
-    fetchProjectDetails(true);
-  }, [orgId, token, projectId, router]);
+    fetchDetails(true);
+  }, [orgId, token, projectId]);
 
   const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
   const currentUserName = user?.name || (user as any)?.displayName || "Usuário";
@@ -95,16 +92,13 @@ export default function ProjectDetailsPage() {
   const hasPermission = isOrgAdmin || isAssigned;
 
   const handleLeaveProject = async () => {
-    const confirmLeave = window.confirm("Tem certeza que deseja encerrar sua participação nesta obra? Ela deixará de aparecer no seu painel principal.");
+    const confirmLeave = window.confirm("Tem certeza que deseja encerrar sua participação?");
     if (!confirmLeave) return;
-
     try {
       await apiRemoveMember(orgId, projectId, currentUserId, currentUserName);
-      alert("Participação encerrada com sucesso.");
       router.push(`/dashboard/projects`);
     } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Falha ao sair da obra.");
+      alert(error.message || "Falha ao sair da demanda.");
     }
   };
 
@@ -131,7 +125,7 @@ export default function ProjectDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-sm font-medium">Buscando histórico da obra...</p>
+        <p className="text-muted-foreground text-sm font-medium">Sincronizando projeto...</p>
       </div>
     );
   }
@@ -142,178 +136,119 @@ export default function ProjectDetailsPage() {
   const PriorityIcon = priorityConfig.icon;
 
   return (
-    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-8 text-foreground pb-24 relative min-h-screen">
-
-      {/* CABEÇALHO DE COMANDO */}
+    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-screen">
+      
+      {/* CABEÇALHO */}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-
           <div className="flex items-start gap-4">
-            <button
-              onClick={() => router.push("/dashboard/projects")}
-              className="mt-1.5 p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors shrink-0"
-            >
+            <button onClick={() => router.push("/dashboard/projects")} className="mt-1.5 p-2 rounded-full hover:bg-muted text-muted-foreground shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              {project.referenceCode && (
-                <div className="text-sm font-mono font-bold text-primary mb-1 tracking-wider uppercase">
-                  {project.referenceCode}
-                </div>
-              )}
+              {project.referenceCode && <div className="text-sm font-mono font-bold text-primary mb-1 tracking-wider uppercase">{project.referenceCode}</div>}
               <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground mt-2 text-sm font-medium">
-                <span className="flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMapLocationView(project.location || "");
-                  }}
-                ><MapPin className="w-4 h-4" /> {project.location}</span>
+                <span className="flex items-center gap-1.5 cursor-pointer hover:text-primary" onClick={(e) => { e.stopPropagation(); setMapLocationView(project.location || ""); }}>
+                  <MapPin className="w-4 h-4" /> {project.location}
+                </span>
                 {(project.startDate || project.endDate) && (
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
-                    {project.startDate ? new Date(project.startDate).toLocaleDateString('pt-BR') : 'TBD'}
-                    {' - '}
-                    {project.endDate ? new Date(project.endDate).toLocaleDateString('pt-BR') : 'TBD'}
+                    {project.startDate ? new Date(project.startDate).toLocaleDateString('pt-BR') : 'TBD'} - {project.endDate ? new Date(project.endDate).toLocaleDateString('pt-BR') : 'TBD'}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* PAINEL DE AÇÕES */}
           <div className="flex flex-wrap items-center gap-2 ml-14 md:ml-0">
             {isOrgAdmin && (
-              <button
-                onClick={() => setIsTeamDrawerOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold transition-colors border border-border"
-              >
+              <button onClick={() => setIsTeamDrawerOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold border border-border">
                 <Users className="w-4 h-4" /> Equipe
               </button>
             )}
-
-            <button
-              disabled={!hasPermission}
-              onClick={() => setIsParecerOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
-                ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-primary/20'
-                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
-                }`}
-              title={!hasPermission ? "Você não está alocado neste projeto." : ""}
-            >
+            <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-primary/20' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
-
-            <button
-              disabled={!hasPermission}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
-                ? 'bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white border-amber-200'
-                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
-                }`}
-            >
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} Diário de Obra
+            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
+              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} RDO
             </button>
-
-            <button
-              disabled={!hasPermission}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors border ${hasPermission
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-200'
-                : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'
-                }`}
-            >
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <Network className="w-4 h-4" />} EAP / Orçamento
-            </button>
-
-            {/* BOTÃO NOVO: Sair da Obra */}
             {isAssigned && (
-              <button
-                onClick={handleLeaveProject}
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-semibold transition-colors border border-red-200 ml-auto md:ml-0"
-                title="Encerrar participação nesta demanda"
-              >
-                <LogOut className="w-4 h-4" /> Encerrar Participação
+              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
+                <LogOut className="w-4 h-4" /> Sair
               </button>
             )}
           </div>
         </div>
 
-        {/* Barra de Metadados */}
         <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-md p-3 shadow-sm ml-0 md:ml-12">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
             <StatusIcon className="w-4 h-4" /> {statusConfig.label}
           </div>
-
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${priorityConfig.bg} ${priorityConfig.color}`}>
             <PriorityIcon className="w-4 h-4" /> {priorityConfig.label}
           </div>
-
-          {project.priorityDetails && (
-            <div className="flex items-center gap-2 px-3 py-1 border-l border-border text-xs text-muted-foreground font-medium">
-              <span title="Gravidade">Gravidade: {project.priorityDetails.gravidade}</span>
-              <span title="Urgência">Urgência: {project.priorityDetails.urgencia}</span>
-              <span title="Tendência">Tendência: {project.priorityDetails.tendencia}</span>
-            </div>
-          )}
-
           {(project.status === "EXECUTION" || project.status === "COMPLETED") && (
             <div className="flex-1 min-w-[150px] flex items-center gap-3 pl-3 md:pl-6 border-l border-border">
               <span className="text-xs font-bold whitespace-nowrap">{project.progress}% Físico</span>
               <div className="w-full h-2 bg-muted rounded-full overflow-hidden max-w-[200px]">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
-                  style={{ width: `${project.progress}%` }}
-                />
+                <div className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${project.progress}%` }} />
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* MOTOR TIMELINE */}
-      <div className="ml-4 md:ml-16 relative border-l-2 border-muted pb-8 mt-4">
-        {timeline.length === 0 ? (
-          <p className="text-muted-foreground text-sm ml-8">Nenhum evento registrado ainda.</p>
-        ) : (
-          timeline.map((event, index) => (
-            <TimelineEventCard
-              key={event._id}
-              event={event as any}
-              isLatest={index === 0}
-              onExportPdf={(eventData) => setPdfEventTarget(eventData)}
-            />
-          ))
+      {/* NAVEGAÇÃO DE ABAS */}
+      <div className="flex space-x-1 border-b border-border ml-0 md:ml-12 mt-2">
+        <button
+          onClick={() => setActiveTab("TIMELINE")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === "TIMELINE" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          <FolderKanban className="w-4 h-4" /> Visão Geral
+        </button>
+        <button
+          onClick={() => setActiveTab("RESOURCES")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === "RESOURCES" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          <Package className="w-4 h-4" /> Movimentações de Recursos
+        </button>
+      </div>
+
+      {/* ÁREA DE RENDERIZAÇÃO CONDICIONAL */}
+      <div className="ml-0 md:ml-12 pt-2">
+        {activeTab === "TIMELINE" && (
+          <div className="relative border-l-2 border-muted pb-8 pl-4 md:pl-6 ml-2 md:ml-0">
+            {timeline.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nenhum evento registrado ainda.</p>
+            ) : (
+              timeline.map((event, index) => (
+                <TimelineEventCard
+                  key={event._id}
+                  event={event as any}
+                  isLatest={index === 0}
+                  onExportPdf={(eventData) => setPdfEventTarget(eventData)}
+                />
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === "RESOURCES" && (
+          <ProjectResourcesTab 
+            orgId={orgId} 
+            projectId={projectId} 
+            hasPermission={hasPermission} 
+          />
         )}
       </div>
 
-      {/* MODAIS */}
-      <EmitParecerModal
-        isOpen={isParecerOpen}
-        onClose={() => setIsParecerOpen(false)}
-        project={{ id: project._id || project.id, title: project.title, status: project.status }}
-        onSuccess={() => fetchProjectDetails(false)}
-      />
-
-      <ManageTeamDrawer
-        isOpen={isTeamDrawerOpen}
-        onClose={() => setIsTeamDrawerOpen(false)}
-        orgId={orgId}
-        projectId={project._id || project.id}
-        currentAssignedMembers={project.assignedMembers || []}
-        onSuccess={() => fetchProjectDetails(false)}
-      />
-
-      <MapViewerModal
-        isOpen={!!mapLocationView}
-        onClose={() => setMapLocationView(null)}
-        locationString={mapLocationView || ""}
-      />
-
-      <ExportPdfModal
-        isOpen={!!pdfEventTarget}
-        onClose={() => setPdfEventTarget(null)}
-        event={pdfEventTarget}
-        currentOrg={currentOrg}
-      />
+      {/* MODAIS (Ocultos) */}
+      <EmitParecerModal isOpen={isParecerOpen} onClose={() => setIsParecerOpen(false)} project={project as any} onSuccess={() => fetchDetails(false)} />
+      <ManageTeamDrawer isOpen={isTeamDrawerOpen} onClose={() => setIsTeamDrawerOpen(false)} orgId={orgId} projectId={projectId} currentAssignedMembers={project.assignedMembers || []} onSuccess={() => fetchDetails(false)} />
+      <MapViewerModal isOpen={!!mapLocationView} onClose={() => setMapLocationView(null)} locationString={mapLocationView || ""} />
+      <ExportPdfModal isOpen={!!pdfEventTarget} onClose={() => setPdfEventTarget(null)} event={pdfEventTarget} currentOrg={currentOrg} />
     </div>
   );
 }
