@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Loader2, Activity, MessageSquare, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, FileText, Briefcase, Paperclip, Trash2 } from "lucide-react";
+import { X, Loader2, Activity, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, Briefcase, Paperclip, Trash2, FileText } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axiosInstance from "@/lib/api/axiosInstance";
-import axios from "axios";
 import { Project } from "@/types/project";
 import { uploadFileToR2 } from "@/lib/services/storageService";
+import { emitParecer } from "@/lib/services/projectService";
 
 // Importações do OpenLayers
 import Map from "ol/Map";
@@ -38,6 +37,9 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     : currentOrg?.organizationId;
 
   const orgRole = currentOrg?.role || 'MEMBER';
+  
+  // Variável segura para o ID (Suporta a lista mapeada ou o dado cru do MongoDB)
+  const projectId = project?.id || (project as any)?._id;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gut, setGut] = useState({ gravidade: 3, urgencia: 3, tendencia: 3 });
@@ -45,7 +47,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const [newStatus, setNewStatus] = useState("");
   const [updateGUT, setUpdateGUT] = useState(false);
 
-  // ESTADOS DO DESDOBRAMENTO TÉCNICO E GPS
   const [technicalTitle, setTechnicalTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -53,7 +54,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
-  // ESTADOS DE UPLOAD R2
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
@@ -61,30 +61,26 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const mapInstance = useRef<Map | null>(null);
   const vectorSource = useRef<VectorSource | null>(null);
 
-  // RECUPERAÇÃO INICIAL (Status e Rascunho)
   useEffect(() => {
-    if (isOpen && project) {
+    if (isOpen && project && projectId) {
       setNewStatus(project.status);
 
-      // Carrega o rascunho específico DESSA obra (caso ele tenha fechado sem querer)
-      const draftKey = `draft_parecer_${project.id}`;
+      const draftKey = `draft_parecer_${projectId}`;
       const savedDraft = localStorage.getItem(draftKey);
       if (savedDraft) {
         setParecerText(savedDraft);
       }
     }
-  }, [isOpen, project]);
+  }, [isOpen, project, projectId]);
 
-  // SALVAMENTO AUTOMÁTICO (Auto-Save)
   useEffect(() => {
-    if (isOpen && project && parecerText.length > 0) {
-      const draftKey = `draft_parecer_${project.id}`;
+    if (isOpen && projectId && parecerText.length > 0) {
+      const draftKey = `draft_parecer_${projectId}`;
       localStorage.setItem(draftKey, parecerText);
     }
-  }, [parecerText, isOpen, project]);
+  }, [parecerText, isOpen, projectId]);
 
 
-  // OpenLayers Config
   useEffect(() => {
     if (showMap && mapRef.current && !mapInstance.current) {
       vectorSource.current = new VectorSource();
@@ -179,7 +175,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     setAttachments(prev => prev.filter((_, i) => i !== indexToRemove));
   };
 
-  if (!isOpen || !project) return null;
+  if (!isOpen || !project || !projectId) return null;
 
   const currentScore = gut.gravidade * gut.urgencia * gut.tendencia;
   const isPlanningMode = newStatus === "PLANNING" && project.status === "DEMAND";
@@ -207,14 +203,10 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       if (startDate) payload.startDate = startDate;
       if (endDate) payload.endDate = endDate;
 
-      await axiosInstance.post(
-        `/organizations/${orgId}/projects/${project.id}/parecer`,
-        payload,
-        { headers: { 'x-org-role': orgRole } }
-      );
+      // Chamada via BFF refatorada
+      await emitParecer(orgId, projectId, payload, orgRole as string);
 
-      // Limpa os estados e DELETA o rascunho após o sucesso
-      const draftKey = `draft_parecer_${project.id}`;
+      const draftKey = `draft_parecer_${projectId}`;
       localStorage.removeItem(draftKey);
 
       setParecerText("");
@@ -225,7 +217,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       onSuccess();
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro interno ao emitir o parecer.");
+      alert(error.message || error.response?.data?.message || "Erro interno ao emitir o parecer.");
     } finally {
       setIsSubmitting(false);
     }
@@ -352,7 +344,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Laudo / Corpo do Parecer <span className="text-red-500">*</span></span>
 
                   <div className="flex gap-2 ml-auto">
-                    {/* Botão de Anexo */}
                     <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-1.5 rounded border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:text-primary/80 bg-primary/5 border-primary/20'}`}>
                       {isUploadingFiles ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
                       {isUploadingFiles ? 'Enviando...' : 'Anexar'}
@@ -380,7 +371,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                       </div>
                     )}
 
-                    {/* A CAIXA DE TEXTO SEMPRE RENDERIZA AGORA */}
                     <textarea
                       required
                       placeholder="Inicie aqui a redação do seu parecer técnico..."
@@ -390,7 +380,6 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                     />
                   </div>
 
-                  {/* PREVIEW DOS ANEXOS */}
                   {attachments.length > 0 && (
                     <div className="w-full max-w-[210mm]">
                       <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Arquivos Anexados ({attachments.length})</h4>
