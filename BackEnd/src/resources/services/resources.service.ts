@@ -1,8 +1,9 @@
 //src/resources/services/resources.service.ts
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResourceRepository } from '../repositories/resource.repository';
 import { ResourceTransactionRepository } from '../repositories/resource-transaction.repository';
+import { WarehouseRepository } from '../repositories/warehouse.repository';
 import { ResourceType, TransactionStatus, TransactionType } from '../types/resource-enums';
 import { Types } from 'mongoose';
 import { CreateResourceDto } from '../validations/resource.zod';
@@ -13,9 +14,24 @@ export class ResourcesService {
   constructor(
     private readonly resourceRepo: ResourceRepository,
     private readonly transactionRepo: ResourceTransactionRepository,
+    private readonly warehouseRepo: WarehouseRepository,
     private readonly eventEmitter: EventEmitter2
   ) { }
 
+  // --- VALIDAÇÃO DE PERMISSÃO DO ALMOXARIFADO ---
+  async checkWarehousePermission(orgId: string, userId: string, userRole: string) {
+    if (userRole === 'OWNER' || userRole === 'ADMIN') return true;
+
+    const warehouse = await this.warehouseRepo.getOrCreate(orgId);
+    const isAssigned = warehouse.assignedMembers.some(id => id.toString() === userId.toString());
+    
+    if (!isAssigned) {
+      throw new ForbiddenException('Acesso negado: Você não tem permissão para operar o Almoxarifado Central.');
+    }
+    return true;
+  }
+
+  // --- MÉTODOS AUXILIARES ---
   private getResourceDescription(resource: any, data: any): string {
     let description: string;
     if (resource.type === ResourceType.CAPITAL) {
@@ -23,7 +39,6 @@ export class ResourcesService {
     } else {
       description = `solicitou ${data.quantity} ${resource.unit} de ${resource.name}. Aguardando Almoxarifado.`;
     };
-    
     return description;
   }
   
@@ -35,7 +50,24 @@ export class ResourcesService {
     this.eventEmitter.emit('timeline.create', data); 
   }
 
-  async createResource(orgId: string, data: CreateResourceDto) {
+  // --- GESTÃO DA EQUIPE ---
+  async getWarehouseTeam(orgId: string) {
+    const warehouse = await this.warehouseRepo.getOrCreate(orgId);
+    return warehouse.assignedMembers;
+  }
+
+  async assignWarehouseMember(orgId: string, memberId: string) {
+    return this.warehouseRepo.assignMember(orgId, memberId);
+  }
+
+  async removeWarehouseMember(orgId: string, memberId: string) {
+    return this.warehouseRepo.removeMember(orgId, memberId);
+  }
+
+
+  // --- OPERAÇÕES DE CATÁLOGO ---
+  async createResource(orgId: string, userId: string, userRole: string, data: CreateResourceDto) {
+    await this.checkWarehousePermission(orgId, userId, userRole);
     return this.resourceRepo.create({
       ...data,
       organizationId: new Types.ObjectId(orgId),
@@ -46,15 +78,12 @@ export class ResourcesService {
     return this.resourceRepo.findAllByOrganization(orgId);
   }
 
-  // 8. ATUALIZAR RECURSO (Edição Controlada)
-  async updateResource(orgId: string, resourceId: string, data: Partial<CreateResourceDto>) {
+  async updateResource(orgId: string, resourceId: string, userId: string, userRole: string, data: Partial<CreateResourceDto>) {
+    await this.checkWarehousePermission(orgId, userId, userRole);
+    
     const resource = await this.resourceRepo.findById(resourceId);
+    if (resource.organizationId.toString() !== orgId) throw new UnauthorizedException('Acesso negado a este recurso.');
 
-    if (resource.organizationId.toString() !== orgId) {
-      throw new UnauthorizedException('Acesso negado a este recurso.');
-    }
-
-    // Trava de segurança estrutural
     if (resource.currentStock !== 0) {
       if (data.type && data.type !== resource.type) {
         throw new BadRequestException('Não é possível alterar a categoria de um recurso que possui saldo no almoxarifado.');
@@ -63,35 +92,25 @@ export class ResourcesService {
         throw new BadRequestException('Não é possível alterar a unidade de medida de um recurso que possui saldo no almoxarifado.');
       }
     }
-
     return this.resourceRepo.update(resourceId, data);
   }
 
-  // 9. INATIVAR RECURSO (Soft Delete)
-  async inactivateResource(orgId: string, resourceId: string) {
+  async inactivateResource(orgId: string, resourceId: string, userId: string, userRole: string) {
+    await this.checkWarehousePermission(orgId, userId, userRole);
+
     const resource = await this.resourceRepo.findById(resourceId);
+    if (resource.organizationId.toString() !== orgId) throw new UnauthorizedException('Acesso negado a este recurso.');
 
-    if (resource.organizationId.toString() !== orgId) {
-      throw new UnauthorizedException('Acesso negado a este recurso.');
-    }
-
-    // Trava contábil: Não pode esconder recurso com dinheiro/material pendente
     if (resource.currentStock !== 0) {
       throw new BadRequestException('Zere o saldo deste recurso (via estorno ou saída) antes de inativá-lo.');
     }
-
     return this.resourceRepo.inactivate(resourceId);
   }
 
-  async requestAllocation(data: {
-    orgId: string;
-    projectId: string;
-    authorId: string;
-    resourceId: string;
-    quantity: number;
-    origin?: string;
-    attachments?: string[];
-  }) {
+  // --- OPERAÇÕES DE ESTOQUE E TRANSAÇÕES ---
+  
+  // Exceção: O Engenheiro pede a RM da obra, não precisa ser Almoxarife.
+  async requestAllocation(data: { orgId: string; projectId: string; authorId: string; resourceId: string; quantity: number; origin?: string; attachments?: string[]; }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode ser solicitado.');
 
@@ -121,7 +140,9 @@ export class ResourcesService {
     return transaction;
   }
 
-  async approveRequest(transactionId: string, authorId: string, approvedQuantity: number) {
+  async approveRequest(orgId: string, transactionId: string, authorId: string, userRole: string, approvedQuantity: number) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+    
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
 
@@ -155,7 +176,9 @@ export class ResourcesService {
     return approvedTx;
   }
 
-  async rejectRequest(transactionId: string, authorId: string, reason: string) {
+  async rejectRequest(orgId: string, transactionId: string, authorId: string, userRole: string, reason: string) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
 
@@ -169,13 +192,9 @@ export class ResourcesService {
     );
   }
 
-  async allocateDirectly(orgId: string, authorId: string, data: {
-    projectId: string;
-    resourceId: string;
-    quantity: number;
-    origin?: string;
-    attachments?: string[];
-  }) {
+  async allocateDirectly(orgId: string, authorId: string, userRole: string, data: { projectId: string; resourceId: string; quantity: number; origin?: string; attachments?: string[]; }) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+
     const resource = await this.resourceRepo.findById(data.resourceId);
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo.');
     
@@ -213,7 +232,9 @@ export class ResourcesService {
     return transaction;
   }
 
-  async addStock(orgId: string, authorId: string, data: any) {
+  async addStock(orgId: string, authorId: string, userRole: string, data: any) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+
     const resource = await this.resourceRepo.findById(data.resourceId);
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode receber novas entradas.');
 
@@ -234,7 +255,9 @@ export class ResourcesService {
     });
   }
 
-  async returnFromProject(orgId: string, projectId: string, authorId: string, data: any) {
+  async returnFromProject(orgId: string, projectId: string, authorId: string, userRole: string, data: any) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+
     const resource = await this.resourceRepo.findById(data.resourceId);
 
     if (this.isStockableResource(resource.type)) {
@@ -266,7 +289,9 @@ export class ResourcesService {
     return transaction;
   }
 
-  async cancelTransaction(transactionId: string, authorId: string, reason: string) {
+  async cancelTransaction(orgId: string, transactionId: string, authorId: string, userRole: string, reason: string) {
+    await this.checkWarehousePermission(orgId, authorId, userRole);
+
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.isCanceled) throw new Error('Esta transação já foi estornada.');
 
