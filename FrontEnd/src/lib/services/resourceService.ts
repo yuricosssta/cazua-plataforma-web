@@ -24,6 +24,7 @@ export interface Resource {
   unit: string;
   standardCost: number;
   currentStock: number;
+  isActive: boolean; // NOVO CAMPO: Identifica se o recurso foi arquivado
   createdAt: string;
   updatedAt: string;
 }
@@ -82,7 +83,7 @@ export interface CancelTransactionData {
 }
 
 export const resourceService = {
-  // 1. Catálogo
+  // Catálogo
   createResource: async (orgId: string, data: CreateResourceData): Promise<Resource> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources`, data);
     return response.data;
@@ -93,13 +94,13 @@ export const resourceService = {
     return response.data;
   },
 
-  // 2. Requisição pela Obra
+  // Requisição pela Obra
   requestAllocation: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/request/${projectId}`, data);
     return response.data;
   },
 
-  // 3. Gestão do Almoxarifado (Aprovar/Rejeitar RM)
+  // Gestão do Almoxarifado (Aprovar/Rejeitar RM)
   approveRequest: async (orgId: string, transactionId: string, data: ApproveRequestData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/approve`, data);
     return response.data;
@@ -110,13 +111,13 @@ export const resourceService = {
     return response.data;
   },
 
-  // 3.3 Saída Direta (Almoxarifado -> Obra)
+  // Saída Direta (Almoxarifado -> Obra)
   allocateDirectly: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/allocate-direct/${projectId}`, data);
     return response.data;
   },
 
-  // 4. Entradas e Devoluções de Estoque
+  // Entradas e Devoluções de Estoque
   addStock: async (orgId: string, data: AddStockData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/stock`, data);
     return response.data;
@@ -127,15 +128,27 @@ export const resourceService = {
     return response.data;
   },
 
-  // 5. Auditoria (Estorno)
+  // Auditoria (Estorno)
   cancelTransaction: async (orgId: string, transactionId: string, data: CancelTransactionData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/cancel`, data);
     return response.data;
   },
 
-  // 6. Livro Razão
+  // Livro Razão
   listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
     const response = await axiosInstance.get(`/organizations/${orgId}/resources/transactions`);
+    return response.data;
+  },
+
+  // Atualizar Recurso (Edição) - Tipagem corrigida para alinhar com o DTO
+  updateResource: async (orgId: string, resourceId: string, data: Partial<CreateResourceData>): Promise<Resource> => {
+    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}`, data);
+    return response.data;
+  },
+
+  // Inativar Recurso (Soft Delete)
+  inactivateResource: async (orgId: string, resourceId: string): Promise<Resource> => {
+    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}/inactivate`);
     return response.data;
   },
 };

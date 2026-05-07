@@ -6,7 +6,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { resourceService, Resource, ResourceType } from '@/lib/services/resourceService';
-import { Box, HardHat, Wrench, DollarSign, AlertCircle } from "lucide-react";
+import { Box, HardHat, Wrench, DollarSign, AlertCircle, Edit2, Archive } from "lucide-react";
+import { EditResourceModal } from "./EditResourceModal";
 
 interface ResourceCatalogProps {
   refreshKey: number;
@@ -16,6 +17,12 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Refresh interno para não precisar alterar a page.tsx pai
+  const [internalRefresh, setInternalRefresh] = useState(0);
+
+  // Estados de Edição
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
 
   const currentOrg = useSelector(selectCurrentOrg);
   const orgId = typeof currentOrg?.organizationId === "object"
@@ -39,9 +46,29 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     }
 
     fetchResources();
-  }, [orgId, refreshKey]);
+  }, [orgId, refreshKey, internalRefresh]);
 
-  // Função auxiliar para formatar moeda
+  const triggerLocalRefresh = () => setInternalRefresh(prev => prev + 1);
+
+  const handleInactivate = async (resource: Resource) => {
+    if (!orgId) return;
+    
+    if (resource.currentStock !== 0) {
+      alert("Operação bloqueada: Zere o saldo deste recurso antes de inativá-lo para evitar furos contábeis.");
+      return;
+    }
+
+    const confirm = window.confirm(`Tem certeza que deseja inativar o recurso "${resource.name}"? Ele deixará de aparecer em novas requisições.`);
+    if (!confirm) return;
+
+    try {
+      await resourceService.inactivateResource(orgId, resource._id);
+      triggerLocalRefresh();
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || "Erro ao inativar recurso.");
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -49,7 +76,6 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     }).format(value);
   };
 
-  // Função auxiliar para renderizar a badge visual da categoria
   const getCategoryBadge = (type: ResourceType) => {
     switch (type) {
       case ResourceType.MATERIAL:
@@ -103,7 +129,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3">
         <Box className="w-12 h-12 opacity-20" />
-        <p className="text-sm font-medium">Nenhum recurso cadastrado no almoxarifado.</p>
+        <p className="text-sm font-medium">Nenhum recurso ativo no almoxarifado.</p>
         <p className="text-xs opacity-70">Utilize o botão "Novo Recurso" para iniciar o catálogo.</p>
       </div>
     );
@@ -111,14 +137,15 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full text-left text-sm border-collapse">
+      <table className="w-full text-left text-sm border-collapse min-w-[800px]">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-muted-foreground w-1/3">Nome do Recurso</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground">Nome do Recurso</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground">Categoria</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground">Unidade</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Custo Padrão</th>
             <th className="px-4 py-3 font-semibold text-muted-foreground text-right">Saldo Central</th>
+            <th className="px-4 py-3 font-semibold text-muted-foreground text-center">Ações</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -137,7 +164,6 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
                 {formatCurrency(resource.standardCost)}
               </td>
               <td className="px-4 py-3 text-right">
-                {/* Lógica condicional tripla: Mão de obra, Capital e Materiais físicos */}
                 {resource.type === ResourceType.LABOR ? (
                   <span className="text-muted-foreground text-xs italic">N/A</span>
                 ) : resource.type === ResourceType.CAPITAL ? (
@@ -150,10 +176,38 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
                   </span>
                 )}
               </td>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => setEditingResource(resource)}
+                    className="p-1.5 text-muted-foreground hover:text-primary bg-muted/50 hover:bg-muted rounded-md transition-colors"
+                    title="Editar Recurso"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleInactivate(resource)}
+                    className="p-1.5 text-muted-foreground hover:text-destructive bg-muted/50 hover:bg-destructive/10 rounded-md transition-colors"
+                    title="Arquivar/Inativar"
+                  >
+                    <Archive className="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {orgId && (
+        <EditResourceModal
+          isOpen={!!editingResource}
+          onClose={() => setEditingResource(null)}
+          orgId={orgId}
+          resource={editingResource}
+          onSuccess={triggerLocalRefresh}
+        />
+      )}
     </div>
   );
 }

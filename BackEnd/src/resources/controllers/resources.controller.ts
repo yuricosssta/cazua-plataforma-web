@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, Req, UseGuards } from '@nestjs/common';
+//src/resources/controllers/resources.controller.ts
+import { Controller, Post, Get, Patch, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { ResourcesService } from '../services/resources.service';
 import { AuthGuard } from '../../auth/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
@@ -24,12 +25,11 @@ import {
 export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) { }
 
-  // Função auxiliar padronizada para extrair o ID do usuário logado
   private extractUserId(req: any): string {
     return req.user?.sub || req.user?._id || req.user?.id;
   }
 
-  // 1. CRIAR NOVO RECURSO NO CATÁLOGO (Ex: Cadastrar "Saco de Cimento")
+  // 1. CRIAR NOVO RECURSO NO CATÁLOGO
   @Post()
   async createResource(
     @Param('orgId') orgId: string,
@@ -44,7 +44,7 @@ export class ResourcesController {
     return this.resourcesService.findAllByOrganization(orgId);
   }
 
-  // 3. ENGENHEIRO PEDE RECURSO (Cai na fila do Almoxarifado)
+  // 3. ENGENHEIRO PEDE RECURSO (RM)
   @Post('request/:projectId')
   async requestAllocation(
     @Param('orgId') orgId: string,
@@ -135,5 +135,24 @@ export class ResourcesController {
   @Get('transactions')
   async listTransactions(@Param('orgId') orgId: string) {
     return this.resourcesService.listTransactions(orgId);
+  }
+
+  // 8. ATUALIZAR RECURSO (Edição Controlada)
+  @Patch(':resourceId')
+  async updateResource(
+    @Param('orgId') orgId: string,
+    @Param('resourceId') resourceId: string,
+    @Body() data: Partial<CreateResourceDto>,
+  ) {
+    return this.resourcesService.updateResource(orgId, resourceId, data);
+  }
+
+  // 9. INATIVAR RECURSO (Soft Delete)
+  @Patch(':resourceId/inactivate')
+  async inactivateResource(
+    @Param('orgId') orgId: string,
+    @Param('resourceId') resourceId: string,
+  ) {
+    return this.resourcesService.inactivateResource(orgId, resourceId);
   }
 }
