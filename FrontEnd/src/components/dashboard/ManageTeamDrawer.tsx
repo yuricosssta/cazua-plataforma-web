@@ -7,7 +7,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { IUser } from "@/types/user";
-import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService"; // <-- IMPORTANDO O BFF
+import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService";
 
 
 interface ManageTeamDrawerProps {
@@ -47,7 +47,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
         fetchOrgMembers();
     }, [isOpen, orgId, token]);
 
-    // Função para Alocar no projeto (Usando BFF)
+    // Função para Alocar no projeto
     const handleAssign = async (userId: string, userName: string) => {
         try {
             setProcessingId(userId);
@@ -62,7 +62,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
         }
     };
 
-    // Função para Remover do projeto (Usando BFF)
+    // Função para Remover do projeto
     const handleRemove = async (userId: string, userName: string) => {
         try {
             setProcessingId(userId);
