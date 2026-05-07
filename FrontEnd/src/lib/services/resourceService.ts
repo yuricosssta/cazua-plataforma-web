@@ -24,7 +24,7 @@ export interface Resource {
   unit: string;
   standardCost: number;
   currentStock: number;
-  isActive: boolean; // NOVO CAMPO: Identifica se o recurso foi arquivado
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,9 +83,35 @@ export interface CancelTransactionData {
 }
 
 export const resourceService = {
-  // Catálogo
-  createResource: async (orgId: string, data: CreateResourceData): Promise<Resource> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources`, data);
+  // --- EQUIPE DO ALMOXARIFADO ---
+  getWarehouseTeam: async (orgId: string): Promise<string[]> => {
+    const response = await axiosInstance.get(`/organizations/${orgId}/resources/team`);
+    return response.data;
+  },
+
+  assignWarehouseMember: async (orgId: string, userId: string, orgRole: string): Promise<any> => {
+    const response = await axiosInstance.post(
+      `/organizations/${orgId}/resources/team/assign`,
+      { userId },
+      { headers: { 'x-org-role': orgRole } }
+    );
+    return response.data;
+  },
+
+  removeWarehouseMember: async (orgId: string, userId: string, orgRole: string): Promise<any> => {
+    const response = await axiosInstance.post(
+      `/organizations/${orgId}/resources/team/remove`,
+      { userId },
+      { headers: { 'x-org-role': orgRole } }
+    );
+    return response.data;
+  },
+
+  // --- CATÁLOGO ---
+  createResource: async (orgId: string, data: CreateResourceData, orgRole?: string): Promise<Resource> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
@@ -94,61 +120,75 @@ export const resourceService = {
     return response.data;
   },
 
-  // Requisição pela Obra
+  updateResource: async (orgId: string, resourceId: string, data: Partial<CreateResourceData>, orgRole?: string): Promise<Resource> => {
+    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
+    return response.data;
+  },
+
+  inactivateResource: async (orgId: string, resourceId: string, orgRole?: string): Promise<Resource> => {
+    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}/inactivate`, {}, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
+    return response.data;
+  },
+
+  // --- REQUISIÇÃO PELA OBRA ---
   requestAllocation: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
     const response = await axiosInstance.post(`/organizations/${orgId}/resources/request/${projectId}`, data);
     return response.data;
   },
 
-  // Gestão do Almoxarifado (Aprovar/Rejeitar RM)
-  approveRequest: async (orgId: string, transactionId: string, data: ApproveRequestData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/approve`, data);
+  // --- GESTÃO DO ALMOXARIFADO (Aprovar/Rejeitar RM) ---
+  approveRequest: async (orgId: string, transactionId: string, data: ApproveRequestData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/approve`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  rejectRequest: async (orgId: string, transactionId: string, data: RejectRequestData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/reject`, data);
+  rejectRequest: async (orgId: string, transactionId: string, data: RejectRequestData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/reject`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  // Saída Direta (Almoxarifado -> Obra)
-  allocateDirectly: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/allocate-direct/${projectId}`, data);
+  // --- SAÍDA DIRETA (Almoxarifado -> Obra) ---
+  allocateDirectly: async (orgId: string, projectId: string, data: AllocateResourceData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/allocate-direct/${projectId}`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  // Entradas e Devoluções de Estoque
-  addStock: async (orgId: string, data: AddStockData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/stock`, data);
+  // --- ENTRADAS E DEVOLUÇÕES DE ESTOQUE ---
+  addStock: async (orgId: string, data: AddStockData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/stock`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  returnFromProject: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/return/${projectId}`, data);
+  returnFromProject: async (orgId: string, projectId: string, data: AllocateResourceData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/return/${projectId}`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  // Auditoria (Estorno)
-  cancelTransaction: async (orgId: string, transactionId: string, data: CancelTransactionData): Promise<ResourceTransaction> => {
-    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/cancel`, data);
+  // --- AUDITORIA (Estorno) ---
+  cancelTransaction: async (orgId: string, transactionId: string, data: CancelTransactionData, orgRole?: string): Promise<ResourceTransaction> => {
+    const response = await axiosInstance.post(`/organizations/${orgId}/resources/transactions/${transactionId}/cancel`, data, {
+      headers: orgRole ? { 'x-org-role': orgRole } : undefined
+    });
     return response.data;
   },
 
-  // Livro Razão
+  // --- LIVRO RAZÃO ---
   listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
     const response = await axiosInstance.get(`/organizations/${orgId}/resources/transactions`);
-    return response.data;
-  },
-
-  // Atualizar Recurso (Edição) - Tipagem corrigida para alinhar com o DTO
-  updateResource: async (orgId: string, resourceId: string, data: Partial<CreateResourceData>): Promise<Resource> => {
-    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}`, data);
-    return response.data;
-  },
-
-  // Inativar Recurso (Soft Delete)
-  inactivateResource: async (orgId: string, resourceId: string): Promise<Resource> => {
-    const response = await axiosInstance.patch(`/organizations/${orgId}/resources/${resourceId}/inactivate`);
     return response.data;
   },
 };

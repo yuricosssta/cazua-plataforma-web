@@ -7,19 +7,23 @@ import { ResourceRepository } from './repositories/resource.repository';
 import { ResourceTransactionRepository } from './repositories/resource-transaction.repository';
 import { Resource, ResourceSchema } from './schemas/resource.schema';
 import { ResourceTransaction, ResourceTransactionSchema } from './schemas/resource-transaction.schema';
+import { Warehouse, WarehouseSchema } from './schemas/warehouse.schema';
+import { WarehouseRepository } from './repositories/warehouse.repository';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Resource.name, schema: ResourceSchema },
       { name: ResourceTransaction.name, schema: ResourceTransactionSchema },
+      { name: Warehouse.name, schema: WarehouseSchema }
     ])
   ],
   controllers: [ResourcesController],
   providers: [
     ResourcesService,
     ResourceRepository,            
-    ResourceTransactionRepository  
+    ResourceTransactionRepository,
+    WarehouseRepository
   ],
   exports: [ResourcesService],
 })

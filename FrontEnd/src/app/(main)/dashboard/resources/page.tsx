@@ -1,17 +1,19 @@
 //src/app/(main)/dashboard/resources/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Package, ClipboardList, History, Plus, ArrowDownToLine } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Package, ClipboardList, History, Plus, ArrowDownToLine, Send, Users, ShieldAlert } from "lucide-react";
 import { ResourceCatalog } from "@/components/resources/ResourceCatalog";
 import { CreateResourceModal } from "@/components/resources/CreateResourceModal";
 import { AddStockModal } from "@/components/resources/AddStockModal";
-import { useSelector } from "react-redux";
-import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { TransactionHistory } from "@/components/resources/TransactionHistory";
 import { PendingRequests } from "@/components/resources/PendingRequests";
 import { AllocateDirectlyModal } from "@/components/resources/AllocateDirectlyModal";
-import { Send } from "lucide-react"; 
+import { ManageWarehouseTeamDrawer } from "@/components/resources/ManageWarehouseTeamDrawer";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/redux/store";
+import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
+import { resourceService } from "@/lib/services/resourceService";
 
 type TabType = "catalog" | "requests" | "history";
 
@@ -19,15 +21,44 @@ export default function ResourcesPage() {
     const [activeTab, setActiveTab] = useState<TabType>("catalog");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
-    const [refreshKey, setRefreshKey] = useState(0);
     const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+    const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
+    
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [warehouseTeam, setWarehouseTeam] = useState<string[]>([]);
 
     const currentOrg = useSelector(selectCurrentOrg);
+    const user = useSelector((state: RootState) => state.auth.user);
+    
     const orgId = typeof currentOrg?.organizationId === "object"
         ? (currentOrg.organizationId as any)._id
         : currentOrg?.organizationId;
 
-    const triggerRefresh = () => setRefreshKey(prev => prev + 1);
+    const orgRole = currentOrg?.role || 'MEMBER';
+    const isAdminOrOwner = orgRole === 'OWNER' || orgRole === 'ADMIN';
+    const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
+
+    const fetchTeam = async () => {
+        if (!orgId) return;
+        try {
+            const team = await resourceService.getWarehouseTeam(orgId);
+            setWarehouseTeam(team.map(id => String(id)));
+        } catch (error) {
+            console.error("Erro ao buscar equipe do almoxarifado:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTeam();
+    }, [orgId, refreshKey]);
+
+    const isAssigned = warehouseTeam.includes(currentUserId);
+    const hasWriteAccess = isAdminOrOwner || isAssigned;
+
+    const triggerRefresh = () => {
+        setRefreshKey(prev => prev + 1);
+        fetchTeam();
+    };
 
     return (
         <div className="flex flex-col h-full w-full max-w-7xl mx-auto space-y-6 pb-10">
@@ -41,30 +72,50 @@ export default function ResourcesPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button
-                        onClick={() => setIsAddStockModalOpen(true)}
-                        className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10">
-                        <ArrowDownToLine className="w-4 h-4" />
-                        Entrada de Recurso
-                    </button>
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    {isAdminOrOwner && (
+                        <button
+                            onClick={() => setIsTeamDrawerOpen(true)}
+                            className="flex-1 sm:flex-none bg-muted border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-accent transition-colors flex items-center justify-center gap-2 font-semibold text-sm h-10"
+                        >
+                            <Users className="w-4 h-4" />
+                            Equipe
+                        </button>
+                    )}
 
-                    <button
-                        onClick={() => setIsAllocateModalOpen(true)}
-                        className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10"
-                    >
-                        <Send className="w-4 h-4" />
-                        Saída de Recurso
-                    </button>
+                    {hasWriteAccess && (
+                        <>
+                            <button
+                                onClick={() => setIsAddStockModalOpen(true)}
+                                className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10"
+                            >
+                                <ArrowDownToLine className="w-4 h-4" /> Entrada de Recurso
+                            </button>
 
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10">
-                        <Plus className="w-4 h-4" />
-                        Novo Recurso
-                    </button>
+                            <button
+                                onClick={() => setIsAllocateModalOpen(true)}
+                                className="flex-1 sm:flex-none bg-card border border-border text-foreground px-4 py-2 rounded-md shadow-sm hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10"
+                            >
+                                <Send className="w-4 h-4" /> Saída de Recurso
+                            </button>
+
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-medium text-sm h-10"
+                            >
+                                <Plus className="w-4 h-4" /> Novo Recurso
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
+
+            {!hasWriteAccess && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md flex items-center gap-3 text-sm font-medium">
+                    <ShieldAlert className="w-5 h-5 text-amber-600" />
+                    Você está em modo de visualização. Apenas a equipe autorizada do Almoxarifado Central pode registrar movimentações.
+                </div>
+            )}
 
             {/* NAVEGAÇÃO INTERNA (TABS) */}
             <div className="border-b border-border">
@@ -76,8 +127,7 @@ export default function ResourcesPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                             }`}
                     >
-                        <Package className="w-4 h-4" />
-                        Saldo de Recursos
+                        <Package className="w-4 h-4" /> Saldo de Recursos
                     </button>
 
                     <button
@@ -87,12 +137,7 @@ export default function ResourcesPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                             }`}
                     >
-                        <ClipboardList className="w-4 h-4" />
-                        Fila de Requisições
-                        {/* Badge de notificação mockada - depois ligaremos ao Back-end */}
-                        {/* <span className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            3
-                        </span> */}
+                        <ClipboardList className="w-4 h-4" /> Fila de Requisições
                     </button>
 
                     <button
@@ -102,8 +147,7 @@ export default function ResourcesPage() {
                             : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                             }`}
                     >
-                        <History className="w-4 h-4" />
-                        Extrato de Movimentações
+                        <History className="w-4 h-4" /> Extrato de Movimentações
                     </button>
                 </nav>
             </div>
@@ -129,8 +173,17 @@ export default function ResourcesPage() {
                     </div>
                 )}
             </div>
+
             {orgId && (
                 <>
+                    <ManageWarehouseTeamDrawer
+                        isOpen={isTeamDrawerOpen}
+                        onClose={() => setIsTeamDrawerOpen(false)}
+                        orgId={orgId}
+                        currentAssignedMembers={warehouseTeam}
+                        orgRole={orgRole}
+                        onSuccess={triggerRefresh}
+                    />
                     <CreateResourceModal
                         isOpen={isCreateModalOpen}
                         onClose={() => setIsCreateModalOpen(false)}
