@@ -1,0 +1,813 @@
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}import { Controller, HttpCode, HttpStatus, Post, Body } from '@nestjs/common';
+import SummaryService  from './summary.service';
+
+@Controller('summary')
+export class SummaryController {
+    constructor(private readonly summaryService: SummaryService) {}
+
+    @HttpCode(HttpStatus.OK)
+    @Post('text')
+    summarize(@Body('text') text: string): Promise<string> {
+        return this.summaryService.summarizeText(text);
+    }
+}
+//src/posts/controllers/post.controller.ts
+
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { PostService } from '../services/post.service';
+import { LoggingInterceptor } from '../../shared/interceptors/logging.interceptor';
+import { AuthGuard } from '../../auth/auth.guard';
+import { CreatePostDto } from '../dto/create-post.dto';
+import { UpdatePostDto } from '../dto/update-post.dto';
+import { TenantGuard } from '../../organization/guards/tenant.guard';
+
+@UseInterceptors(LoggingInterceptor)
+// @UseGuards(AuthGuard, TenantGuard) // Ativar mais tarde
+@Controller('posts')
+export class PostController {
+  constructor(private readonly postService: PostService) {}
+
+  @UseGuards(AuthGuard, TenantGuard)
+  @Get()
+  async getAllPosts(
+  @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+  @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  // @Query('organizationId') organizationId?: string, 
+  @Req() req: any,
+  ) {
+    if (limit > 100) {
+      limit = 100;
+    }
+
+    const orgId = req.organizationId || ''; 
+    // console.log(`Buscando posts blindados para a Organização: ${orgId}`);
+    console.log(`Buscando posts -> Page: ${page}, Limit: ${limit}, Org: ${orgId}`);
+    return this.postService.getAllPosts(page, limit, orgId);
+  }
+
+  @Get('search')
+  async searchPost(@Query('term') term: string) {
+    return this.postService.searchPost(term);
+  }
+
+  @UseGuards(AuthGuard, TenantGuard)
+  @Get(':postId')
+  async getPost(@Param('postId') postId: string) {
+    return this.postService.getPost(postId);
+  }
+
+  @UseGuards(AuthGuard, TenantGuard)
+  @Post()
+  async createPost(
+    @Body() createPostDto: CreatePostDto, 
+    @Req() req: any
+  ) {
+    const orgId = req.organizationId;    
+    console.log('Dados recebidos (DTO):', createPostDto);
+
+    return this.postService.createPost({
+      ...createPostDto, 
+      organizationId: orgId,      
+      created_at: new Date(),
+      modified_at: new Date(),
+      author: createPostDto.author || req.user?.name || 'Anônimo',
+    });
+  }
+
+  @UseGuards(AuthGuard, TenantGuard)
+  @Put(':postId')
+  async updatePost(
+    @Param('postId') postId: string,
+    @Body() updatePostDto: UpdatePostDto,
+    @Req() req: any
+  ) {
+    const orgId = req.organizationId;
+    // Atualiza apenas se for o autor ou um ADMIN
+     if (updatePostDto.author !== 'ADMIN') {
+      const post = await this.postService.getPost(postId);
+      if (post.author !== updatePostDto.author) {
+        throw new UnauthorizedException('Você não tem permissão para editar esta postagem.');
+      }
+    }
+    return this.postService.updatePost(postId, {
+      ...updatePostDto,
+      organizationId: orgId,
+      modified_at: new Date(), // Atualiza a data de modificação automaticamente
+    });
+  }
+
+  @UseGuards(AuthGuard, TenantGuard)
+  @Delete(':postId')
+  async deletePost(@Param('postId') postId: string, @Req() req: any) {
+    // Apaga ser for ADMIN da organização
+    const orgId = req.organizationId;
+    const post = await this.postService.getPost(postId);
+    
+    if (post.organizationId !== orgId) {
+      throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+    };
+    // Apaga apenas se for o autor ou um ADMIN
+    if (req.user?.role !== 'ADMIN') {
+      
+      if (post.author !== req.user.name) {
+        throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+      }
+    }
+    
+    return this.postService.deletePost(postId);
+  }
+}
+
+
+//src/resources/controllers/resources.controller.ts
+import { Controller, Post, Get, Patch, Body, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import { ResourcesService } from '../services/resources.service';
+import { AuthGuard } from '../../auth/auth.guard';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
+import {
+  createResourceSchema,
+  CreateResourceDto,
+  allocateResourceSchema,
+  AllocateResourceDto,
+  addStockSchema,
+  AddStockDto,
+  returnResourceSchema,
+  ReturnResourceDto,
+  cancelTransactionSchema,
+  CancelTransactionDto,
+  RejectRequestDto,
+  approveRequestSchema,
+  ApproveRequestDto,
+  rejectRequestSchema
+} from '../validations/resource.zod';
+
+@Controller('organizations/:orgId/resources')
+@UseGuards(AuthGuard)
+export class ResourcesController {
+  constructor(private readonly resourcesService: ResourcesService) { }
+
+  private extractUserId(req: any): string {
+    return req.user?.sub || req.user?._id || req.user?.id;
+  }
+
+  private extractUserRole(req: any): string {
+    return req.headers['x-org-role'] || 'MEMBER';
+  }
+
+  // --- GESTÃO DA EQUIPE DO ALMOXARIFADO ---
+
+  @Get('team')
+  async getWarehouseTeam(@Param('orgId') orgId: string) {
+    return this.resourcesService.getWarehouseTeam(orgId);
+  }
+
+  @Post('team/assign')
+  async assignWarehouseMember(
+    @Param('orgId') orgId: string,
+    @Req() req: any,
+    @Body('userId') userIdToAssign: string
+  ) {
+    const userRole = this.extractUserRole(req);
+    if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Apenas Administradores podem modificar a equipe do Almoxarifado.');
+    }
+    return this.resourcesService.assignWarehouseMember(orgId, userIdToAssign);
+  }
+
+  @Post('team/remove')
+  async removeWarehouseMember(
+    @Param('orgId') orgId: string,
+    @Req() req: any,
+    @Body('userId') userIdToRemove: string
+  ) {
+    const userRole = this.extractUserRole(req);
+    if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Apenas Administradores podem modificar a equipe do Almoxarifado.');
+    }
+    return this.resourcesService.removeWarehouseMember(orgId, userIdToRemove);
+  }
+
+  // --- OPERAÇÕES DO CATÁLOGO E ESTOQUE ---
+
+  @Post()
+  async createResource(
+    @Param('orgId') orgId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(createResourceSchema)) data: CreateResourceDto,
+  ) {
+    return this.resourcesService.createResource(orgId, this.extractUserId(req), this.extractUserRole(req), data);
+  }
+
+  @Get()
+  async listResources(@Param('orgId') orgId: string) {
+    return this.resourcesService.findAllByOrganization(orgId);
+  }
+
+  @Post('request/:projectId')
+  async requestAllocation(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
+  ) {
+    return this.resourcesService.requestAllocation({
+      orgId,
+      projectId,
+      authorId: this.extractUserId(req),
+      resourceId: data.resourceId,
+      quantity: data.quantity,
+      origin: data.origin,
+      attachments: data.attachments,
+    });
+  }
+
+  @Post('transactions/:transactionId/approve')
+  async approveRequest(
+    @Param('orgId') orgId: string,
+    @Param('transactionId') transactionId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(approveRequestSchema)) data: ApproveRequestDto,
+  ) {
+    return this.resourcesService.approveRequest(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.approvedQuantity);
+  }
+
+  @Post('transactions/:transactionId/reject')
+  async rejectRequest(
+    @Param('orgId') orgId: string,
+    @Param('transactionId') transactionId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(rejectRequestSchema)) data: RejectRequestDto,
+  ) {
+    return this.resourcesService.rejectRequest(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.reason);
+  }
+
+  @Post('allocate-direct/:projectId')
+  async allocateDirectly(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
+  ) {
+    return this.resourcesService.allocateDirectly(orgId, this.extractUserId(req), this.extractUserRole(req), {
+      projectId: projectId,
+      resourceId: data.resourceId,
+      quantity: data.quantity,
+      origin: data.origin,
+      attachments: data.attachments,
+    });
+  }
+
+  @Post('stock')
+  async addStock(
+    @Param('orgId') orgId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(addStockSchema)) data: AddStockDto,
+  ) {
+    return this.resourcesService.addStock(orgId, this.extractUserId(req), this.extractUserRole(req), data);
+  }
+
+  @Post('return/:projectId')
+  async returnFromProject(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(returnResourceSchema)) data: ReturnResourceDto,
+  ) {
+    return this.resourcesService.returnFromProject(orgId, projectId, this.extractUserId(req), this.extractUserRole(req), data);
+  }
+
+  @Post('transactions/:transactionId/cancel')
+  async cancelTransaction(
+    @Param('orgId') orgId: string,
+    @Param('transactionId') transactionId: string,
+    @Req() req: any,
+    @Body(new ZodValidationPipe(cancelTransactionSchema)) data: CancelTransactionDto,
+  ) {
+    return this.resourcesService.cancelTransaction(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.reason);
+  }
+
+  @Get('transactions')
+  async listTransactions(@Param('orgId') orgId: string) {
+    return this.resourcesService.listTransactions(orgId);
+  }
+
+  @Patch(':resourceId')
+  async updateResource(
+    @Param('orgId') orgId: string,
+    @Param('resourceId') resourceId: string,
+    @Req() req: any,
+    @Body() data: Partial<CreateResourceDto>,
+  ) {
+    return this.resourcesService.updateResource(orgId, resourceId, this.extractUserId(req), this.extractUserRole(req), data);
+  }
+
+  @Patch(':resourceId/inactivate')
+  async inactivateResource(
+    @Param('orgId') orgId: string,
+    @Param('resourceId') resourceId: string,
+    @Req() req: any,
+  ) {
+    return this.resourcesService.inactivateResource(orgId, resourceId, this.extractUserId(req), this.extractUserRole(req));
+  }
+}
+import { Body, Controller, Post, HttpCode, HttpStatus, Request, UseGuards, Get } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthGuard } from './auth.guard';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) { }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  signIn(@Body() signInDto: Record<string, any>) {
+    return this.authService.signIn(signInDto.email, signInDto.password);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('refresh')
+  async refresh(@Request() req: any) {
+    return this.authService.refreshToken(req.user);
+  }
+
+}
+//src/storage/controllers/storage.controller.ts
+import { Get, Delete, Param, ForbiddenException, Controller, Post, Body, UseGuards, Headers, Req, BadRequestException } from '@nestjs/common';
+import { StorageService } from '../services/storage.service';
+import { GetPresignedUrlDto } from '../dto/get-presigned-url.dto';
+import { AuthGuard } from '../../auth/auth.guard';
+
+@Controller('storage')
+@UseGuards(AuthGuard)
+export class StorageController {
+  constructor(private readonly storageService: StorageService) { }
+
+  // SOLICITAÇÃO DO LINK DE UPLOAD (Aplica a trava do limite de espaço do plano)
+  @Post('presigned-url')
+  async getUploadUrl(
+    @Headers('x-org-id') orgId: string,
+    @Body() dto: GetPresignedUrlDto
+  ) {
+    if (!orgId) {
+      throw new BadRequestException('Contexto da organização (x-org-id) é obrigatório no cabeçalho.');
+    }
+
+    return this.storageService.getPresignedUploadUrl(
+      orgId,
+      dto.fileName,
+      dto.fileType,
+      dto.sizeBytes
+    );
+  }
+
+  // CONFIRMAÇÃO DO UPLOAD (Grava o registro no banco e consome a franquia em MB)
+  @Post('confirm-upload')
+  async confirmUpload(
+    @Headers('x-org-id') orgId: string,
+    @Req() req: any,
+    @Body() body: { fileUrl: string; fileName: string; mimeType: string; sizeBytes: number }
+  ) {
+    if (!orgId) {
+      throw new BadRequestException('Contexto da organização (x-org-id) é obrigatório no cabeçalho.');
+    }
+
+    // Extrai o ID do usuário que fez o upload a partir do Token JWT
+    const userId = req.user?.sub || req.user?.id;
+
+    return this.storageService.confirmUploadAndRegister(
+      orgId,
+      userId,
+      body.fileUrl,
+      body.fileName,
+      body.mimeType,
+      body.sizeBytes
+    );
+  }
+
+  // LISTAR ARQUIVOS DA EMPRESA
+  @Get('assets')
+  async getAssets(@Headers('x-org-id') orgId: string) {
+    if (!orgId) throw new BadRequestException('Contexto da organização (x-org-id) é obrigatório.');
+
+    return this.storageService.getOrganizationAssets(orgId);
+  }
+
+  // EXCLUIR ARQUIVO
+  @Delete('assets/:id')
+  async deleteAsset(
+    @Param('id') assetId: string,
+    @Headers('x-org-id') orgId: string,
+    @Headers('x-org-role') role: string // Pega o cargo do cabeçalho
+  ) {
+    if (!orgId) throw new BadRequestException('Contexto da organização (x-org-id) é obrigatório.');
+
+    // Trava de Segurança Backend: Só dono e admin podem deletar arquivos em nuvem
+    if (role !== 'ADMIN' && role !== 'OWNER') {
+      throw new ForbiddenException('Apenas administradores podem excluir arquivos do acervo.');
+    }
+
+    return this.storageService.deleteAsset(orgId, assetId);
+  }
+
+}// BackEnd/src/users/controllers/user.controller.ts
+
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
+import { LoggingInterceptor } from '../../shared/interceptors/logging.interceptor';
+import { UsersService } from '../services/user.service';
+import {
+  CreateUser,
+  createUserSchema,
+  UpdateUser,
+  updateUserSchema,
+} from '../validations/users.zod';
+import { GetUser } from '../../shared/decorators/get-user-decorator';
+import { AuthGuard } from '../../auth/auth.guard';
+
+@UseInterceptors(LoggingInterceptor)
+@Controller('users')
+export class UsersController {
+  constructor(private readonly userService: UsersService) { }
+
+  @UseGuards(AuthGuard)
+  @Get()
+  async getAllUsers() {
+    return this.userService.getAllUsers();
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('search')
+  async searchUser(@Query('term') term: string) {
+    return this.userService.searchUser(term);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('profile')
+  async getProfile(@GetUser('sub') userId: string) {
+    return this.userService.getUser(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':userId')
+  async getUser(@Param('userId') userId: string) {
+    return this.userService.getUser(userId);
+  }
+
+  @Post()
+  async createUser(
+    @Body(new ZodValidationPipe(createUserSchema)) user: CreateUser,
+  ) {
+    return this.userService.createUser(user);
+  }
+
+  @UseGuards(AuthGuard)
+  @Put(':userId')
+  async updateUser(
+    @Param('userId') userId: string,
+    @Body(new ZodValidationPipe(updateUserSchema)) { name }: UpdateUser,
+  ) {
+    return this.userService.updateUser(userId, { name });
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(':userId')
+  async deleteUser(@Param('userId') userId: string) {
+    return this.userService.deleteUser(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('change-password')
+  async changePassword(
+    @GetUser('sub') userId: string,
+    @Body() body: any // Em um cenário ideal, você criaria um Zod schema para isso: changePasswordSchema
+  ) {
+    return this.userService.changeUserPassword(userId, body.currentPassword, body.newPassword);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) throw new BadRequestException('O e-mail é obrigatório.');
+    return this.userService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string
+  ) {
+    if (!token || !newPassword) throw new BadRequestException('Token e nova senha são obrigatórios.');
+    return this.userService.resetPassword(token, newPassword);
+  }
+
+}//src/transcription/transcription.controller.ts
+import { Controller, Post, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { TranscriptionService } from './transcription.service';
+// import type { File as MulterFile } from 'multer';
+import type { Express } from 'express';
+
+@Controller('transcription')
+export class TranscriptionController {
+  constructor(private readonly transcriptionService: TranscriptionService) { }
+
+  // Transcrição via URL do YouTube
+  @Post()
+  async transcribeFromYoutube(@Body('url') url: string) {
+    return this.transcriptionService.transcribeFromYoutube(url);
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  //Faz upload de um arquivo de áudio para transcrição
+  async transcribeFromFile(@UploadedFile() file: Express.Multer.File) {
+    return this.transcriptionService.transcribeFromFile(file);
+  }
+}
+
+//src/projects/controllers/project.controller.ts
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ProjectsService } from '../services/project.service';
+import { ProjectMemberService } from '../services/project-member.service';
+import { TimelineService } from '../services/timeline.service';
+import { AuthGuard } from '../../auth/auth.guard';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
+import {
+  BulkImportDto,
+  bulkImportSchema,
+  CreateProjectDto,
+  createProjectSchema,
+  EmitParecerDto,
+  emitParecerSchema,
+} from '../validations/project.zod';
+
+@Controller('organizations/:orgId/projects')
+@UseGuards(AuthGuard)
+export class ProjectsController {
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly projectMemberService: ProjectMemberService,
+    private readonly timelineService: TimelineService
+  ) { }
+
+  // Função auxiliar para extrair o ID com segurança
+  private extractUserId(req: any): string {
+    return req.user?.sub || req.user?._id || req.user?.id;
+  }
+
+  // Função auxiliar para extrair e normalizar o Cargo (Role)
+  private extractUserRole(req: any): string {
+    const role = req.headers['x-org-role'] || req.membership?.role || req.user?.role || 'MEMBER';
+    return String(role).toUpperCase();
+  }
+
+  // CRIAR NOVA DEMANDA/OBRA
+  @Post()
+  async createProject(
+    @Param('orgId') orgId: string,
+    @Body(new ZodValidationPipe(createProjectSchema)) data: CreateProjectDto,
+    @Req() req: any,
+  ) {
+    const userId = this.extractUserId(req);
+    return this.projectsService.createProject(orgId, userId, data);
+  }
+
+  // IMPORTAÇÃO EM MASSA DE PROJETOS
+  @Post('bulk-import')
+  async bulkImportProjects(
+    @Param('orgId') orgId: string,
+    @Body(new ZodValidationPipe(bulkImportSchema)) data: BulkImportDto,
+    @Req() req: any,
+  ) {
+    const userId = this.extractUserId(req);
+    const userRole = this.extractUserRole(req);
+
+    // TRAVA DE SEGURANÇA: Apenas Admins e Donos entram aqui
+    if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
+      throw new ForbiddenException('Acesso negado: Apenas Administradores podem realizar importações em massa.');
+    }
+
+    // Passamos o array validado (data.projects) para o service
+    return this.projectsService.bulkImportProjects(orgId, userId, data.projects);
+  }
+
+  // LISTAR TODOS PROJETOS DA EMPRESA
+  @Get()
+  async getProjects(@Param('orgId') orgId: string) {
+    return this.projectsService.findAllByOrganization(orgId);
+  }
+
+  // TIMELINE GERAL DA EMPRESA (Dashboard)
+  @Get('timeline')
+  async getOrgTimeline(@Param('orgId') orgId: string) {
+    return this.timelineService.getOrganizationTimeline(orgId);
+  }
+
+  // EMITIR PARECER TÉCNICO (E GERAR A PRIORIDADE)
+  @Post(':projectId/parecer')
+  async emitParecer(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Body(new ZodValidationPipe(emitParecerSchema)) data: EmitParecerDto,
+    @Req() req: any,
+  ) {
+    const userId = this.extractUserId(req);
+    const userRole = this.extractUserRole(req);
+
+    return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data, userRole);
+  }
+
+  // DETALHES DA OBRA E TIMELINE COMPLETA
+  @Get(':projectId')
+  async getProjectDetails(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.projectsService.findOneWithTimeline(orgId, projectId);
+  }
+
+  // Adicionar Membro
+  @Post(':projectId/members')
+  async assignMember(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+    @Body() body: { memberId: string; memberName: string }
+  ) {
+    const actionByUserId = this.extractUserId(req);
+    return this.projectMemberService.assignMember(orgId, projectId, body.memberId, actionByUserId, body.memberName);
+  }
+
+  // Remover Membro
+  @Delete(':projectId/members/:memberId')
+  async removeMember(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string,
+    @Param('memberId') memberId: string,
+    @Req() req: any,
+    @Body() body: { memberName: string }
+  ) {
+    const actionByUserId = this.extractUserId(req);
+    return this.projectMemberService.removeMember(orgId, projectId, memberId, actionByUserId, body.memberName);
+  }
+}// src/organization/controllers/organization.controller.ts
+
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { OrganizationService } from '../services/organization.service';
+import { CreateOrganizationDto } from '../dto/create-organization.dto';
+import { AuthGuard } from '../../auth/auth.guard';
+import { ConfigService } from '@nestjs/config';
+import { IUser } from 'src/users/schemas/models/user.interface';
+
+@Controller('organizations')
+@UseGuards(AuthGuard)
+export class OrganizationController {
+  constructor(private readonly orgService: OrganizationService, private readonly configService: ConfigService) { }
+
+  @Post()
+  create(@Body() createDto: CreateOrganizationDto, @Req() req: any) {
+    const userId = req.user.sub || req.user.id;
+    return this.orgService.create(createDto, userId);
+  }
+
+  @Get('my-orgs')
+  getMyOrgs(@Req() req: any) {
+    const userId = req.user.sub || req.user.id;
+    return this.orgService.findAllForUser(userId);
+  }
+
+  // Busca de membros ---
+  @Get(':orgId/members')
+  getMembers(@Param('orgId') orgId: string) {
+    return this.orgService.findMembersByOrganization(orgId);
+  }
+
+  // Adição de membro
+  @Post(':orgId/members')
+  addMember(@Param('orgId') orgId: string, @Body() body: any) {
+    return this.orgService.addMemberToOrganization(orgId, body);
+  }
+
+  // --- ATUALIZAR CARGO DO MEMBRO ---
+  @Patch(':orgId/members/:userId/role')
+  async updateMemberRole(
+    @Param('orgId') orgId: string,
+    @Param('userId') userId: string,
+    @Body('role') role: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.updateMemberRole(orgId, adminId, userId, role);
+  }
+
+  // --- REMOVER MEMBRO DA ORGANIZAÇÃO ---
+  @Delete(':orgId/members/:userId')
+  async removeMember(
+    @Param('orgId') orgId: string,
+    @Param('userId') userId: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.removeMemberFromOrganization(orgId, adminId, userId);
+  }
+
+  @Get('admin/all')
+  async getAllForAdmin(@Req() req: any): Promise<any> {
+    // A TRAVA DE DEUS
+    const userEmail = req.user?.email; // Certifique-se de que seu token JWT tenha o email embutido
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+
+    if (userEmail !== superAdminEmail) {
+      throw new ForbiddenException('Acesso negado: Área restrita ao Administrador.');
+    }
+
+    return this.orgService.findAllForSuperAdmin();
+  }
+
+  @Patch('admin/:id/plan')
+  async updateOrgPlan(
+    @Param('id') orgId: string,
+    @Body('plan') plan: string,
+    @Req() req: any
+  ) {
+    const userEmail = req.user?.email;
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+
+    if (userEmail !== superAdminEmail) {
+      throw new ForbiddenException('Acesso negado: Área restrita ao Master Admin.');
+    }
+
+    return this.orgService.updatePlan(orgId, plan);
+  }
+
+  @Patch(':orgId/settings')
+  async updateOrgSettings(
+    @Param('orgId') orgId: string,
+    @Body('settings') settings: any,
+    @Req() req: any
+  ) {
+    const adminId = req.user.sub || req.user.id;
+    return this.orgService.updateSettings(orgId, adminId, settings);
+  }
+
+  // Busca por slug
+  @Get(':slug')
+  getBySlug(@Param('slug') slug: string) {
+    return this.orgService.findOneBySlug(slug);
+  }
+
+}

@@ -6,7 +6,7 @@ import { ResourceTransactionRepository } from '../repositories/resource-transact
 import { WarehouseRepository } from '../repositories/warehouse.repository';
 import { ResourceType, TransactionStatus, TransactionType } from '../types/resource-enums';
 import { Types } from 'mongoose';
-import { CreateResourceDto } from '../validations/resource.zod';
+import { CreateResourceDto, ProjectStatementDto } from '../validations/resource.zod';
 import { TimelineEventType } from 'src/projects/schemas/timeline-event.schema';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class ResourcesService {
 
     const warehouse = await this.warehouseRepo.getOrCreate(orgId);
     const isAssigned = warehouse.assignedMembers.some(id => id.toString() === userId.toString());
-    
+
     if (!isAssigned) {
       throw new ForbiddenException('Acesso negado: Você não tem permissão para operar o Almoxarifado Central.');
     }
@@ -35,19 +35,19 @@ export class ResourcesService {
   private getResourceDescription(resource: any, data: any): string {
     let description: string;
     if (resource.type === ResourceType.CAPITAL) {
-      description = `solicitou ${resource.unit} ${data.quantity} de ${resource.name}. Aguardando Almoxarifado.`;    
+      description = `solicitou ${resource.unit} ${data.quantity} de ${resource.name}. Aguardando Almoxarifado.`;
     } else {
       description = `solicitou ${data.quantity} ${resource.unit} de ${resource.name}. Aguardando Almoxarifado.`;
     };
     return description;
   }
-  
+
   private isStockableResource(type: ResourceType): boolean {
     return [ResourceType.MATERIAL, ResourceType.EQUIPMENT, ResourceType.CAPITAL].includes(type);
   }
 
   private emitTimelineEvent(data: { orgId: string, projectId: string, authorId: string, type: string, description: string, metadata?: any }) {
-    this.eventEmitter.emit('timeline.create', data); 
+    this.eventEmitter.emit('timeline.create', data);
   }
 
   // --- GESTÃO DA EQUIPE ---
@@ -80,7 +80,7 @@ export class ResourcesService {
 
   async updateResource(orgId: string, resourceId: string, userId: string, userRole: string, data: Partial<CreateResourceDto>) {
     await this.checkWarehousePermission(orgId, userId, userRole);
-    
+
     const resource = await this.resourceRepo.findById(resourceId);
     if (resource.organizationId.toString() !== orgId) throw new UnauthorizedException('Acesso negado a este recurso.');
 
@@ -108,7 +108,7 @@ export class ResourcesService {
   }
 
   // --- OPERAÇÕES DE ESTOQUE E TRANSAÇÕES ---
-  
+
   // Exceção: O Engenheiro pede a RM da obra, não precisa ser Almoxarife.
   async requestAllocation(data: { orgId: string; projectId: string; authorId: string; resourceId: string; quantity: number; origin?: string; attachments?: string[]; }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
@@ -142,7 +142,7 @@ export class ResourcesService {
 
   async approveRequest(orgId: string, transactionId: string, authorId: string, userRole: string, approvedQuantity: number) {
     await this.checkWarehousePermission(orgId, authorId, userRole);
-    
+
     const transaction = await this.transactionRepo.findById(transactionId);
     if (transaction.status !== TransactionStatus.PENDING) throw new Error('Esta requisição não está pendente.');
 
@@ -197,7 +197,7 @@ export class ResourcesService {
 
     const resource = await this.resourceRepo.findById(data.resourceId);
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo.');
-    
+
     let isStockNegative = false;
 
     if (this.isStockableResource(resource.type)) {
@@ -322,5 +322,35 @@ export class ResourcesService {
 
   async listTransactions(orgId: string) {
     return this.transactionRepo.findAllByOrganization(orgId);
+  }
+
+  async getProjectStatement(orgId: string, projectId: string): Promise<ProjectStatementDto> {
+    const rawData = await this.transactionRepo.getProjectCostStatement(orgId, projectId);
+
+    const categoriesData = rawData?.categories || [];
+    const itemsData = rawData?.items || [];
+
+    const totalAccumulated = categoriesData.reduce((acc, curr) => acc + curr.total, 0);
+
+    const categories = categoriesData.map(item => ({
+      type: item._id as ResourceType,
+      total: item.total,
+      percentage: totalAccumulated > 0 ? Number(((item.total / totalAccumulated) * 100).toFixed(2)) : 0
+    }));
+
+    const items = itemsData.map(item => ({
+      resourceId: item._id.toString(),
+      name: item.name,
+      unit: item.unit,
+      type: item.type,
+      quantity: item.quantity,
+      total: item.total
+    }));
+
+    return {
+      totalAccumulated: Number(totalAccumulated.toFixed(2)),
+      categories,
+      items
+    };
   }
 }

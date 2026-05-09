@@ -18,8 +18,9 @@ import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
   Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package
 } from "lucide-react";
+import { ProjectCostTab } from "@/components/resources/ProjectCostTab";
 
-type DetailTabType = "TIMELINE" | "RESOURCES";
+type DetailTabType = "TIMELINE" | "RESOURCES" | "COSTS";
 
 interface TimelineEvent {
   _id: string;
@@ -137,7 +138,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-screen">
-      
+
       {/* CABEÇALHO */}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -214,6 +215,13 @@ export default function ProjectDetailsPage() {
         >
           <Package className="w-4 h-4" /> Movimentações de Recursos
         </button>
+
+        <button
+          onClick={() => setActiveTab("COSTS")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === "COSTS" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          <Activity className="w-4 h-4" /> Resumo de Custos
+        </button>
       </div>
 
       {/* ÁREA DE RENDERIZAÇÃO CONDICIONAL */}
@@ -236,11 +244,15 @@ export default function ProjectDetailsPage() {
         )}
 
         {activeTab === "RESOURCES" && (
-          <ProjectResourcesTab 
-            orgId={orgId} 
-            projectId={projectId} 
-            hasPermission={hasPermission} 
+          <ProjectResourcesTab
+            orgId={orgId}
+            projectId={projectId}
+            hasPermission={hasPermission}
           />
+        )}
+
+        {activeTab === "COSTS" && (
+          <ProjectCostTab orgId={orgId} projectId={projectId} />
         )}
       </div>
 

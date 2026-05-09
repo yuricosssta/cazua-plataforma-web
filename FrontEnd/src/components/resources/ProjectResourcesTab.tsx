@@ -1,9 +1,13 @@
 //src/components/resources/ProjectResourcesTab.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/redux/store";
+// import { fetchProjectStatement } from "@/lib/redux/slices/resourcesSlice";
 import { resourceService } from "@/lib/services/resourceService";
 import { RequestResourceModal } from "./RequestResourceModal";
+// import { ProjectCostSummary } from "./ProjectCostSummary";
 import { Plus, Box, Loader2, AlertCircle } from "lucide-react";
 
 interface ProjectResourcesTabProps {
@@ -13,16 +17,21 @@ interface ProjectResourcesTabProps {
 }
 
 export function ProjectResourcesTab({ orgId, projectId, hasPermission }: ProjectResourcesTabProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { statement, loading: statementLoading, error: statementError } = useSelector((state: RootState) => state.resources);
+
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTransactions = async () => {
+  const fetchAllData = useCallback(async () => {
+    if (!orgId || !projectId) return;
+
+    // Busca as transações para a tabela
     try {
       setIsLoading(true);
       const allData = await resourceService.listTransactions(orgId);
-      // Filtra apenas as movimentações deste projeto
       const projectData = allData.filter((tx: any) => tx.projectId?._id === projectId || tx.projectId === projectId);
       setTransactions(projectData);
     } catch (err) {
@@ -31,11 +40,11 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [orgId, projectId, dispatch]);
 
   useEffect(() => {
-    if (orgId && projectId) fetchTransactions();
-  }, [orgId, projectId]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -56,6 +65,18 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
 
   return (
     <div className="flex flex-col space-y-6">
+      {/* Componente de Resumo Financeiro */}
+      {statementLoading ? (
+        <div className="flex justify-center py-6 border border-border rounded-md bg-card">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      ) : statementError ? (
+        <div className="flex items-center gap-2 text-destructive py-4">
+          <AlertCircle className="w-5 h-5" /> {statementError}
+        </div>
+      ) : null}
+
+      {/* Cabeçalho e Tabela de Movimentações */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold">Movimentação de Recursos</h2>
@@ -123,7 +144,7 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         onClose={() => setIsModalOpen(false)}
         orgId={orgId}
         projectId={projectId}
-        onSuccess={fetchTransactions}
+        onSuccess={fetchAllData}
       />
     </div>
   );

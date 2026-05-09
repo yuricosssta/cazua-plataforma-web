@@ -188,4 +188,12 @@ export class ResourcesController {
   ) {
     return this.resourcesService.inactivateResource(orgId, resourceId, this.extractUserId(req), this.extractUserRole(req));
   }
+
+  @Get('statement/:projectId')
+  async getProjectStatement(
+    @Param('orgId') orgId: string,
+    @Param('projectId') projectId: string
+  ) {
+    return this.resourcesService.getProjectStatement(orgId, projectId);
+  }
 }

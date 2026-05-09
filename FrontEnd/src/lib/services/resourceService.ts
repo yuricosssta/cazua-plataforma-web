@@ -47,6 +47,27 @@ export interface ResourceTransaction {
   createdAt: string;
 }
 
+export interface ProjectStatementCategory {
+  type: ResourceType;
+  total: number;
+  percentage: number;
+}
+
+export interface ProjectStatementItem {
+  resourceId: string;
+  name: string;
+  unit: string;
+  type: ResourceType;
+  quantity: number;
+  total: number;
+}
+
+export interface ProjectStatement {
+  totalAccumulated: number;
+  categories: ProjectStatementCategory[];
+  items: ProjectStatementItem[];
+}
+
 // --- INTERFACES DE ENVIO (DTOs) ---
 export interface CreateResourceData {
   name: string;
@@ -186,9 +207,14 @@ export const resourceService = {
     return response.data;
   },
 
-  // --- LIVRO RAZÃO ---
+  // --- LIVRO RAZÃO & FINANCEIRO ---
   listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
     const response = await axiosInstance.get(`/organizations/${orgId}/resources/transactions`);
+    return response.data;
+  },
+
+  getProjectStatement: async (orgId: string, projectId: string): Promise<ProjectStatement> => {
+    const response = await axiosInstance.get(`/organizations/${orgId}/resources/statement/${projectId}`);
     return response.data;
   },
 };
