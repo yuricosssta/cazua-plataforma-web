@@ -4,6 +4,7 @@ import authReducer from './slices/authSlice';
 import postsReducer from './slices/postsSlice';
 import userReducer from './slices/userSlice';
 import organizationReducer from './slices/organizationSlice';
+import resourcesReducer from './slices/resourcesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     posts: postsReducer,
     user: userReducer,
     organizations: organizationReducer,
+    resources: resourcesReducer,
   },
 });
 
