@@ -54,6 +54,14 @@ export const projectStatementSchema = z.object({
     type: z.nativeEnum(ResourceType),
     total: z.number(),
     percentage: z.number()
+  })),
+  items: z.array(z.object({
+    resourceId: z.string(),
+    name: z.string(),
+    unit: z.string(),
+    type: z.nativeEnum(ResourceType),
+    quantity: z.number(),
+    total: z.number()
   }))
 });
 

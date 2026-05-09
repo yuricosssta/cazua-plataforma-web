@@ -327,17 +327,30 @@ export class ResourcesService {
   async getProjectStatement(orgId: string, projectId: string): Promise<ProjectStatementDto> {
     const rawData = await this.transactionRepo.getProjectCostStatement(orgId, projectId);
 
-    const totalAccumulated = rawData.reduce((acc, curr) => acc + curr.total, 0);
+    const categoriesData = rawData?.categories || [];
+    const itemsData = rawData?.items || [];
 
-    const categories = rawData.map(item => ({
+    const totalAccumulated = categoriesData.reduce((acc, curr) => acc + curr.total, 0);
+
+    const categories = categoriesData.map(item => ({
       type: item._id as ResourceType,
       total: item.total,
       percentage: totalAccumulated > 0 ? Number(((item.total / totalAccumulated) * 100).toFixed(2)) : 0
     }));
 
+    const items = itemsData.map(item => ({
+      resourceId: item._id.toString(),
+      name: item.name,
+      unit: item.unit,
+      type: item.type,
+      quantity: item.quantity,
+      total: item.total
+    }));
+
     return {
       totalAccumulated: Number(totalAccumulated.toFixed(2)),
-      categories
+      categories,
+      items
     };
   }
 }

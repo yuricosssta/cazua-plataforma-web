@@ -85,8 +85,8 @@ export class ResourceTransactionRepository {
   }
 
   // Método para gerar o demonstrativo de custos por projeto
-  async getProjectCostStatement(orgId: string, projectId: string): Promise<any[]> {
-    return this.model.aggregate([
+  async getProjectCostStatement(orgId: string, projectId: string): Promise<any> {
+    const result = await this.model.aggregate([
       {
         $match: {
           organizationId: new Types.ObjectId(orgId),
@@ -97,7 +97,7 @@ export class ResourceTransactionRepository {
         }
       },
       {
-        $lookup: { 
+        $lookup: {
           from: 'resources',
           localField: 'resourceId',
           foreignField: '_id',
@@ -106,20 +106,57 @@ export class ResourceTransactionRepository {
       },
       { $unwind: '$resourceDetails' },
       {
-        $group: {
-          _id: '$resourceDetails.type',
-          total: { 
-            $sum: {
-              $cond: [
-                { $eq: ['$type', TransactionType.RETURN] },
-                { $multiply: ['$totalCost', -1] }, 
-                '$totalCost'
-              ]
-            }
+        $project: {
+          resourceId: '$resourceId',
+          resourceName: '$resourceDetails.name',
+          resourceUnit: '$resourceDetails.unit',
+          resourceType: '$resourceDetails.type',
+          // Ajusta o sinal do valor financeiro
+          adjustedCost: {
+            $cond: [
+              { $eq: ['$type', TransactionType.RETURN] },
+              { $multiply: ['$totalCost', -1] },
+              '$totalCost'
+            ]
+          },
+          // Ajusta o sinal da quantidade física
+          adjustedQuantity: {
+            $cond: [
+              { $eq: ['$type', TransactionType.RETURN] },
+              { $multiply: ['$quantity', -1] },
+              '$quantity'
+            ]
           }
+        }
+      },
+      {
+        $facet: {
+          categories: [
+            {
+              $group: {
+                _id: '$resourceType',
+                total: { $sum: '$adjustedCost' }
+              }
+            }
+          ],
+          items: [
+            {
+              $group: {
+                _id: '$resourceId',
+                name: { $first: '$resourceName' },
+                unit: { $first: '$resourceUnit' },
+                type: { $first: '$resourceType' },
+                quantity: { $sum: '$adjustedQuantity' },
+                total: { $sum: '$adjustedCost' }
+              }
+            },
+            { $sort: { total: -1 } } // Ordena pelo maior custo
+          ]
         }
       }
     ]).exec();
+
+    return result[0];
   }
 
 }

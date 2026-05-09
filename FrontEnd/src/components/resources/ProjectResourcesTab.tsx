@@ -4,10 +4,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/redux/store";
-import { fetchProjectStatement } from "@/lib/redux/slices/resourcesSlice";
+// import { fetchProjectStatement } from "@/lib/redux/slices/resourcesSlice";
 import { resourceService } from "@/lib/services/resourceService";
 import { RequestResourceModal } from "./RequestResourceModal";
-import { ProjectCostSummary } from "./ProjectCostSummary";
+// import { ProjectCostSummary } from "./ProjectCostSummary";
 import { Plus, Box, Loader2, AlertCircle } from "lucide-react";
 
 interface ProjectResourcesTabProps {
@@ -27,9 +27,6 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
 
   const fetchAllData = useCallback(async () => {
     if (!orgId || !projectId) return;
-    
-    // Dispara o thunk do Redux para buscar o extrato
-    dispatch(fetchProjectStatement({ orgId, projectId }));
 
     // Busca as transações para a tabela
     try {
@@ -77,8 +74,6 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         <div className="flex items-center gap-2 text-destructive py-4">
           <AlertCircle className="w-5 h-5" /> {statementError}
         </div>
-      ) : statement ? (
-        <ProjectCostSummary data={statement} />
       ) : null}
 
       {/* Cabeçalho e Tabela de Movimentações */}

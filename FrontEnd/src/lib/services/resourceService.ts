@@ -53,9 +53,19 @@ export interface ProjectStatementCategory {
   percentage: number;
 }
 
+export interface ProjectStatementItem {
+  resourceId: string;
+  name: string;
+  unit: string;
+  type: ResourceType;
+  quantity: number;
+  total: number;
+}
+
 export interface ProjectStatement {
   totalAccumulated: number;
   categories: ProjectStatementCategory[];
+  items: ProjectStatementItem[];
 }
 
 // --- INTERFACES DE ENVIO (DTOs) ---
