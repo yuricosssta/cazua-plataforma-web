@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ResourceTransaction, ResourceTransactionDocument } from '../schemas/resource-transaction.schema';
-import { TransactionStatus } from '../types/resource-enums';
+import { TransactionStatus, TransactionType } from '../types/resource-enums';
 
 @Injectable()
 export class ResourceTransactionRepository {
@@ -46,7 +46,7 @@ export class ResourceTransactionRepository {
         status: 'PENDING',
         isCanceled: false
       })
-      .sort({ createdAt: 1 }) 
+      .sort({ createdAt: 1 })
       .exec();
   }
 
@@ -78,9 +78,48 @@ export class ResourceTransactionRepository {
   async findAllByOrganization(orgId: string): Promise<ResourceTransaction[]> {
     return this.model
       .find({ organizationId: new Types.ObjectId(orgId) })
-      .sort({ createdAt: -1 }) 
-      .populate('resourceId', 'name unit') 
-      .populate('projectId', 'title') 
+      .sort({ createdAt: -1 })
+      .populate('resourceId', 'name unit')
+      .populate('projectId', 'title')
       .exec();
   }
+
+  // Método para gerar o demonstrativo de custos por projeto
+  async getProjectCostStatement(orgId: string, projectId: string): Promise<any[]> {
+    return this.model.aggregate([
+      {
+        $match: {
+          organizationId: new Types.ObjectId(orgId),
+          projectId: new Types.ObjectId(projectId),
+          status: TransactionStatus.APPROVED,
+          isCanceled: false,
+          type: { $in: [TransactionType.ALLOCATION, TransactionType.RETURN] }
+        }
+      },
+      {
+        $lookup: { 
+          from: 'resources',
+          localField: 'resourceId',
+          foreignField: '_id',
+          as: 'resourceDetails'
+        }
+      },
+      { $unwind: '$resourceDetails' },
+      {
+        $group: {
+          _id: '$resourceDetails.type',
+          total: { 
+            $sum: {
+              $cond: [
+                { $eq: ['$type', TransactionType.RETURN] },
+                { $multiply: ['$totalCost', -1] }, 
+                '$totalCost'
+              ]
+            }
+          }
+        }
+      }
+    ]).exec();
+  }
+
 }

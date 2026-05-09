@@ -48,6 +48,14 @@ export const rejectRequestSchema = z.object({
   reason: z.string().min(5, "O motivo da rejeição é obrigatório"),
 });
 
+export const projectStatementSchema = z.object({
+  totalAccumulated: z.number(),
+  categories: z.array(z.object({
+    type: z.nativeEnum(ResourceType),
+    total: z.number(),
+    percentage: z.number()
+  }))
+});
 
 export type CreateResourceDto = z.infer<typeof createResourceSchema>;
 export type AllocateResourceDto = z.infer<typeof allocateResourceSchema>;
@@ -56,3 +64,4 @@ export type ReturnResourceDto = z.infer<typeof returnResourceSchema>;
 export type CancelTransactionDto = z.infer<typeof cancelTransactionSchema>;
 export type ApproveRequestDto = z.infer<typeof approveRequestSchema>;
 export type RejectRequestDto = z.infer<typeof rejectRequestSchema>;
+export type ProjectStatementDto = z.infer<typeof projectStatementSchema>;
