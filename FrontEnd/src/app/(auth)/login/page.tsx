@@ -1,5 +1,4 @@
 //src/app/(auth)/login/page.tsx
-
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
@@ -10,8 +9,9 @@ import { AppDispatch, RootState } from '@/lib/redux/store';
 import { loginUser, selectIsAuthenticated } from '@/lib/redux/slices/authSlice';
 import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
 import Spinner from '@/components/Spinner';
-import { HardHat, Activity, ShieldCheck } from 'lucide-react';
+import { HardHat, Activity, Wallet } from 'lucide-react'; // Ícones atualizados
 import LogoBloco from '@/components/LogoBloco'; 
+import { ComercialLogin } from '@/components/landing/ComercialLogin';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -50,7 +50,7 @@ export default function LoginPage() {
            <LogoBloco />
         </div>
 
-        {/* Container Centralizado (O flex-1 garante que ele ocupe o espaço restante) */}
+        {/* Container Centralizado */}
         <div className="flex-1 flex flex-col justify-center mx-auto w-full sm:w-[380px] space-y-8 pb-12 lg:pb-0">
           
           <div className="flex flex-col space-y-2 text-left">
@@ -112,7 +112,6 @@ export default function LoginPage() {
 
             {error && (
               <div className="p-3 mt-4 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-                {/* {error} */}
                 Algo deu errado. Verifique suas credenciais e tente novamente.
               </div>
             )}
@@ -122,60 +121,15 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground font-medium">
             Sua empresa ainda não utiliza o Cazuá?{" "}
             <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
-              Criar conta.
+              Criar conta gratuita.
             </Link>
           </p>
 
         </div>
       </div>
 
-      {/* LADO DIREITO: Permanece idêntico (Oculto no Mobile) */}
-      <div className="relative hidden lg:flex h-full flex-col bg-zinc-950 text-white p-10 dark:border-r">
-        <div className="absolute inset-0 bg-zinc-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
-        
-        <div className="relative z-20 flex items-center text-lg font-medium gap-2">
-          <LogoBloco />
-        </div>
-
-        <div className="relative z-20 mt-auto mb-auto max-w-lg mx-auto">
-          <h2 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
-            Gestão de obras de ponta a ponta.
-          </h2>
-          <div className="space-y-6 text-zinc-400">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <Activity className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">Linha do Tempo Centralizada</h4>
-                <p className="text-sm leading-relaxed mt-1">Acompanhe todos os laudos, diários e avanços da sua obra em uma timeline auditável.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">RBAC e Segurança</h4>
-                <p className="text-sm leading-relaxed mt-1">Controle de permissões granular. Apenas a equipe técnica designada interfere na sua demanda.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <HardHat className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">Decisões Baseadas em Dados</h4>
-                <p className="text-sm leading-relaxed mt-1">Matriz GUT integrada para priorização inteligente do seu fluxo de execução diário.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-20 mt-auto text-sm text-zinc-500 font-medium">
-          © {new Date().getFullYear()} Grupo Cazuá. Sistema fechado para clientes corporativos.
-        </div>
-      </div>
+      {/* LADO DIREITO: Atualizado com Copywriting Comercial */}
+      <ComercialLogin />
       
     </div>
   );

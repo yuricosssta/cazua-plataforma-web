@@ -8,6 +8,7 @@ import axios from 'axios';
 import { HardHat, Activity, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import LogoBloco from '@/components/LogoBloco'; 
 import Spinner from '@/components/Spinner';
+import { ComercialLogin } from '@/components/landing/ComercialLogin';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -175,52 +176,7 @@ export default function SignupPage() {
       </div>
 
       {/* LADO DIREITO: Cópia do Login */}
-      <div className="relative hidden lg:flex h-full flex-col bg-zinc-950 text-white p-10 dark:border-r">
-        <div className="absolute inset-0 bg-zinc-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
-        
-        <div className="relative z-20 flex items-center text-lg font-medium gap-2">
-          <LogoBloco />
-        </div>
-
-        <div className="relative z-20 mt-auto mb-auto max-w-lg mx-auto">
-          <h2 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
-            Gestão de obras de ponta a ponta.
-          </h2>
-          <div className="space-y-6 text-zinc-400">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <Activity className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">Linha do Tempo Centralizada</h4>
-                <p className="text-sm leading-relaxed mt-1">Acompanhe todos os laudos, diários e avanços da sua obra em uma timeline auditável.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">RBAC e Segurança</h4>
-                <p className="text-sm leading-relaxed mt-1">Controle de permissões granular. Apenas a equipe técnica designada interfere na sua demanda.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-zinc-900 rounded-md border border-zinc-800 text-zinc-300">
-                <HardHat className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-zinc-200 font-semibold">Decisões Baseadas em Dados</h4>
-                <p className="text-sm leading-relaxed mt-1">Matriz GUT integrada para priorização inteligente do seu fluxo de execução diário.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-20 mt-auto text-sm text-zinc-500 font-medium">
-          © {new Date().getFullYear()} Grupo Cazuá. Sistema fechado para clientes corporativos.
-        </div>
-      </div>
+      <ComercialLogin />
       
     </div>
   );
