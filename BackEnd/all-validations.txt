@@ -1,0 +1,155 @@
+//src/resources/validations/resource.zod.ts
+import { z } from 'zod';
+import { ResourceType } from '../types/resource-enums';
+
+// 1. Catálogo
+export const createResourceSchema = z.object({
+  name: z.string().min(2, "O nome do recurso é obrigatório"),
+  type: z.nativeEnum(ResourceType, { required_error: "Tipo de recurso inválido" }),
+  unit: z.string().min(1, "A unidade de medida é obrigatória (ex: un, kg, h)"),
+  standardCost: z.number().min(0, "O custo não pode ser negativo").default(0),
+});
+
+// 2. Alocação (Estoque -> Obra)
+export const allocateResourceSchema = z.object({
+  resourceId: z.string().min(1, "O ID do recurso é obrigatório"),
+  quantity: z.number().positive("A quantidade deve ser maior que zero"),
+  origin: z.string().optional(),
+  attachments: z.array(z.string().url("Formato de anexo inválido")).optional(),
+});
+
+// 3. Entrada de Estoque / Compra / Aporte
+export const addStockSchema = z.object({
+  resourceId: z.string().min(1, "O ID do recurso é obrigatório"),
+  quantity: z.number().positive("A quantidade deve ser maior que zero"),
+  unitCostSnapshot: z.number().min(0, "O custo não pode ser negativo").optional(), // Opcional, se não vier, o Back-end usa o preço padrão
+  origin: z.string().optional(),
+  attachments: z.array(z.string().url("Formato de anexo inválido")).optional(),
+});
+
+// 4. Devolução (Obra -> Estoque)
+export const returnResourceSchema = z.object({
+  resourceId: z.string().min(1, "O ID do recurso é obrigatório"),
+  quantity: z.number().positive("A quantidade deve ser maior que zero"),
+  origin: z.string().optional(),
+  attachments: z.array(z.string().url("Formato de anexo inválido")).optional(),
+});
+
+// 5. Estorno / Cancelamento
+export const cancelTransactionSchema = z.object({
+  reason: z.string().min(5, "O motivo do cancelamento é obrigatório e deve ser descritivo"),
+});
+
+export const approveRequestSchema = z.object({
+  approvedQuantity: z.number().positive("A quantidade aprovada deve ser maior que zero"),
+});
+
+export const rejectRequestSchema = z.object({
+  reason: z.string().min(5, "O motivo da rejeição é obrigatório"),
+});
+
+export const projectStatementSchema = z.object({
+  totalAccumulated: z.number(),
+  categories: z.array(z.object({
+    type: z.nativeEnum(ResourceType),
+    total: z.number(),
+    percentage: z.number()
+  })),
+  items: z.array(z.object({
+    resourceId: z.string(),
+    name: z.string(),
+    unit: z.string(),
+    type: z.nativeEnum(ResourceType),
+    quantity: z.number(),
+    total: z.number()
+  }))
+});
+
+export type CreateResourceDto = z.infer<typeof createResourceSchema>;
+export type AllocateResourceDto = z.infer<typeof allocateResourceSchema>;
+export type AddStockDto = z.infer<typeof addStockSchema>;
+export type ReturnResourceDto = z.infer<typeof returnResourceSchema>;
+export type CancelTransactionDto = z.infer<typeof cancelTransactionSchema>;
+export type ApproveRequestDto = z.infer<typeof approveRequestSchema>;
+export type RejectRequestDto = z.infer<typeof rejectRequestSchema>;
+export type ProjectStatementDto = z.infer<typeof projectStatementSchema>;//BackEnd/src/users/validations/users.zod.ts
+import { z } from 'zod';
+
+export const createUserSchema = z.object({
+  email: z.string().email('E-mail inválido'),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
+  role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional().default('MEMBER'),
+  memberships: z.array(
+    z.object({
+      organizationId: z.string(),
+      role: z.string(),
+    })
+  ).optional(),
+});
+
+export const updateUserSchema = z.object({
+  name: z.string().optional(),
+  memberships: z.array(
+    z.object({
+      organizationId: z.string(),
+      role: z.string(),
+    })
+  ).optional(),
+});
+
+export type CreateUser = z.infer<typeof createUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;// BackEnd/src/projects/validations/projects.zod.ts
+
+import { z } from 'zod';
+
+// 1. Esquema para Criação da Obra/Demanda
+export const createProjectSchema = z.object({
+  title: z.string().min(1, 'O título da obra/demanda é obrigatório.'),
+  description: z.string().min(1, 'A descrição é obrigatória e deve ter pelo menos 1 caracter.'),
+  location: z.string().min(1, 'A localização é obrigatória.'),
+  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional().default('DEMAND'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  attachments: z.array(z.string()).optional(),
+});
+
+// 2. Esquema para Emissão do Parecer Técnico (A Matriz de Prioridade)
+export const emitParecerSchema = z.object({
+  // Notas de 1 a 5
+  // Ex: { gravidade: 5, urgencia: 4, tendencia: 2 }
+  priorityDetails: z.record(z.string(), z.number().min(1).max(5)).optional(),
+
+  // O texto descritivo do parecer do engenheiro
+  parecerText: z.string().min(1, 'O texto do parecer é obrigatório.'),
+
+  // O engenheiro pode decidir avançar a demanda para PLANEJAMENTO ou mantê-la como DEMANDA
+  newStatus: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional(),
+
+  // Campos adicionais para atualização do projeto
+  technicalTitle: z.string().optional(), // Título técnico específico para o parecer
+  startDate: z.string().optional(), // Nova data de início, se aplicável
+  endDate: z.string().optional(), // Nova data de término, se aplicável
+  location: z.string().optional(), // Nova localização, se aplicável
+  attachments: z.array(z.string()).optional(),
+});
+
+export const bulkImportItemSchema = z.object({
+  title: z.string().min(1, 'O título é obrigatório.'),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  status: z.enum(['DEMAND', 'PLANNING', 'EXECUTION', 'COMPLETED', 'INVALID']).optional().default('DEMAND'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  // O preprocess converte string "125" para número 125 antes de validar os limites
+  priority: z.preprocess((val) => Number(val), z.number().min(1).max(125)).optional().default(1),
+  attachments: z.array(z.string()).optional(),
+});
+
+export const bulkImportSchema = z.object({
+  projects: z.array(bulkImportItemSchema).min(1, 'A lista de importação não pode estar vazia.')
+});
+
+export type CreateProjectDto = z.infer<typeof createProjectSchema>;
+export type EmitParecerDto = z.infer<typeof emitParecerSchema>;
+export type BulkImportDto = z.infer<typeof bulkImportSchema>;
