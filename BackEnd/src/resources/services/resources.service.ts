@@ -1,4 +1,4 @@
-//src/resources/services/resources.service.ts
+// src/resources/services/resources.service.ts
 import { Injectable, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ResourceRepository } from '../repositories/resource.repository';
@@ -8,6 +8,7 @@ import { ResourceType, TransactionStatus, TransactionType } from '../types/resou
 import { Types } from 'mongoose';
 import { CreateResourceDto, ProjectStatementDto } from '../validations/resource.zod';
 import { TimelineEventType } from 'src/projects/schemas/timeline-event.schema';
+import { Precision } from '../../shared/utils/precision.util';
 
 @Injectable()
 export class ResourcesService {
@@ -64,7 +65,6 @@ export class ResourcesService {
     return this.warehouseRepo.removeMember(orgId, memberId);
   }
 
-
   // --- OPERAÇÕES DE CATÁLOGO ---
   async createResource(orgId: string, userId: string, userRole: string, data: CreateResourceDto) {
     await this.checkWarehousePermission(orgId, userId, userRole);
@@ -108,8 +108,6 @@ export class ResourcesService {
   }
 
   // --- OPERAÇÕES DE ESTOQUE E TRANSAÇÕES ---
-
-  // Exceção: O Engenheiro pede a RM da obra, não precisa ser Almoxarife.
   async requestAllocation(data: { orgId: string; projectId: string; authorId: string; resourceId: string; quantity: number; origin?: string; attachments?: string[]; }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode ser solicitado.');
@@ -151,10 +149,11 @@ export class ResourcesService {
 
     if (this.isStockableResource(resource.type)) {
       if (resource.currentStock - approvedQuantity < 0) isStockNegative = true;
-      await this.resourceRepo.updateStock(transaction.resourceId.toString(), -approvedQuantity);
+      await this.resourceRepo.updateStock(transaction.resourceId.toString(), -approvedQuantity); // Arredondado no Repositório
     }
 
-    const finalTotalCost = approvedQuantity * transaction.unitCostSnapshot;
+    // Utilizando o helper de precisão para calcular o custo total final
+    const finalTotalCost = Precision.round(approvedQuantity * transaction.unitCostSnapshot);
 
     const approvedTx = await this.transactionRepo.updateRequestStatus(
       transactionId,
@@ -205,6 +204,9 @@ export class ResourcesService {
       await this.resourceRepo.updateStock(data.resourceId, -data.quantity);
     }
 
+    // Utilizando o helper de precisão
+    const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
+
     const transaction = await this.transactionRepo.create({
       organizationId: new Types.ObjectId(orgId),
       projectId: new Types.ObjectId(data.projectId),
@@ -214,7 +216,7 @@ export class ResourcesService {
       status: TransactionStatus.APPROVED,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
-      totalCost: data.quantity * resource.standardCost,
+      totalCost: finalTotalCost,
       origin: data.origin,
       attachments: data.attachments || [],
       isStockNegative,
@@ -242,14 +244,17 @@ export class ResourcesService {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
     }
 
+    const unitCost = data.unitCostSnapshot || resource.standardCost;
+    const finalTotalCost = Precision.round(data.quantity * unitCost);
+
     return this.transactionRepo.create({
       organizationId: new Types.ObjectId(orgId),
       resourceId: new Types.ObjectId(data.resourceId),
       authorId: new Types.ObjectId(authorId),
       type: TransactionType.ENTRY,
       quantity: data.quantity,
-      unitCostSnapshot: data.unitCostSnapshot || resource.standardCost,
-      totalCost: data.quantity * (data.unitCostSnapshot || resource.standardCost),
+      unitCostSnapshot: unitCost,
+      totalCost: finalTotalCost,
       origin: data.origin,
       attachments: data.attachments || [],
     });
@@ -264,6 +269,8 @@ export class ResourcesService {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
     }
 
+    const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
+
     const transaction = await this.transactionRepo.create({
       organizationId: new Types.ObjectId(orgId),
       projectId: new Types.ObjectId(projectId),
@@ -272,7 +279,7 @@ export class ResourcesService {
       type: TransactionType.RETURN,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
-      totalCost: data.quantity * resource.standardCost,
+      totalCost: finalTotalCost,
       origin: data.origin,
       attachments: data.attachments || [],
     });
@@ -348,9 +355,27 @@ export class ResourcesService {
     }));
 
     return {
-      totalAccumulated: Number(totalAccumulated.toFixed(2)),
+      totalAccumulated: Precision.round(totalAccumulated),
       categories,
       items
     };
   }
+
+  // MÉTODO DE SANITIZAÇÃO DE PRECISÃO DECIMAL PARA DADOS ANTIGOS
+  async sanitizeDecimals(orgId: string, userId: string, userRole: string) {
+    if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Acesso negado: Apenas Administradores podem executar a sanitização de dados.');
+    }
+
+    const txResult = await this.transactionRepo.sanitizeDecimalPrecision(orgId);
+    const resourceResult = await this.resourceRepo.sanitizeDecimalPrecision(orgId);
+
+    return {
+      message: 'Sanitização de precisão decimal concluída com sucesso.',
+      organizationId: orgId,
+      transactionsModified: txResult.modifiedCount,
+      resourcesModified: resourceResult.modifiedCount
+    };
+  }
+
 }

@@ -33,6 +33,18 @@ export class ResourcesController {
     return req.headers['x-org-role'] || 'MEMBER';
   }
 
+  // --- OPERAÇÕES DE MANUTENÇÃO E PADRONIZAÇÃO ---
+  // @Patch('admin/sanitize-decimals')
+  async sanitizeDecimals(
+    @Param('orgId') orgId: string,
+    @Req() req: any
+  ) {
+    const userId = this.extractUserId(req);
+    const userRole = this.extractUserRole(req);
+
+    return this.resourcesService.sanitizeDecimals(orgId, userId, userRole);
+  }
+
   // --- GESTÃO DA EQUIPE DO ALMOXARIFADO ---
 
   @Get('team')

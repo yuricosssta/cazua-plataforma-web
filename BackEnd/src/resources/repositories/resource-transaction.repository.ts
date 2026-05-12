@@ -1,4 +1,4 @@
-//src/resources/repositories/resource-transaction.repository.ts
+// src/resources/repositories/resource-transaction.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -37,7 +37,6 @@ export class ResourceTransactionRepository {
     return updated;
   }
 
-  // Busca todas as requisições pendentes de uma organização
   async findPendingRequests(orgId: string): Promise<ResourceTransaction[]> {
     return this.model
       .find({
@@ -50,7 +49,6 @@ export class ResourceTransactionRepository {
       .exec();
   }
 
-  // Atualiza o status da requisição
   async updateRequestStatus(
     id: string,
     status: TransactionStatus,
@@ -84,7 +82,7 @@ export class ResourceTransactionRepository {
       .exec();
   }
 
-  // Método para gerar o demonstrativo de custos por projeto
+  // Método para gerar o demonstrativo de custos por projeto COM $ROUND na Pipeline
   async getProjectCostStatement(orgId: string, projectId: string): Promise<any> {
     const result = await this.model.aggregate([
       {
@@ -137,6 +135,13 @@ export class ResourceTransactionRepository {
                 _id: '$resourceType',
                 total: { $sum: '$adjustedCost' }
               }
+            },
+            // Arredonda o subtotal de categorias na pipeline
+            {
+              $project: {
+                _id: 1,
+                total: { $round: ['$total', 2] }
+              }
             }
           ],
           items: [
@@ -150,13 +155,39 @@ export class ResourceTransactionRepository {
                 total: { $sum: '$adjustedCost' }
               }
             },
-            { $sort: { total: -1 } } // Ordena pelo maior custo
+            // Arredonda as somas calculadas para remover qualquer dízima binária (IEEE 754)
+            {
+              $project: {
+                name: 1,
+                unit: 1,
+                type: 1,
+                quantity: { $round: ['$quantity', 2] },
+                total: { $round: ['$total', 2] }
+              }
+            },
+            { $sort: { total: -1 } }
           ]
         }
       }
     ]).exec();
 
     return result[0];
+  }
+
+  // Método para corrigir a precisão decimal de transações existentes usando $ROUND na Pipeline
+  async sanitizeDecimalPrecision(orgId: string): Promise<any> {
+    return this.model.updateMany(
+      { organizationId: new Types.ObjectId(orgId) },
+      [
+        {
+          $set: {
+            quantity: { $round: ['$quantity', 2] },
+            unitCostSnapshot: { $round: ['$unitCostSnapshot', 2] },
+            totalCost: { $round: ['$totalCost', 2] }
+          }
+        }
+      ]
+    ).exec();
   }
 
 }
