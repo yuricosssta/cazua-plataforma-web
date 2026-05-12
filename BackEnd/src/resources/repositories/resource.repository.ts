@@ -8,7 +8,7 @@ import { Resource, ResourceDocument } from '../schemas/resource.schema';
 export class ResourceRepository {
   constructor(
     @InjectModel(Resource.name) private readonly model: Model<ResourceDocument>
-  ) {}
+  ) { }
 
   // CRIAR NOVO RECURSO NO BANCO
   async create(data: Partial<Resource>): Promise<Resource> {
@@ -19,10 +19,10 @@ export class ResourceRepository {
   // BUSCAR RECURSOS DA EMPRESA (Traz apenas os ativos por padrão)
   async findAllByOrganization(orgId: string, includeInactive = false): Promise<Resource[]> {
     const query: any = { organizationId: new Types.ObjectId(orgId) };
-    
+
     if (!includeInactive) {
       // $ne: false garante compatibilidade com registros antigos que não possuíam a flag
-      query.isActive = { $ne: false }; 
+      query.isActive = { $ne: false };
     }
 
     return this.model
@@ -43,7 +43,7 @@ export class ResourceRepository {
       { $inc: { currentStock: quantityChange } },
       { new: true }
     ).exec();
-    
+
     if (!updated) throw new NotFoundException('Recurso não encontrado.');
     return updated;
   }
@@ -55,7 +55,7 @@ export class ResourceRepository {
       { $set: data },
       { new: true }
     ).exec();
-    
+
     if (!updated) throw new NotFoundException('Recurso não encontrado.');
     return updated;
   }
@@ -67,8 +67,24 @@ export class ResourceRepository {
       { $set: { isActive: false } },
       { new: true }
     ).exec();
-    
+
     if (!updated) throw new NotFoundException('Recurso não encontrado.');
     return updated;
   }
+
+  // SANITIZAÇÃO DE PRECISÃO DECIMAL PARA PADRONIZAR DADOS ANTIGOS
+  async sanitizeDecimalPrecision(orgId: string): Promise<any> {
+    return this.model.updateMany(
+      { organizationId: new Types.ObjectId(orgId) },
+      [
+        {
+          $set: {
+            standardCost: { $round: ['$standardCost', 2] },
+            currentStock: { $round: ['$currentStock', 2] }
+          }
+        }
+      ]
+    ).exec();
+  }
+
 }

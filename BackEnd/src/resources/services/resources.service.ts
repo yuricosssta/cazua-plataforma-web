@@ -360,4 +360,22 @@ export class ResourcesService {
       items
     };
   }
+
+  // MÉTODO DE SANITIZAÇÃO DE PRECISÃO DECIMAL PARA DADOS ANTIGOS
+  async sanitizeDecimals(orgId: string, userId: string, userRole: string) {
+    if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
+      throw new ForbiddenException('Acesso negado: Apenas Administradores podem executar a sanitização de dados.');
+    }
+
+    const txResult = await this.transactionRepo.sanitizeDecimalPrecision(orgId);
+    const resourceResult = await this.resourceRepo.sanitizeDecimalPrecision(orgId);
+
+    return {
+      message: 'Sanitização de precisão decimal concluída com sucesso.',
+      organizationId: orgId,
+      transactionsModified: txResult.modifiedCount,
+      resourcesModified: resourceResult.modifiedCount
+    };
+  }
+
 }

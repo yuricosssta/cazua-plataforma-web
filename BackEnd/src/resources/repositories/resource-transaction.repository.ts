@@ -173,4 +173,21 @@ export class ResourceTransactionRepository {
 
     return result[0];
   }
+
+  // Método para corrigir a precisão decimal de transações existentes usando $ROUND na Pipeline
+  async sanitizeDecimalPrecision(orgId: string): Promise<any> {
+    return this.model.updateMany(
+      { organizationId: new Types.ObjectId(orgId) },
+      [
+        {
+          $set: {
+            quantity: { $round: ['$quantity', 2] },
+            unitCostSnapshot: { $round: ['$unitCostSnapshot', 2] },
+            totalCost: { $round: ['$totalCost', 2] }
+          }
+        }
+      ]
+    ).exec();
+  }
+
 }
