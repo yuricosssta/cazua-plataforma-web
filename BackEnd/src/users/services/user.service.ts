@@ -12,10 +12,14 @@ import { CreateUser, UpdateUser } from '../validations/users.zod';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { IUser } from '../schemas/models/user.interface';
+import { MailService } from '../../shared/services/mail.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly userRepository: UsersRepository) { }
+  constructor(
+    private readonly userRepository: UsersRepository,
+    private readonly mailService: MailService,
+  ) { }
 
   async findOne(email: string): Promise<IUser | undefined> {
     return this.userRepository.findOneByEmail(email);
@@ -24,7 +28,6 @@ export class UsersService {
   async createUser(user: CreateUser) {
     const hashedPassword = await bcrypt.hash(user.password, 10);
     try {
-      // Cria a Identidade Global
       return await this.userRepository.createUser({
         ...user,
         password: hashedPassword,
@@ -32,7 +35,6 @@ export class UsersService {
     } catch (e: any) {
       console.error('Erro ao criar usuário:', e);
       if (e.code === 11000) {
-        // Isso retorna o Erro 409 (Conflict). 
         throw new ConflictException('O E-mail já está em uso');
       }
       throw new InternalServerErrorException('Erro ao criar usuário');
@@ -74,67 +76,58 @@ export class UsersService {
       throw new BadRequestException('A senha atual e a nova senha são obrigatórias.');
     }
 
-    // Busca o usuário com o password
     const user = await this.userRepository.getUserWithPassword(userId);
     if (!user) throw new NotFoundException('Usuário não encontrado.');
 
-    // Compara a senha digitada com a senha do banco
     const passwordMatch = await bcrypt.compare(currentPass, user.password);
     if (!passwordMatch) {
       throw new BadRequestException('A senha atual está incorreta.');
     }
 
-    // Hash da nova senha
     const hashedNewPassword = await bcrypt.hash(newPass, 10);
 
-    // Salva usando o repository
     await this.userRepository.updateUser(userId, { password: hashedNewPassword } as Partial<IUser>);
 
     return { message: 'Senha atualizada com sucesso.' };
   }
 
-  // Esqueci minha senha
   async forgotPassword(email: string) {
     const user = await this.userRepository.findOneByEmail(email);
+    const successMessage = { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+
     if (!user) {
-      return { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+      return successMessage;
     }
 
-    // 1. Gera um Token Aleatório Seguro (Hexadecimal)
     const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // 2. Define a validade para 1 hora a partir de agora
     const expireDate = new Date();
     expireDate.setHours(expireDate.getHours() + 1);
 
-    // 3. Salva no banco (Certifique-se que seu updateUser aceita esses campos)
-    await this.userRepository.updateUser(String(user._id), {
-      resetPasswordToken: resetToken,
+    await this.userRepository.updateUser(String(user._id || user.id), {
+      resetPasswordToken: resetTokenHash,
       resetPasswordExpires: expireDate
     } as Partial<IUser>);
 
-    // 4. "Envia" o e-mail
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`; // teste
-    console.log(`\n\n[SIMULAÇÃO DE E-MAIL]`);
-    console.log(`Para: ${user.email}`);
-    console.log(`Assunto: Recuperação de Senha - Cazuá`);
-    console.log(`Clique no link para redefinir sua senha: ${resetLink}\n\n`);
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
 
-    return { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+    return successMessage;
   }
 
   async resetPassword(token: string, newPass: string) {
-    // Busca um usuário que tenha ESTE token
-    const user = await this.userRepository.findOneByResetToken(token);
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    if (!user) {
+    const user = await this.userRepository.findOneByResetToken(resetTokenHash);
+
+    // Validação de segurança: verificar existência do usuário e se o token expirou
+    if (!user || (user.resetPasswordExpires && new Date(user.resetPasswordExpires).getTime() < Date.now())) {
       throw new BadRequestException('Token de recuperação inválido ou expirado. Solicite um novo link.');
     }
 
-    // Hash da nova senha
     const hashedNewPassword = await bcrypt.hash(newPass, 10);
 
-    // Salva a nova senha e DESTROI o token para ele não ser usado de novo
     await this.userRepository.updateUser(String(user._id || user.id), {
       password: hashedNewPassword,
       resetPasswordToken: null,
@@ -143,5 +136,4 @@ export class UsersService {
 
     return { message: 'Sua senha foi redefinida com sucesso! Você já pode fazer o login.' };
   }
-
 }

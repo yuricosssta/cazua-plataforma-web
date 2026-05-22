@@ -1,3 +1,4 @@
+=== SPRINT 01 - 07/05/2026 ===
 Resumo Técnico de Fechamento: Interface Comercial e Technical SEO
 
 Decisões de Arquitetura:
@@ -18,7 +19,7 @@ Configuração de diretivas de rastreamento (FrontEnd/src/app/robots.ts) com blo
 
 Exigência de configuração da variável de ambiente NEXT_PUBLIC_APP_URL no ambiente de produção para a montagem correta das URLs nos arquivos de SEO
 
-------------
+=== SPRINT 02 - 09/05/2026 ===
 Resumo Técnico de Fechamento: Extrato de Custos da Obra
 
 Decisões de Arquitetura
@@ -41,7 +42,7 @@ Roteamento (API NestJS): Novo endpoint exposto GET /organizations/:orgId/resourc
 
 Serviço de Rede (Next.js): Atualização do axiosInstance em resourceService.ts com o novo método getProjectStatement injetando implicitamente as credenciais da organização.
 
-------------
+=== SPRINT 03 - 11/05/2026 ===
 Resumo Técnico de Fechamento: Extrato de Custos da Obra
 
 Decisões de Arquitetura

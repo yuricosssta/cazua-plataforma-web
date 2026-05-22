@@ -83,7 +83,7 @@ export default function LoginPage() {
                   Senha
                 </label>
                 <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline" tabIndex={-1}>
-                  Esqueceu a senha? (em breve)
+                  Esqueceu a senha?
                 </Link>
               </div>
               <input

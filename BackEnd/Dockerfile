@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Habilita o pnpm usando o Corepack nativo do Node 22
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Copia apenas os arquivos de dependência
 COPY pnpm-lock.yaml package.json ./
