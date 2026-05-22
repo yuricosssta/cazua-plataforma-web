@@ -8,7 +8,7 @@ import rehypeHighlight from 'rehype-highlight';
 // Importe um tema de estilo para o realce de sintaxe.
 // Você pode escolher outros temas da biblioteca 'highlight.js'.
 // Este import pode ser feito aqui ou no seu globals.css.
-import 'highlight.js/styles/github-dark.css';
+// import 'highlight.js/styles/github-dark.css';
 
 interface MarkdownPreviewProps {
   markdown: string;
