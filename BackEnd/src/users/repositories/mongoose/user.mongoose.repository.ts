@@ -1,5 +1,4 @@
-// src/users/repositories/mongoose/user.mongoose.repository.ts
-
+//src/users/repositories/mongoose/user.mongoose.repository.ts
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UsersRepository } from '../../repositories/user.repository';
@@ -103,10 +102,10 @@ export class UsersMongooseRepository implements UsersRepository {
     }
   }
 
-  async findOneByResetToken(token : string){
-    console.log(`Buscando usuário com token de reset: ${token}`);
+  async findOneByResetToken(tokenHash: string) {
+    console.log(`Buscando usuário com token de reset criptografado.`);
     const user = await this.userModel.findOne({
-      resetPasswordToken: token,
+      resetPasswordToken: tokenHash,
       resetPasswordExpires: { $gt: new Date() } // Verifica se o token ainda é válido
     }).lean().exec();
 
@@ -114,7 +113,7 @@ export class UsersMongooseRepository implements UsersRepository {
       console.log(`Usuário encontrado para token de reset: ${user.email}`);
       return user as unknown as IUser;
     } else {
-      console.log(`Nenhum usuário encontrado com token de reset: ${token}`);
+      console.log(`Nenhum usuário encontrado ou token expirado.`);
       return undefined;
     }
   }
