@@ -1,3 +1,4 @@
+//src/organization/guards/tenant.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -43,8 +44,8 @@ export class TenantGuard implements CanActivate {
     }
 
     const membership = await this.memberModel.findOne({
-      userId: new Types.ObjectId(userIdStr),
-      organizationId: new Types.ObjectId(orgIdHeader),
+      userId: new Types.ObjectId(userIdStr as string),
+      organizationId: new Types.ObjectId(orgIdHeader as string),
     }).exec();
 
     if (!membership) {

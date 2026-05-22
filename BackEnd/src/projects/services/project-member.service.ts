@@ -17,10 +17,10 @@ export class ProjectMemberService {
   async assignMember(orgId: string, projectId: string, memberId: string, actionByUserId: string, memberName: string) {
     const project = await this.projectModel.findOneAndUpdate(
       {
-        _id: new Types.ObjectId(String(projectId)),
-        organizationId: new Types.ObjectId(String(orgId))
+        _id: new Types.ObjectId(String(projectId as string)),
+        organizationId: new Types.ObjectId(String(orgId as string))
       },
-      { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId)) } },
+      { $addToSet: { assignedMembers: new Types.ObjectId(String(memberId as string)) } },
       { new: true }
     ).exec();
 
@@ -41,10 +41,10 @@ export class ProjectMemberService {
   async removeMember(orgId: string, projectId: string, memberId: string, actionByUserId: string, memberName: string) {
     const project = await this.projectModel.findOneAndUpdate(
       {
-        _id: new Types.ObjectId(String(projectId)),
-        organizationId: new Types.ObjectId(String(orgId))
+        _id: new Types.ObjectId(String(projectId as string)),
+        organizationId: new Types.ObjectId(String(orgId as string))
       },
-      { $pull: { assignedMembers: new Types.ObjectId(String(memberId)) } },
+      { $pull: { assignedMembers: new Types.ObjectId(String(memberId as string)) } },
       { new: true }
     ).exec();
 

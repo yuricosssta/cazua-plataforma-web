@@ -12,10 +12,10 @@ export class WarehouseRepository {
 
   // Padrão Lazy Initialization
   async getOrCreate(orgId: string): Promise<Warehouse> {
-    let warehouse = await this.model.findOne({ organizationId: new Types.ObjectId(orgId) }).exec();
+    let warehouse = await this.model.findOne({ organizationId: new Types.ObjectId(orgId as string) }).exec();
     if (!warehouse) {
       warehouse = await this.model.create({
-        organizationId: new Types.ObjectId(orgId),
+        organizationId: new Types.ObjectId(orgId as string),
         assignedMembers: []
       });
     }
@@ -24,16 +24,16 @@ export class WarehouseRepository {
 
   async assignMember(orgId: string, memberId: string): Promise<Warehouse> {
     return this.model.findOneAndUpdate(
-      { organizationId: new Types.ObjectId(orgId) },
-      { $addToSet: { assignedMembers: new Types.ObjectId(memberId) } },
+      { organizationId: new Types.ObjectId(orgId as string) },
+      { $addToSet: { assignedMembers: new Types.ObjectId(memberId as string) } },
       { new: true, upsert: true }
     ).exec();
   }
 
   async removeMember(orgId: string, memberId: string): Promise<Warehouse> {
     return this.model.findOneAndUpdate(
-      { organizationId: new Types.ObjectId(orgId) },
-      { $pull: { assignedMembers: new Types.ObjectId(memberId) } },
+      { organizationId: new Types.ObjectId(orgId as string) },
+      { $pull: { assignedMembers: new Types.ObjectId(memberId as string) } },
       { new: true }
     ).exec();
   }

@@ -40,7 +40,7 @@ export class ResourceTransactionRepository {
   async findPendingRequests(orgId: string): Promise<ResourceTransaction[]> {
     return this.model
       .find({
-        organizationId: new Types.ObjectId(orgId),
+        organizationId: new Types.ObjectId(orgId as string),
         type: 'ALLOCATION',
         status: 'PENDING',
         isCanceled: false
@@ -75,7 +75,7 @@ export class ResourceTransactionRepository {
 
   async findAllByOrganization(orgId: string): Promise<ResourceTransaction[]> {
     return this.model
-      .find({ organizationId: new Types.ObjectId(orgId) })
+      .find({ organizationId: new Types.ObjectId(orgId as string) })
       .sort({ createdAt: -1 })
       .populate('resourceId', 'name unit')
       .populate('projectId', 'title')
@@ -87,8 +87,8 @@ export class ResourceTransactionRepository {
     const result = await this.model.aggregate([
       {
         $match: {
-          organizationId: new Types.ObjectId(orgId),
-          projectId: new Types.ObjectId(projectId),
+          organizationId: new Types.ObjectId(orgId as string),
+          projectId: new Types.ObjectId(projectId as string),
           status: TransactionStatus.APPROVED,
           isCanceled: false,
           type: { $in: [TransactionType.ALLOCATION, TransactionType.RETURN] }
@@ -177,7 +177,7 @@ export class ResourceTransactionRepository {
   // Método para corrigir a precisão decimal de transações existentes usando $ROUND na Pipeline
   async sanitizeDecimalPrecision(orgId: string): Promise<any> {
     return this.model.updateMany(
-      { organizationId: new Types.ObjectId(orgId) },
+      { organizationId: new Types.ObjectId(orgId as string) },
       [
         {
           $set: {

@@ -26,7 +26,7 @@ export class ProjectsService {
     const plan = (org as any).plan || 'FREE';
     if (plan === 'FREE') {
       const currentCount = await this.projectModel.countDocuments({
-        organizationId: new Types.ObjectId(String(orgId))
+        organizationId: new Types.ObjectId(String(orgId as string))
       });
 
       if (currentCount + incomingItemsCount > 2) {
@@ -51,7 +51,7 @@ export class ProjectsService {
     if (plan !== 'FREE') return;
 
     const oldestProjects = await this.projectModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .find({ organizationId: new Types.ObjectId(String(orgId as string)) })
       .sort({ createdAt: 1 })
       .limit(2)
       .select('_id')
@@ -90,8 +90,8 @@ export class ProjectsService {
       const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
 
       const newProject = new this.projectModel({
-        organizationId: new Types.ObjectId(String(orgId)),
-        createdBy: new Types.ObjectId(String(userId)),
+        organizationId: new Types.ObjectId(String(orgId as string)),
+        createdBy: new Types.ObjectId(String(userId as string)),
         referenceCode: referenceCode,
         title: data.title,
         description: data.description,
@@ -100,7 +100,7 @@ export class ProjectsService {
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         attachments: data.attachments || [],
-        assignedMembers: [new Types.ObjectId(String(userId))] // O CRIADOR ENTRA NA EQUIPE AUTOMATICAMENTE
+        assignedMembers: [new Types.ObjectId(String(userId as string))] // O CRIADOR ENTRA NA EQUIPE AUTOMATICAMENTE
       });
 
       const savedProject = await newProject.save();
@@ -108,8 +108,8 @@ export class ProjectsService {
       // Grava o primeiro evento diretamente para pegar o ID na hora
       const firstEvent = new this.timelineEventModel({
         projectId: savedProject._id,
-        organizationId: new Types.ObjectId(String(orgId)),
-        authorId: new Types.ObjectId(String(userId)),
+        organizationId: new Types.ObjectId(String(orgId as string)),
+        authorId: new Types.ObjectId(String(userId as string)),
         type: TimelineEventType.DOCUMENT,
         description: data.description,
         referenceCode: referenceCode,
@@ -188,12 +188,12 @@ export class ProjectsService {
         const referenceCode = `${prefixoOrg}.${year}${month}${sequencia}`;
         startSequence++; // Prepara para a próxima obra do loop
 
-        const projectId = new Types.ObjectId(); // Gera o ID antes de salvar para linkar com a Timeline
+        const projectId = new Types.ObjectId( as string); // Gera o ID antes de salvar para linkar com a Timeline
 
         const projectDoc = {
           _id: projectId,
-          organizationId: new Types.ObjectId(String(orgId)),
-          createdBy: new Types.ObjectId(String(userId)),
+          organizationId: new Types.ObjectId(String(orgId as string)),
+          createdBy: new Types.ObjectId(String(userId as string)),
           referenceCode: referenceCode,
           title: data.title || 'Demanda Sem Título', // Proteção extra caso venha vazio
           description: data.description || 'Importado via planilha CSV.',
@@ -209,10 +209,10 @@ export class ProjectsService {
         };
 
         const eventDoc = {
-          _id: new Types.ObjectId(),
+          _id: new Types.ObjectId( as string),
           projectId: projectId,
-          organizationId: new Types.ObjectId(String(orgId)),
-          authorId: new Types.ObjectId(String(userId)),
+          organizationId: new Types.ObjectId(String(orgId as string)),
+          authorId: new Types.ObjectId(String(userId as string)),
           type: TimelineEventType.DOCUMENT,
           description: 'Demanda importada em lote via arquivo CSV.',
           referenceCode: referenceCode,
@@ -248,8 +248,8 @@ export class ProjectsService {
   // EMISSÃO DO PARECER TÉCNICO
   async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: any, userRole?: string) {
     const project = await this.projectModel.findOne({
-      _id: new Types.ObjectId(String(projectId)),
-      organizationId: new Types.ObjectId(String(orgId))
+      _id: new Types.ObjectId(String(projectId as string)),
+      organizationId: new Types.ObjectId(String(orgId as string))
     });
 
     if (!project) throw new NotFoundException('Demanda/Projeto não encontrada.');
@@ -304,8 +304,8 @@ export class ProjectsService {
 
       const parecerEvent = new this.timelineEventModel({
         projectId: project._id,
-        organizationId: new Types.ObjectId(String(orgId)),
-        authorId: new Types.ObjectId(String(userId)),
+        organizationId: new Types.ObjectId(String(orgId as string)),
+        authorId: new Types.ObjectId(String(userId as string)),
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
         parecerCode: parecerCode,
@@ -332,7 +332,7 @@ export class ProjectsService {
 
     // Puxa as obras com .lean() para podermos injetar dados nativamente
     const projects = await this.projectModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .find({ organizationId: new Types.ObjectId(String(orgId as string)) })
       .populate({
         path: 'lastEventId',
         select: 'description date authorId type metadata createdAt',
@@ -349,7 +349,7 @@ export class ProjectsService {
 
     // Se for FREE, descobre quais são as 2 mais velhas (Aquelas que têm passe livre)
     const oldestProjects = await this.projectModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .find({ organizationId: new Types.ObjectId(String(orgId as string)) })
       .sort({ createdAt: 1 })
       .limit(2)
       .select('_id')
@@ -368,8 +368,8 @@ export class ProjectsService {
   // VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
   async findOneWithTimeline(orgId: string, projectId: string): Promise<{ project: any; timeline: any[] }> {
     const project = await this.projectModel.findOne({
-      _id: new Types.ObjectId(String(projectId)),
-      organizationId: new Types.ObjectId(String(orgId))
+      _id: new Types.ObjectId(String(projectId as string)),
+      organizationId: new Types.ObjectId(String(orgId as string))
     }).lean().exec();
 
     if (!project) throw new NotFoundException('Projeto não encontrado.');
@@ -385,8 +385,8 @@ export class ProjectsService {
     }
 
     const timeline = await this.timelineEventModel.find({
-      projectId: new Types.ObjectId(String(projectId)),
-      organizationId: new Types.ObjectId(String(orgId))
+      projectId: new Types.ObjectId(String(projectId as string)),
+      organizationId: new Types.ObjectId(String(orgId as string))
     })
       .populate('authorId', 'name')
       .sort({ createdAt: -1 })

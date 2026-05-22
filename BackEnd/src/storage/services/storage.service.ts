@@ -71,8 +71,8 @@ export class StorageService {
   async confirmUploadAndRegister(orgId: string, userId: string, fileUrl: string, fileName: string, mimeType: string, sizeBytes: number) {
     // 1. Salva o registro do arquivo no MongoDB
     const newAsset = new this.fileAssetModel({
-      organizationId: new Types.ObjectId(String(orgId)),
-      uploadedBy: new Types.ObjectId(String(userId)),
+      organizationId: new Types.ObjectId(String(orgId as string)),
+      uploadedBy: new Types.ObjectId(String(userId as string)),
       fileName,
       fileUrl,
       mimeType,
@@ -96,7 +96,7 @@ export class StorageService {
 
     // Busca todos os arquivos ordenados do mais recente para o mais antigo
     const assets = await this.fileAssetModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .find({ organizationId: new Types.ObjectId(String(orgId as string)) })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
@@ -111,8 +111,8 @@ export class StorageService {
   async deleteAsset(orgId: string, assetId: string) {
     // Busca o arquivo no banco de dados para descobrir a URL e o Tamanho
     const asset = await this.fileAssetModel.findOne({
-      _id: new Types.ObjectId(String(assetId)),
-      organizationId: new Types.ObjectId(String(orgId))
+      _id: new Types.ObjectId(String(assetId as string)),
+      organizationId: new Types.ObjectId(String(orgId as string))
     });
 
     if (!asset) {

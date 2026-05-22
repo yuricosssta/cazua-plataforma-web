@@ -70,7 +70,7 @@ export class ResourcesService {
     await this.checkWarehousePermission(orgId, userId, userRole);
     return this.resourceRepo.create({
       ...data,
-      organizationId: new Types.ObjectId(orgId),
+      organizationId: new Types.ObjectId(orgId as string),
     });
   }
 
@@ -113,10 +113,10 @@ export class ResourcesService {
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode ser solicitado.');
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(data.orgId),
-      projectId: new Types.ObjectId(data.projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(data.authorId),
+      organizationId: new Types.ObjectId(data.orgId as string),
+      projectId: new Types.ObjectId(data.projectId as string),
+      resourceId: new Types.ObjectId(data.resourceId as string),
+      authorId: new Types.ObjectId(data.authorId as string),
       type: TransactionType.ALLOCATION,
       status: TransactionStatus.PENDING,
       quantity: data.quantity,
@@ -208,10 +208,10 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      projectId: new Types.ObjectId(data.projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new Types.ObjectId(orgId as string),
+      projectId: new Types.ObjectId(data.projectId as string),
+      resourceId: new Types.ObjectId(data.resourceId as string),
+      authorId: new Types.ObjectId(authorId as string),
       type: TransactionType.ALLOCATION,
       status: TransactionStatus.APPROVED,
       quantity: data.quantity,
@@ -248,9 +248,9 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * unitCost);
 
     return this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new Types.ObjectId(orgId as string),
+      resourceId: new Types.ObjectId(data.resourceId as string),
+      authorId: new Types.ObjectId(authorId as string),
       type: TransactionType.ENTRY,
       quantity: data.quantity,
       unitCostSnapshot: unitCost,
@@ -272,10 +272,10 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      projectId: new Types.ObjectId(projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new Types.ObjectId(orgId as string),
+      projectId: new Types.ObjectId(projectId as string),
+      resourceId: new Types.ObjectId(data.resourceId as string),
+      authorId: new Types.ObjectId(authorId as string),
       type: TransactionType.RETURN,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,
