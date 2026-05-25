@@ -70,7 +70,7 @@ export class ResourcesService {
     await this.checkWarehousePermission(orgId, userId, userRole);
     return this.resourceRepo.create({
       ...data,
-      organizationId: new Types.ObjectId(orgId),
+      organizationId: new (Types.ObjectId as any)(orgId),
     });
   }
 
@@ -113,10 +113,10 @@ export class ResourcesService {
     if (resource.isActive === false) throw new BadRequestException('Este recurso está inativo e não pode ser solicitado.');
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(data.orgId),
-      projectId: new Types.ObjectId(data.projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(data.authorId),
+      organizationId: new (Types.ObjectId as any)(data.orgId),
+      projectId: new (Types.ObjectId as any)(data.projectId),
+      resourceId: new (Types.ObjectId as any)(data.resourceId),
+      authorId: new (Types.ObjectId as any)(data.authorId),
       type: TransactionType.ALLOCATION,
       status: TransactionStatus.PENDING,
       quantity: data.quantity,
@@ -208,10 +208,10 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      projectId: new Types.ObjectId(data.projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new (Types.ObjectId as any)(orgId),
+      projectId: new (Types.ObjectId as any)(data.projectId),
+      resourceId: new (Types.ObjectId as any)(data.resourceId),
+      authorId: new (Types.ObjectId as any)(authorId),
       type: TransactionType.ALLOCATION,
       status: TransactionStatus.APPROVED,
       quantity: data.quantity,
@@ -248,9 +248,9 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * unitCost);
 
     return this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new (Types.ObjectId as any)(orgId),
+      resourceId: new (Types.ObjectId as any)(data.resourceId),
+      authorId: new (Types.ObjectId as any)(authorId),
       type: TransactionType.ENTRY,
       quantity: data.quantity,
       unitCostSnapshot: unitCost,
@@ -272,10 +272,10 @@ export class ResourcesService {
     const finalTotalCost = Precision.round(data.quantity * resource.standardCost);
 
     const transaction = await this.transactionRepo.create({
-      organizationId: new Types.ObjectId(orgId),
-      projectId: new Types.ObjectId(projectId),
-      resourceId: new Types.ObjectId(data.resourceId),
-      authorId: new Types.ObjectId(authorId),
+      organizationId: new (Types.ObjectId as any)(orgId),
+      projectId: new (Types.ObjectId as any)(projectId),
+      resourceId: new (Types.ObjectId as any)(data.resourceId),
+      authorId: new (Types.ObjectId as any)(authorId),
       type: TransactionType.RETURN,
       quantity: data.quantity,
       unitCostSnapshot: resource.standardCost,

@@ -18,7 +18,7 @@ export class ResourceRepository {
 
   // BUSCAR RECURSOS DA EMPRESA (Traz apenas os ativos por padrão)
   async findAllByOrganization(orgId: string, includeInactive = false): Promise<Resource[]> {
-    const query: any = { organizationId: new Types.ObjectId(orgId) };
+    const query: any = { organizationId: new (Types.ObjectId as any)(orgId) };
 
     if (!includeInactive) {
       // $ne: false garante compatibilidade com registros antigos que não possuíam a flag
@@ -75,7 +75,7 @@ export class ResourceRepository {
   // SANITIZAÇÃO DE PRECISÃO DECIMAL PARA PADRONIZAR DADOS ANTIGOS
   async sanitizeDecimalPrecision(orgId: string): Promise<any> {
     return this.model.updateMany(
-      { organizationId: new Types.ObjectId(orgId) },
+      { organizationId: new (Types.ObjectId as any)(orgId) },
       [
         {
           $set: {

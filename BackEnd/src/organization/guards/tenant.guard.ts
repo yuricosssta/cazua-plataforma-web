@@ -28,7 +28,7 @@ export class TenantGuard implements CanActivate {
     const userIdStr = user.sub || user.userId;
 
 
-    if (!Types.ObjectId.isValid(userIdStr)) {
+    if (!(Types.ObjectId as any).isValid(userIdStr)) {
       console.error('TenantGuard: ID do usuário no token não é um ObjectId válido:', userIdStr);
       throw new UnauthorizedException('Token de usuário inválido.');
     }
@@ -38,13 +38,13 @@ export class TenantGuard implements CanActivate {
       throw new BadRequestException('O cabeçalho x-org-id é obrigatório.');
     }
 
-    if (!Types.ObjectId.isValid(orgIdHeader)) {
+    if (!(Types.ObjectId as any).isValid(orgIdHeader)) {
       throw new BadRequestException(`ID da organização inválido: ${orgIdHeader}`);
     }
 
     const membership = await this.memberModel.findOne({
-      userId: new Types.ObjectId(userIdStr),
-      organizationId: new Types.ObjectId(orgIdHeader),
+      userId: new (Types.ObjectId as any)(userIdStr),
+      organizationId: new (Types.ObjectId as any)(orgIdHeader),
     }).exec();
 
     if (!membership) {

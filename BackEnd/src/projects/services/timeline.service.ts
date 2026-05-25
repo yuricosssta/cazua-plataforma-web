@@ -23,9 +23,9 @@ export class TimelineService {
   }) {
     try {
       const event = new this.timelineEventModel({
-        organizationId: new Types.ObjectId(payload.orgId),
-        projectId: new Types.ObjectId(payload.projectId),
-        authorId: new Types.ObjectId(payload.authorId),
+        organizationId: new (Types.ObjectId as any)(payload.orgId),
+        projectId: new (Types.ObjectId as any)(payload.projectId),
+        authorId: new (Types.ObjectId as any)(payload.authorId),
         type: payload.type,
         description: payload.description,
         metadata: payload.metadata,
@@ -39,7 +39,7 @@ export class TimelineService {
   // BUSCA A TIMELINE DA ORGANIZAÇÃO (Dashboard)
   async getOrganizationTimeline(orgId: string) {
     return this.timelineEventModel
-      .find({ organizationId: new Types.ObjectId(String(orgId)) })
+      .find({ organizationId: new (Types.ObjectId as any)(String(orgId)) })
       .sort({ createdAt: -1 })
       .limit(15)
       .populate('authorId', 'name avatarUrl')
