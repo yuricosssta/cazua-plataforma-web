@@ -21,7 +21,7 @@ export class OrganizationService {
 
     // 1. Busca todas as empresas onde este usuário é o DONO
     const ownedMemberships = await this.memberModel.find({
-      userId: new Types.ObjectId(ownerId),
+      userId: new (Types.ObjectId as any)(ownerId),
       role: 'OWNER'
     }).exec();
 
@@ -51,14 +51,14 @@ export class OrganizationService {
     const createdOrg = new this.orgModel({
       ...createDto,
       slug,
-      ownerId: new Types.ObjectId(ownerId),
+      ownerId: new (Types.ObjectId as any)(ownerId),
       plan: 'FREE' // Toda nova empresa nasce no Free por padrão
     });
     const savedOrg = await createdOrg.save();
 
     await this.memberModel.create({
       organizationId: savedOrg._id,
-      userId: new Types.ObjectId(ownerId),
+      userId: new (Types.ObjectId as any)(ownerId),
       role: 'OWNER',
     });
 
@@ -68,7 +68,7 @@ export class OrganizationService {
   // 2. LISTAGEM (O Menu Lateral)
   async findAllForUser(userId: string) {
     const memberships = await this.memberModel
-      .find({ userId: new Types.ObjectId(userId) })
+      .find({ userId: new (Types.ObjectId as any)(userId) })
       .populate({
         path: 'organizationId',
         select: 'name acronym slug ownerId status plan createdAt settings',
@@ -80,12 +80,12 @@ export class OrganizationService {
 
   // 3. BUSCAR MEMBROS DA ORGANIZAÇÃO
   async findMembersByOrganization(orgId: string) {
-    if (!Types.ObjectId.isValid(orgId)) {
+    if (!(Types.ObjectId as any).isValid(orgId)) {
       throw new BadRequestException('ID da organização inválido ou não fornecido.');
     }
 
     const memberships = await this.memberModel
-      .find({ organizationId: new Types.ObjectId(orgId) })
+      .find({ organizationId: new (Types.ObjectId as any)(orgId) })
       .populate({
         path: 'userId',
         select: 'name email',
@@ -109,7 +109,7 @@ export class OrganizationService {
   }
 
   async addMemberToOrganization(orgId: string, userData: any) {
-    if (!Types.ObjectId.isValid(orgId)) {
+    if (!(Types.ObjectId as any).isValid(orgId)) {
       throw new BadRequestException('ID da organização inválido.');
     }
 
@@ -134,8 +134,8 @@ export class OrganizationService {
 
     // 3. Valida se o usuário já não faz parte DESTA empresa
     const existingLink = await this.memberModel.findOne({
-      organizationId: new Types.ObjectId(orgId),
-      userId: new Types.ObjectId(String(user._id || user.id)),
+      organizationId: new (Types.ObjectId as any)(orgId),
+      userId: new (Types.ObjectId as any)(String(user._id || user.id)),
     });
 
     if (existingLink) {
@@ -144,8 +144,8 @@ export class OrganizationService {
 
     // 4. Cria o vínculo na tabela pivô oficial
     await this.memberModel.create({
-      organizationId: new Types.ObjectId(orgId),
-      userId: new Types.ObjectId(String(user._id || user.id)),
+      organizationId: new (Types.ObjectId as any)(orgId),
+      userId: new (Types.ObjectId as any)(String(user._id || user.id)),
       role: userData.role || 'MEMBER',
     });
 
@@ -155,8 +155,8 @@ export class OrganizationService {
   async updateMemberRole(orgId: string, adminId: string, targetUserId: string, newRole: string) {
     // Verifica se quem está pedindo é ADMIN ou OWNER
     const adminMember = await this.memberModel.findOne({
-      organizationId: new Types.ObjectId(String(orgId)),
-      userId: new Types.ObjectId(String(adminId)),
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
+      userId: new (Types.ObjectId as any)(String(adminId)),
       role: { $in: ['ADMIN', 'OWNER'] }
     });
 
@@ -167,8 +167,8 @@ export class OrganizationService {
     // Atualiza o cargo do alvo
     const updated = await this.memberModel.findOneAndUpdate(
       {
-        organizationId: new Types.ObjectId(String(orgId)),
-        userId: new Types.ObjectId(String(targetUserId))
+        organizationId: new (Types.ObjectId as any)(String(orgId)),
+        userId: new (Types.ObjectId as any)(String(targetUserId))
       },
       { role: newRole },
       { new: true }
@@ -181,8 +181,8 @@ export class OrganizationService {
   async removeMemberFromOrganization(orgId: string, adminId: string, targetUserId: string) {
     // Verifica se quem está pedindo é ADMIN ou OWNER
     const adminMember = await this.memberModel.findOne({
-      organizationId: new Types.ObjectId(String(orgId)),
-      userId: new Types.ObjectId(String(adminId)),
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
+      userId: new (Types.ObjectId as any)(String(adminId)),
       role: { $in: ['ADMIN', 'OWNER'] }
     });
 
@@ -196,8 +196,8 @@ export class OrganizationService {
 
     // Remove o vínculo
     await this.memberModel.findOneAndDelete({
-      organizationId: new Types.ObjectId(String(orgId)),
-      userId: new Types.ObjectId(String(targetUserId)),
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
+      userId: new (Types.ObjectId as any)(String(targetUserId)),
       role: { $ne: 'OWNER' } // Proteção extra: não deixa deletar o dono supremo
     });
 
@@ -208,8 +208,8 @@ export class OrganizationService {
   async updateSettings(orgId: string, adminId: string, newSettings: any) {
     // Verifica se quem está pedindo é ADMIN ou OWNER
     const adminMember = await this.memberModel.findOne({
-      organizationId: new Types.ObjectId(String(orgId)),
-      userId: new Types.ObjectId(String(adminId)),
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
+      userId: new (Types.ObjectId as any)(String(adminId)),
       role: { $in: ['ADMIN', 'OWNER'] }
     });
 
