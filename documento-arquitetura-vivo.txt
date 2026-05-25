@@ -1,3 +1,62 @@
+=== SPRINT 05 - 25/05/2026 ===
+### Resumo Técnico de Fechamento: Sanitização de Precisão Decimal
+
+**Decisões de Arquitetura**
+
+* **Utilitário de Domínio:** Criação do módulo `Precision` (`src/shared/utils/precision.util.ts`) implementando mitigação matemática via `Number.EPSILON` para contornar falhas de ponto flutuante nativas da V8 Engine.
+* **Validação de Borda (BFF):** Refatoração do `resource.zod.ts` com injeção do encadeamento `.transform((val) => Precision.round(val, 2))` nos schemas de entrada (`createResourceSchema`, `allocateResourceSchema`, `addStockSchema`, `returnResourceSchema`), garantindo higienização de quantitativos e custos antes da camada de serviço.
+* **Motor de Serviço:** Integração do utilitário `Precision.round` no `ResourcesService` para o cálculo exato de `finalTotalCost` nas lógicas transacionais (alocação direta, aprovação de RMs, entrada e devolução de estoque).
+* **Expurgo de Passivo:** Criação do método `sanitizeDecimals` no serviço, restrito a cargos de governança (`OWNER`, `ADMIN`), para invocação de rotina de limpeza de dados legados corrompidos.
+
+**Definições de Infraestrutura**
+
+* **Persistência (Repositórios):** Atualização do `ResourceRepository` e `ResourceTransactionRepository` com a função de sanitização em lote utilizando `updateMany` e operações de pipeline (`[{ $set: ... }]`).
+* **Pipeline de Agregação:** Alteração do método `getProjectCostStatement` no MongoDB. Inserção de estágios de `$project` contendo o operador `$round` após os blocos `$group`, interceptando e neutralizando dízimas binárias (IEEE 754) residuais geradas durante as somatórias (`$sum`) dos extratos financeiros por insumo e por categoria.
+
+=== SPRINT 04 - 24/05/2026 ===
+### 📄 Resumo Técnico do Sprint: Infraestrutura de Comunicação, CI/CD e Tipagem
+
+**Objetivo Principal:** Implementar o fluxo de recuperação de senhas via e-mail transacional e estabilizar a esteira de *deploy* contínuo (CI/CD) na Vercel e orquestração Docker local.
+
+#### 1. Infraestrutura Local e Orquestração (Docker + PNPM)
+
+* **Desafio:** Contêineres quebrando na etapa de instalação devido a *breaking changes* na atualização silenciosa para o `pnpm v10` e bloqueios de segurança em scripts de compilação nativa. Falhas no mapeamento do `.env` e travamento da rede WSL (`Vsock`).
+* **Solução:** * Fixação (*downgrade* travado) do motor de dependências para o `pnpm@9` nos `Dockerfile.dev`.
+* Implementação da configuração moderna de monorepo criando o arquivo `pnpm-workspace.yaml`, mapeando os pacotes `frontend` e `backend`.
+* Liberação centralizada de dependências nativas (`@tailwindcss/oxide`, `core-js`, `sharp`) através da diretiva `allowBuilds`.
+* Correção do apontamento do arquivo `.env` através da instrução `env_file` no `docker-compose.yml`.
+
+
+
+#### 2. Mensageria e Comunicação (SMTP via Resend)
+
+* **Desafio:** Garantir a entregabilidade (evitar a caixa de spam), contornar a interceptação de TLS no ambiente local e adaptar o envio transacional para o ambiente *Serverless* da Vercel.
+* **Solução:**
+* Configuração e autoridade de domínio estabelecida via Cloudflare (registros DNS: SPF, DKIM, DMARC e MX).
+* Integração do `nodemailer` mantendo o código agnóstico de provedor (sem *vendor lock-in*).
+* Adição de `tls: { rejectUnauthorized: false }` no transporter para permitir envios a partir de redes Docker/WSL locais.
+* Resolução do erro `501 Bad sender address syntax` em produção, limpando os caracteres especiais da variável `MAIL_FROM` na Vercel e formatando o cabeçalho dinamicamente no código (`Sistema Cazuá <${process.env.MAIL_FROM}>`).
+
+
+
+#### 3. CI/CD e Tipagem Estrita (Vercel & TypeScript)
+
+* **Desafio:** A Vercel (ambiente de produção) utilizou o compilador estrito do TypeScript (`tsc`), derrubando o *build* devido a falhas na manipulação de IDs do Mongoose e conflitos entre a tipagem do Node.js e a Fetch API nativa.
+* **Solução:**
+* **Mongoose:** Refatoração massiva em repositórios, *guards* e serviços para instanciar corretamente os ObjectIds usando `new Types.ObjectId(id as string)`. Padronização da validação através de `Types.ObjectId.isValid()`.
+* **Express vs. Fetch API:** Aplicação de um *bypass* cirúrgico (utilizando o tipo estático `any`) nos objetos `Request` e `Response` dentro do `AuthGuard` e do `HttpExceptionFilter`. Isso silenciou falsos-positivos de compilação relacionados às propriedades `.headers`, `.status` e `.url`, forçando a aprovação do *deploy*.
+
+
+
+#### 4. Governança de Variáveis de Ambiente
+
+* **Definição Arquitetural:** Estabelecemos a separação de responsabilidades. O Front-end (Vercel) guarda a `NEXT_PUBLIC_API_BASE_URL` para encontrar a API. O Back-end (também na Vercel) guarda a `FRONTEND_URL` e as credenciais seguras do provedor SMTP (`SMTP_PASS`, etc.) injetadas em tempo de *build* nas Serverless Functions.
+
+---
+
+Com a esteira de deploy operando perfeitamente e a fundação de e-mails transacionais em produção, o sistema ganhou autonomia de comunicação e infraestrutura escalável.
+
+
 === SPRINT 01 - 07/05/2026 ===
 Resumo Técnico de Fechamento: Interface Comercial e Technical SEO
 
