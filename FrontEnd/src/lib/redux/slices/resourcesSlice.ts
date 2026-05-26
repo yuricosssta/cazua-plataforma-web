@@ -1,6 +1,7 @@
 //src/lib/redux/slices/resourcesSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { resourceService, ProjectStatement } from '../../services/resourceService';
+import { AllocateResourceData } from '../../services/resourceService';
 
 interface ResourcesState {
   statement: ProjectStatement | null;
@@ -22,6 +23,19 @@ export const fetchProjectStatement = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Falha ao carregar o extrato de custos do projeto.'
+      );
+    }
+  }
+);
+
+export const returnResourceThunk = createAsyncThunk(
+  'resources/returnResource',
+  async ({ orgId, projectId, data }: { orgId: string; projectId: string; data: AllocateResourceData }, { rejectWithValue }) => {
+    try {
+      return await resourceService.returnFromProject(orgId, projectId, data);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Falha ao processar a devolução do recurso.'
       );
     }
   }
