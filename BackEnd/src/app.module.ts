@@ -15,6 +15,7 @@ import { StorageModule } from './storage/storage.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ResourcesModule } from './resources/resources.module';
 import { SharedModule } from './shared/shared.module';
+import { PlanningModule } from './planning/planning.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SharedModule } from './shared/shared.module';
     StorageModule,
     ResourcesModule,
     SharedModule, 
+    PlanningModule,
   ],
   controllers: [AppController],
   providers: [AppService],// { provide: APP_GUARD, useClass: AuthGuard }],
