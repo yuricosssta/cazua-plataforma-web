@@ -5,6 +5,7 @@ import postsReducer from './slices/postsSlice';
 import userReducer from './slices/userSlice';
 import organizationReducer from './slices/organizationSlice';
 import resourcesReducer from './slices/resourcesSlice';
+import planningReducer from './slices/planningSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     user: userReducer,
     organizations: organizationReducer,
     resources: resourcesReducer,
+    planning: planningReducer,
   },
 });
 
