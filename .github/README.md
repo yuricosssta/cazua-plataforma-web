@@ -23,6 +23,11 @@ Centralizar as regras de arquitetura e o fluxo de finalização de sprint para o
 3. O skill deve identificar se há contexto arquitetural disponível e iniciar a conversa com:
    - `Contexto de arquitetura identificado na base de conhecimento. Qual o objetivo técnico ou funcional do Sprint atual?`
 
+## Fluxo de PR
+
+- Use os scripts de Git para criar a branch, trabalhar e dar push.
+- Não crie o PR por script. Abra o PR manualmente no navegador e aprove-o via GitHub.
+
 ## Protocolo de finalização de sprint
 
 Ao concluir um sprint aprovado, a skill deve:
@@ -33,6 +38,7 @@ Ao concluir um sprint aprovado, a skill deve:
   - `BackEnd/all-controllers.txt`
   - `BackEnd/all-schemas.txt`
   - `BackEnd/all-validations.txt`
+- Executar o skill `/proptech-linkedin` para gerar uma sugestão de post técnico no LinkedIn.
 
 ## Quando usar este workflow
 
