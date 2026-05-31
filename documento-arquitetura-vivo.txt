@@ -1,3 +1,37 @@
+=== SPRINT 06 - 25/05/2026 ===
+Resumo Técnico de Fechamento: Fluxo de Devolução de Recursos (Obra para Almoxarifado)
+
+Decisões de Arquitetura
+
+* Lógica Transacional (Back-end): Efetivação do método `returnFromProject` no `ResourcesService`, responsável por registrar a transação (`RETURN`), atualizar o saldo no Almoxarifado (`currentStock`) e abater o valor do extrato consolidado da obra.
+
+
+* Emissão de Eventos: Disparo de evento `timeline.create` via `EventEmitter2` para registro automático da devolução na Timeline da obra.
+
+
+* Gerenciamento de Estado Global (Front-end): Implementação do `returnResourceThunk` no `resourcesSlice.ts` via Redux Toolkit para gerenciar o ciclo de vida da requisição e abstrair o tratamento de erros.
+
+
+* Validação e Tipagem Estrita: Utilização do `returnResourceSchema` via Zod integrado ao `react-hook-form` no Front-end, garantindo que o payload (`resourceId`, `quantity`, `origin`) obedeça ao contrato da API antes da submissão.
+
+
+* Reuso de Dados Consolidados: Injeção do objeto `statement.items` do Redux diretamente no modal de devolução (`ReturnResourceModal.tsx`), garantindo que apenas recursos com saldo alocado na obra sejam apresentados para estorno/devolução.
+
+
+
+Definições de Infraestrutura
+
+* Roteamento (API NestJS): Rota `POST /organizations/:orgId/resources/return/:projectId` consolidada e protegida por `AuthGuard`.
+
+
+* Serviço de Rede (Next.js): Adição do método `returnFromProject` no `resourceService.ts` utilizando a instância configurada do Axios.
+
+
+* Interface de Usuário (UI): Refatoração da tabela em `ProjectResourcesTab.tsx` para exibição integral das justificativas (remoção do truncamento) e integração do novo fluxo de modal de devolução.
+
+
+* Dependências: Adição dos pacotes `zod`, `@hookform/resolvers` e `react-hook-form` ao escopo do workspace do Front-end.
+
 === SPRINT 05 - 25/05/2026 ===
 ### Resumo Técnico de Fechamento: Sanitização de Precisão Decimal
 

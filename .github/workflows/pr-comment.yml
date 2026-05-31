@@ -1,0 +1,39 @@
+name: PR Commenter
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  add_comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post PR checklist comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            const body = `Obrigado! Checklist automático para este PR:
+
+- [ ] Lint
+- [ ] Type check
+- [ ] Build
+- [ ] Testes
+- [ ] DTOs validados com Zod (quando aplicável)
+- [ ] Arquivos de arquitetura atualizados quando aplicável: documento-arquitetura-vivo.md, BackEnd/all-controllers.txt, BackEnd/all-schemas.txt, BackEnd/all-validations.txt
+
+Se precisar de ajuda, responda neste PR.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });
