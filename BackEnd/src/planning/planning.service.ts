@@ -11,7 +11,7 @@ export class PlanningService {
   constructor(
     @InjectModel(Planning.name)
     private readonly planningModel: Model<PlanningDocument>,
-  ) {}
+  ) { }
 
   async uploadFromExcel(file: Express.Multer.File, metadata: UploadPlanningDto) {
     if (!file || !file.buffer) {
@@ -51,7 +51,18 @@ export class PlanningService {
 
     const filtersWithSearch = { ...filters };
     if (query.q) {
-      filtersWithSearch.$text = { $search: query.q };
+      // 1. Limpa espaços extras e divide a string em um array de palavras
+      const keywords = query.q.trim().split(/\s+/);
+
+      // 2. Mapeia cada palavra para exigir que ela exista (AND) em pelo menos um dos campos abaixo (OR)
+      filtersWithSearch.$and = keywords.map((keyword) => ({
+        $or: [
+          { descricao: { $regex: keyword, $options: 'i' } },
+          { codigoComposicao: { $regex: keyword, $options: 'i' } },
+          { insumo: { $regex: keyword, $options: 'i' } },
+          { grupo: { $regex: keyword, $options: 'i' } }
+        ]
+      }));
     }
 
     const searchQuery = this.planningModel.find(filtersWithSearch);
@@ -89,11 +100,21 @@ export class PlanningService {
   }
 
   async grouped(groupBy: string[], query: SearchPlanningDto = {}) {
+
     const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
 
     if (query.q) {
-      filters.$text = { $search: query.q };
+      const keywords = query.q.trim().split(/\s+/);
+      filters.$and = keywords.map((keyword) => ({
+        $or: [
+          { descricao: { $regex: keyword, $options: 'i' } },
+          { codigoComposicao: { $regex: keyword, $options: 'i' } },
+          { insumo: { $regex: keyword, $options: 'i' } },
+          { grupo: { $regex: keyword, $options: 'i' } }
+        ]
+      }));
     }
+
     if (query.grupo) filters.grupo = query.grupo;
     if (query.codigoComposicao) filters.codigoComposicao = query.codigoComposicao;
     if (query.tipo) filters.tipo = query.tipo;

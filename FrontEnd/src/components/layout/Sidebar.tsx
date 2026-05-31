@@ -33,6 +33,7 @@ export function Sidebar() {
     // { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
     { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
     { name: "Almoxarifado Central", href: "/dashboard/resources", icon: <Banknote className="w-4 h-4" /> },
+    { name: "Planejamento", href: "/dashboard/planning", icon: <BarChart3 className="w-4 h-4" /> },
   ];
 
   const monetizationLinks = [

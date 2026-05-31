@@ -1,3 +1,47 @@
+=== SPRINT 07 - 31/05/2026 ===
+Resumo Técnico de Fechamento: Módulo de Planejamento com Upload Excel e Busca Dinâmica
+
+Decisões de Arquitetura
+
+* **Estrutura de Dados (Schema):** Implementação do schema `Planning` no MongoDB consolidando dados de composições de obra (SINAPI e customizadas por organização) com campos: `isGlobal` (booleano), `organizationId` (string nullable), `state` (UF), `referenceMonth`/`referenceYear` (versionamento temporal), `codigoComposicao` (agrupador), `tipo` (COMPOSICAO | INSUMO | vazio), `insumo` (identificador), `descricao`, `unidade`, `coeficiente`, `custo` (COM CUSTO | COM PREÇO), `isSummary` (booleano para distinção resumo vs. detalhe).
+
+* **Indexação para Performance:** Criação de índices compostos (`state`, `referenceMonth`, `referenceYear`, `grupo`, `codigoComposicao`, `isSummary`) e índice full-text nas colunas textuais (`descricao`, `grupo`, `tipo`, `insumo`, `codigoComposicao`, `custo`) para suportar buscas relâmpago em grandes volumes de dados.
+
+* **Parser Excel (Serviço):** Integração da biblioteca `xlsx@^0.18.5` no método `uploadFromExcel()` do `PlanningService` com normalização de colunas (remoção de acentos, lowercase) e tratamento de tipagem heterogênea (números com vírgula, strings vazias).
+
+* **Validação e Tipagem (BFF):** Schemas Zod (`uploadPlanningSchema`, `searchPlanningSchema`) com pré-processadores customizados (`parseBoolean`, `parseNullableString`, `parseNumber`) para conversão de strings e tratamento de valores ausentes antes de alcançar a camada de serviço.
+
+* **Operações de Consulta (Repositório):** Implementação de três padrões de busca no `PlanningService`:
+  - `search()`: Paginação com filtros compostos e busca textual via operador `$text`.
+  - `findCompositionItems()`: Recuperação de todos os itens agrupados por `codigoComposicao`, ordenados (sumário primeiro, depois detalhes).
+  - `grouped()`: Agregação dinâmica via pipeline MongoDB com agrupamento customizável por campos (`state`, `referenceYear`, `referenceMonth`, `grupo`), sem forçar estrutura de armazenamento.
+
+* **Reuso de Dados:** Metadados `isGlobal`, `organizationId`, `state`, `referenceMonth`, `referenceYear` propagados em todas as operações (upload, busca, agrupamento) para suportar tanto base SINAPI global quanto composições customizadas por empresa.
+
+Definições de Infraestrutura
+
+* **Roteamento (API NestJS):**
+  - `POST /planning/upload`: Upload de arquivo `.xlsx` com metadados, retorna `{ insertedCount, metadata }`.
+  - `GET /planning/search`: Busca paginada com filtros (`q`, `isGlobal`, `state`, `referenceMonth`, `referenceYear`, `grupo`, `codigoComposicao`, `tipo`, `insumo`, `summaryOnly`).
+  - `GET /planning/grouped`: Retorna agregação dinâmica agrupada por campos customizáveis (`groupBy` em CSV).
+  - `GET /planning/composition/:codigoComposicao/items`: Detalhe completo de uma composição (sumário + todos os insumos).
+
+* **Interceptor de Upload:** Utilização de `FileInterceptor('file')` via `@nestjs/platform-express` com armazenamento em memória (`memoryStorage()`) para evitar I/O de disco e reduzir latência do parser.
+
+* **Dependências Adicionadas:** `xlsx@^0.18.5` (parsing Excel), `multer@^1.4.5-lts.1` (multipart form handling). Ambas adicionadas ao `BackEnd/package.json` e instaladas via `pnpm install`.
+
+* **Registração no Módulo:** `PlanningModule` importado no `AppModule` com `MongooseModule.forFeature([{ name: Planning.name, schema: PlanningSchema }])`.
+
+* **Testes Unitários:** Cobertura com 10 testes passando (5 no `PlanningService`, 5 no `PlanningController`) cobrindo upload, busca, agrupamento e detalhe de composição.
+
+* **Validação Docker:** Container backend rodando sem erros de módulo (`[InstanceLoader] PlanningModule dependencies initialized`), todos os 4 endpoints mapeados e aplicação iniciada com sucesso (`Nest application successfully started`).
+
+Detalhe de Comportamento
+
+- **Composição e Resumo:** Quando `tipo === 'COMPOSICAO'` ou `tipo === ''` ou `insumo` está vazio, `isSummary = true`. Resumos são sempre os primeiros na ordenação (índice descrito).
+- **Versionamento:** Dados SINAPI mantêm `isGlobal: true` com `referenceMonth/Year` fixos. Dados customizados pela empresa têm `isGlobal: false`, `organizationId` preenchido, e podem ignorar `referenceMonth/Year` se preferirem gerenciar "vivo" sem histórico.
+- **Agrupamento Flexível:** Frontend pode solicitar agrupamento por qualquer combinação de campos (ex.: `?groupBy=state,referenceYear,grupo`), retornando um resumo agregado sem refatorar a estrutura de persistência.
+
 === SPRINT 06 - 25/05/2026 ===
 Resumo Técnico de Fechamento: Fluxo de Devolução de Recursos (Obra para Almoxarifado)
 

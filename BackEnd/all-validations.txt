@@ -159,3 +159,49 @@ export const bulkImportSchema = z.object({
 export type CreateProjectDto = z.infer<typeof createProjectSchema>;
 export type EmitParecerDto = z.infer<typeof emitParecerSchema>;
 export type BulkImportDto = z.infer<typeof bulkImportSchema>;
+// === PLANNING VALIDATION SCHEMAS ===
+// src/planning/validations/planning.zod.ts
+
+const parseBoolean = z.union([
+  z.boolean(),
+  z.string().transform(val => val.toLowerCase() === 'true'),
+  z.null().transform(() => false)
+]);
+
+const parseNullableString = z.union([
+  z.string().optional(),
+  z.null(),
+]).transform(val => val || undefined);
+
+const parseNumber = z.union([
+  z.number(),
+  z.string().transform(val => parseFloat(val.replace(',', '.'))),
+]).optional();
+
+export const uploadPlanningSchema = z.object({
+  isGlobal: parseBoolean.default(false),
+  state: z.string().min(2),
+  referenceMonth: parseNumber.refine(val => val >= 1 && val <= 12, 'Mês inválido'),
+  referenceYear: parseNumber.refine(val => val > 1900, 'Ano inválido'),
+  organizationId: parseNullableString
+});
+
+export const searchPlanningSchema = z.object({
+  q: z.string().optional(),
+  isGlobal: parseBoolean.optional(),
+  organizationId: parseNullableString,
+  state: z.string().optional(),
+  referenceMonth: parseNumber.optional(),
+  referenceYear: parseNumber.optional(),
+  grupo: z.string().optional(),
+  codigoComposicao: z.string().optional(),
+  tipo: z.string().optional(),
+  insumo: z.string().optional(),
+  summaryOnly: parseBoolean.optional(),
+  page: parseNumber.default(1),
+  limit: parseNumber.default(10),
+  groupBy: z.string().optional() // CSV: "state,referenceYear,grupo"
+});
+
+export type UploadPlanningDto = z.infer<typeof uploadPlanningSchema>;
+export type SearchPlanningDto = z.infer<typeof searchPlanningSchema>;
