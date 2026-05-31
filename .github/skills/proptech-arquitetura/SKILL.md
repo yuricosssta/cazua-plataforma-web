@@ -55,3 +55,4 @@ Fornecer um fluxo de trabalho determinístico para iniciar e conduzir conversas 
   - `BackEnd/all-controllers.txt`
   - `BackEnd/all-schemas.txt`
   - `BackEnd/all-validations.txt`
+- Depois de finalizar o sprint e atualizar o documento de arquitetura, execute o skill `/proptech-linkedin` para gerar a sugestão de post técnico no LinkedIn.

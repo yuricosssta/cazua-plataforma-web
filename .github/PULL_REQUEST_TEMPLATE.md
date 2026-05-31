@@ -23,6 +23,8 @@ Link para ticket/issue (ex: CAZ-123)
 Descreva passos para rodar testes e validar a mudança.
 
 ## Observações
+Abra o PR manualmente na interface do GitHub.
+
 Apague a branch local após merge com:
 
 ```bash

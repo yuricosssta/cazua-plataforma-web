@@ -12,6 +12,6 @@ fi
 
 # Push the branch to remote (use when ready to open PR)
 git push -u origin "$BRANCH"
-echo "Pushed $BRANCH to origin. Create a PR now."
+echo "Pushed $BRANCH to origin. Open the PR manually in GitHub and approve it via browser."
 
 echo "After merge, run: ./scripts/git-delete-local-branch.sh $BRANCH"

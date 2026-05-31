@@ -29,6 +29,7 @@ Use este workspace como um SaaS PropTech B2B com arquitetura de micro-serviços 
   - `BackEnd/all-controllers.txt`
   - `BackEnd/all-schemas.txt`
   - `BackEnd/all-validations.txt`
+- Após a finalização do sprint, execute o skill `/proptech-linkedin` para gerar uma sugestão de post técnico no LinkedIn.
 
 ## Comportamento esperado
 
