@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Enable corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (workspace)
+        run: pnpm -w -r run lint --if-present
+
+      - name: Type check (workspace)
+        run: pnpm -w -r run typecheck --if-present
+
+      - name: Build (workspace)
+        run: pnpm -w -r run build --if-present
+
+      - name: Test (workspace)
+        run: pnpm -w -r run test --if-present
