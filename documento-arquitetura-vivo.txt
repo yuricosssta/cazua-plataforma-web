@@ -1,3 +1,20 @@
+=== SPRINT 08 - 02/06/2026 ===
+Resumo Técnico de Fechamento: Consolidação de Diretrizes de Agente (System Instructions)
+
+Decisões de Arquitetura:
+
+Unificação do prompt de sistema (System Instructions) para controle de qualidade na geração de código Front-end e Back-end.
+
+Bloqueio explícito de escalas de cor concorrentes (gray, slate, zinc), impondo o uso restrito do design token stone para preservar a identidade visual B2B da marca Cazuá.
+
+Definição de geometria técnica rigorosa com border-radius base de 4px (--radius: 0.25rem), garantindo consistência estrita em botões, cards e modais gerados via Shadcn UI e Tailwind v4.
+
+Reforço da stack arquitetural orientada a eventos (NestJS + EventEmitter2) e imposição da separação arquitetural de responsabilidades (Services vs Repositories).
+
+Definições de Infraestrutura:
+
+Atualização da base comportamental do agente finalizada. O modelo atuará doravante sob as novas restrições visuais e procedimentais.
+
 === SPRINT 07 - 31/05/2026 ===
 Resumo Técnico de Fechamento: Módulo de Planejamento com Upload Excel e Busca Dinâmica
 
