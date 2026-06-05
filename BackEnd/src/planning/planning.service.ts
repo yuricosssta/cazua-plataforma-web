@@ -1,3 +1,4 @@
+//src/planning/planning.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -51,10 +52,7 @@ export class PlanningService {
 
     const filtersWithSearch = { ...filters };
     if (query.q) {
-      // 1. Limpa espaços extras e divide a string em um array de palavras
       const keywords = query.q.trim().split(/\s+/);
-
-      // 2. Mapeia cada palavra para exigir que ela exista (AND) em pelo menos um dos campos abaixo (OR)
       filtersWithSearch.$and = keywords.map((keyword) => ({
         $or: [
           { descricao: { $regex: keyword, $options: 'i' } },
@@ -100,7 +98,6 @@ export class PlanningService {
   }
 
   async grouped(groupBy: string[], query: SearchPlanningDto = {}) {
-
     const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
 
     if (query.q) {
@@ -187,7 +184,7 @@ export class PlanningService {
     const rawCoeficiente = String(normalized.coeficiente ?? '').replace(',', '.').trim();
     const coeficiente = rawCoeficiente.length > 0 ? Number(rawCoeficiente) : null;
 
-    const isSummary = !insumo || tipo.toUpperCase() === 'COMPOSICAO' || tipo === '';
+    const isSummary = insumo === '' || insumo === codigoComposicao;
 
     return {
       ...metadata,
