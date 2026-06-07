@@ -92,6 +92,30 @@ const planningService = {
   },
 
   /**
+   * Upload de arquivo Excel para atualização massiva de custos
+   */
+  async uploadCostsFromExcel(
+    file: File,
+    metadata: UploadPlanningPayload
+  ): Promise<UploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('isGlobal', String(metadata.isGlobal));
+    if (metadata.organizationId) {
+      formData.append('organizationId', metadata.organizationId);
+    }
+    formData.append('state', metadata.state);
+    formData.append('referenceMonth', String(metadata.referenceMonth));
+    formData.append('referenceYear', String(metadata.referenceYear));
+    formData.append('grupo', metadata.grupo);
+
+    const response = await axiosInstance.post('/planning/upload-costs', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
    * Busca paginada com filtros e busca textual
    */
   async search(query: SearchPlanningQuery): Promise<SearchResponse | any> {

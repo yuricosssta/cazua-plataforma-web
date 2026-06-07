@@ -1,3 +1,27 @@
+=== SPRINT 09 - 06/06/2026 ===
+=== RESUMO TÉCNICO DE FECHAMENTO ===
+
+Funcionalidade: Atualização Massiva de Custos (Módulo de Planejamento)
+
+Decisões de Arquitetura:
+
+Otimização de Banco de Dados: Implementação do método updateCostsFromExcel no PlanningService utilizando operações bulkWrite (com updateMany) do Mongoose. Em vez de deletar e recriar, o sistema agora injeta os novos valores na chave custo buscando pelo índice relacional (codigoComposicao + metadados de lote), garantindo performance e integridade dos nós e sub-nós (resumos e insumos).
+
+Validação de Entrada: Reaproveitamento do uploadPlanningSchema (Zod) no BFF, blindando a mutação para que atue exclusivamente no escopo temporal/geográfico especificado (state, referenceMonth, referenceYear, isGlobal).
+
+Gerenciamento de Estado: Criação da action assíncrona uploadCostsFile (Redux Thunk) dedicada à atualização, separando as responsabilidades transacionais de criação (upload de base) e mutação (atualização de custo). Tratamento local do fluxo de UI via .unwrap() para garantir feedback determinístico (sucesso/erro).
+
+Parsing Restrito: Validação conceitual do parser (xlsx), impondo a necessidade estrita de planilhas tabuladas (duas colunas reais) para o mapeamento seguro da injeção no backend.
+
+Definições de Infraestrutura:
+
+Roteamento Backend: Exposição do novo endpoint POST /planning/upload-costs no PlanningController, mantendo a barreira de segurança via JWT e checagem da variável de ambiente SUPER_ADMIN_EMAIL.
+
+Roteamento Frontend: Adição do respectivo construtor multipart/form-data uploadCostsFromExcel na camada planningService.
+
+Refatoração UI/UX Global (Sistema Cazuá): Criação do UploadCostsModal.tsx e atualização da página de planejamento aplicando as tokens dinâmicas (bg-background, bg-card, text-foreground, border-border). Isso elimina classes estáticas e garante 100% de compatibilidade com o Dark Mode e o padrão cromático sóbrio em escala stone.
+
+
 === SPRINT 08 - 02/06/2026 ===
 Resumo Técnico de Fechamento: Consolidação de Diretrizes de Agente (System Instructions)
 

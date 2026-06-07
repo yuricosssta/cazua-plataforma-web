@@ -96,6 +96,17 @@ export const uploadExcelFile = createAsyncThunk(
   }
 );
 
+export const uploadCostsFile = createAsyncThunk(
+  'planning/uploadCosts',
+  async ({ file, metadata }: { file: File; metadata: UploadPlanningPayload }, { rejectWithValue }) => {
+    try {
+      return await planningService.uploadCostsFromExcel(file, metadata);
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Erro ao processar atualização de custos.');
+    }
+  }
+);
+
 export const getGroupedData = createAsyncThunk(
   'planning/getGroupedData',
   async (query: SearchPlanningQuery, { rejectWithValue }) => {
