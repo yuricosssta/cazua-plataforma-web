@@ -4,9 +4,10 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
+import { UploadCostsModal } from "@/components/planning/UploadCostsModal";
 import { UploadPlanningModal } from "@/components/planning/UploadPlanningModal";
 import { SearchCompositionsModal } from "@/components/planning/SearchCompositionsModal";
-import { UploadCloud, Search, Info } from "lucide-react";
+import { UploadCloud, Search, Info, DollarSign } from "lucide-react";
 
 export default function PlanningPage() {
   // 1. Extração do usuário e perfil do state global (padrão BFF)
@@ -20,6 +21,7 @@ export default function PlanningPage() {
   // 3. Controle dos Modais
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isUploadCostsModalOpen, setIsUploadCostsModalOpen] = useState(false);
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col space-y-10 text-foreground pb-10">
@@ -40,20 +42,41 @@ export default function PlanningPage() {
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Administração de Base
             </h2>
-            <section className="flex flex-col sm:flex-row sm:items-center justify-between border border-border bg-card p-5 rounded-sm shadow-sm gap-4 sm:gap-0">
-              <div>
-                <h3 className="text-sm font-semibold flex items-center gap-2">Upload de Composições</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Faça upload de planilhas de composições (SINAPI ou customizadas) para o banco de dados geral.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="h-9 px-4 py-2 bg-primary text-primary-foreground border border-transparent rounded-sm text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap"
-              >
-                <UploadCloud className="w-4 h-4" /> Importar Dados
-              </button>
-            </section>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Card 1: Base Principal */}
+              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-lg shadow-sm gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">Upload de Composições</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Faça upload da planilha estrutural completa (composições, insumos, descrições e unidades).
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="h-9 w-full px-4 py-2 bg-[#8B4513] text-white border border-transparent rounded-md text-sm font-bold hover:bg-[#8B4513]/90 transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <UploadCloud className="w-4 h-4" /> Importar Estrutura
+                </button>
+              </section>
+
+              {/* Card 2: Atualização de Custos */}
+              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-lg shadow-sm gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">Atualização de Custos</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Faça upload de uma planilha complementar contendo apenas os códigos e os novos valores de custo.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsUploadCostsModalOpen(true)}
+                  className="h-9 w-full px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-md text-sm font-bold hover:bg-muted transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <DollarSign className="w-4 h-4" /> Injetar Custos
+                </button>
+              </section>
+
+            </div>
           </div>
         )}
 
@@ -94,6 +117,10 @@ export default function PlanningPage() {
       <UploadPlanningModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
+      />
+      <UploadCostsModal
+        isOpen={isUploadCostsModalOpen}
+        onClose={() => setIsUploadCostsModalOpen(false)}
       />
       <SearchCompositionsModal
         isOpen={isSearchModalOpen}

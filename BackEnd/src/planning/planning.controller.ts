@@ -1,3 +1,4 @@
+//src/planning/planning.controller.ts
 import { Body, Controller, ForbiddenException, Get, Param, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -26,6 +27,23 @@ export class PlanningController {
       throw new ForbiddenException('Acesso negado: Área restrita ao Master Admin.');
     }
     return this.planningService.uploadFromExcel(file, metadata);
+  }
+
+  @Post('upload-costs')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadCostsExcel(
+    @UploadedFile() file: Express.Multer.File,
+    @Body(new ZodValidationPipe(uploadPlanningSchema)) metadata: UploadPlanningDto,
+    @Req() req: any
+  ) {
+    const userEmail = req.user?.email;
+    const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+
+    if (userEmail !== superAdminEmail) {
+      throw new ForbiddenException('Acesso negado: Área restrita ao Master Admin.');
+    }
+
+    return this.planningService.updateCostsFromExcel(file, metadata);
   }
 
   @Get('search')

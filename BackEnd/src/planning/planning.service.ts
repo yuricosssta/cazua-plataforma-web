@@ -84,6 +84,55 @@ export class PlanningService {
     };
   }
 
+  async updateCostsFromExcel(file: Express.Multer.File, metadata: UploadPlanningDto) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Arquivo Excel de custos não enviado ou inválido.');
+    }
+
+    const rows = this.parseWorkbook(file.buffer);
+    if (!rows.length) {
+      throw new BadRequestException('A planilha de custos não contém linhas válidas.');
+    }
+
+    const baseFilters = this.buildMetadataFilter(metadata);
+
+    // Mapeamento e filtragem das linhas de custo
+    const itemsToUpdate = rows
+      .map((row) => {
+        const normalized = this.normalizeRow(row);
+        const codigoComposicao = String(normalized.codigocomposicao || normalized.composicao || '').trim();
+        const custo = String(normalized.custo || '').trim();
+
+        return { codigoComposicao, custo };
+      })
+      .filter((item) => item.codigoComposicao && item.custo);
+
+    if (!itemsToUpdate.length) {
+      throw new BadRequestException('Nenhuma composição válida com custo foi encontrada na planilha.');
+    }
+
+    // Montagem das operações de bulk para o MongoDB (Performance)
+    const bulkOperations = itemsToUpdate.map((item) => ({
+      updateMany: {
+        filter: {
+          ...baseFilters,
+          codigoComposicao: item.codigoComposicao
+        },
+        update: {
+          $set: { custo: item.custo }
+        },
+      },
+    }));
+
+    const result = await this.planningModel.bulkWrite(bulkOperations);
+
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      metadata,
+    };
+  }
+
   async findCompositionItems(codigoComposicao: string, query: SearchPlanningDto = {}) {
     const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
     filters.codigoComposicao = codigoComposicao;

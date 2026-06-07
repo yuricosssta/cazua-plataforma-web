@@ -256,13 +256,13 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-0.5">Unidade de Medida</span>
-                              {/* <p className="font-semibold text-foreground">{compositionDetail.summary.unidade}</p> */}
-                              <p className="font-semibold text-foreground">{composition.unidade}</p>
+                              <p className="font-semibold text-foreground">{compositionDetail.summary.unidade}</p>
+                              {/* <p className="font-semibold text-foreground">{composition.unidade}</p> */}
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-0.5">Custo Unitário Total</span>
-                              {/* <p className="font-bold text-primary">R$ {formatCurrency(compositionDetail.summary.custo)}</p> */}
-                              <p className="font-bold text-primary">R$ {formatCurrency(composition.custo)}</p>
+                              <p className="font-bold text-primary">R$ {formatCurrency(compositionDetail.summary.custo)}</p>
+                              {/* <p className="font-bold text-primary">R$ {formatCurrency(composition.custo)}</p> */}
                             </div>
                           </div>
                         </div>
@@ -291,9 +291,9 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                                     <p className="text-xs text-muted-foreground mb-0.5">
                                       {item.coeficiente || 1} {item.unidade}
                                     </p>
-                                    <p className="text-sm font-bold text-foreground">
+                                    {/* <p className="text-sm font-bold text-foreground">
                                       R$ {formatCurrency(item.custo)}
-                                    </p>
+                                    </p> */}
                                   </div>
                                 </div>
                               ))}
