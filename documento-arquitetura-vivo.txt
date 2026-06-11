@@ -1,3 +1,25 @@
+=== SPRINT 10 - 11/06/2026 ===
+=== Resumo Técnico de Fechamento: Preferências de Visibilidade de Abas e Adaptação para Dark Mode ===
+
+Decisões de Arquitetura
+
+Gerenciamento de Estado Local: Adoção da Web Storage API (localStorage com a chave cazua_tab_preferences) para persistência das configurações de visibilidade das abas. A estratégia evita overhead de rede na API (BFF) e mantém a árvore de estado global (Redux) estrita aos dados de negócio.
+
+Separação de Responsabilidades (UI): Desacoplamento da interface de configuração através da criação do TabPreferencesModal.tsx, isolando a lógica de filtragem e estado transitório de seleção do componente principal ProjectsList.tsx.
+
+Suporte Nativo a Temas (Dark Mode): Remoção completa de valores hexadecimais e utilitários de cor estáticos (bg-white, bg-[#8B4513], text-stone-900) no nível de componente. Adoção obrigatória das variáveis semânticas do CSS/Shadcn UI (bg-card, bg-primary, text-foreground, border-border), garantindo transição automática entre modo claro e escuro.
+
+Definições de Infraestrutura
+
+Renderização Dinâmica de Navegação: Modificação no motor de renderização do ProjectsList.tsx para aplicar um filtro includes iterativo sobre o array allTabsConfig com base nas preferências recuperadas em tempo de montagem (useEffect).
+
+Tratamento de Conflitos de Estado: Implementação de proteções lógicas para evitar que a interface quebre caso o usuário oculte a aba atualmente ativa (forçando fallback para a primeira aba disponível) e bloqueio mecânico que impede a deleção da última aba visível.
+
+Sincronização de URL (Deep Linking): Inserção de regra que força a reexibição imediata de uma aba caso ela seja acessada diretamente via parâmetro de URL (?tab=...), sobrepondo as preferências locais.
+
+Geometria B2B: Aplicação estrita do token de design de borda da marca (rounded-md, equivalente ao --radius: 0.25rem base) em todo o modal, com iconografia restrita ao lucide-react (SlidersHorizontal).
+
+
 === SPRINT 09 - 06/06/2026 ===
 === RESUMO TÉCNICO DE FECHAMENTO ===
 

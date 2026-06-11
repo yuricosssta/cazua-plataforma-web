@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MapViewerModal } from "../ui/MapViewer";
 import { ProjectStatus, Project, TabType } from "@/types/project";
 import { listProjects } from "@/lib/services/projectService";
+import { TabPreferencesModal } from "./TabPreferencesModal";
 
 export function ProjectsList() {
   const router = useRouter();
@@ -25,10 +26,14 @@ export function ProjectsList() {
   const [sortBy, setSortBy] = useState<"PRIORITY_DESC" | "PRIORITY_ASC" | "NEWEST" | "OLDEST">("PRIORITY_DESC");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<Project | null>(null);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
-  const [projects, setProjects] = useState<any[]>([]); // Usando any temporário para suportar o createdAt numérico
+  const [projects, setProjects] = useState<any[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+
+  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED"];
+  const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
 
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
@@ -46,6 +51,39 @@ export function ProjectsList() {
   const orgId = getOrgId();
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
+
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem("cazua_tab_preferences");
+    if (savedPreferences) {
+      try {
+        const parsed = JSON.parse(savedPreferences);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setVisibleTabs(parsed);
+          if (!parsed.includes(activeTab)) {
+            setActiveTab(parsed[0] as TabType);
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao carregar preferências de abas", e);
+      }
+    }
+  }, []);
+
+  const handleToggleTabVisibility = (tabId: string) => {
+    let newPreferences;
+    if (visibleTabs.includes(tabId)) {
+      if (visibleTabs.length === 1) return; 
+      newPreferences = visibleTabs.filter(id => id !== tabId);
+    } else {
+      newPreferences = [...visibleTabs, tabId];
+    }
+    setVisibleTabs(newPreferences);
+    localStorage.setItem("cazua_tab_preferences", JSON.stringify(newPreferences));
+    
+    if (!newPreferences.includes(activeTab) && newPreferences.length > 0) {
+      setActiveTab(newPreferences[0] as TabType);
+    }
+  };
 
   const fetchProjects = async () => {
     if (!orgId || !token) return;
@@ -83,13 +121,7 @@ export function ProjectsList() {
             author: p.lastEventId.authorId?.name || "Sistema",
             description: p.lastEventId.description,
             type: p.lastEventId.type
-          } : {
-            id: "fallback",
-            date: formatDate(p.createdAt) || "Data desconhecida",
-            author: "Sistema",
-            description: "Demanda criada no sistema.",
-            type: "STATUS_CHANGE"
-          }
+          } : null
         };
       });
 
@@ -106,8 +138,11 @@ export function ProjectsList() {
   }, [orgId, token]);
 
   useEffect(() => {
-    if (urlTab && ["ALL", "MINE", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "INVALID"].includes(urlTab)) {
+    if (urlTab && allAvailableTabs.includes(urlTab)) {
       setActiveTab(urlTab);
+      if (!visibleTabs.includes(urlTab)) {
+        handleToggleTabVisibility(urlTab);
+      }
     }
   }, [urlTab]);
 
@@ -132,7 +167,6 @@ export function ProjectsList() {
     INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
-  // MOTOR DE BUSCA E ORDENAÇÃO
   const filteredProjects = projects.filter((p) => {
     let matchesTab = false;
     if (activeTab === "ALL") matchesTab = true;
@@ -148,12 +182,11 @@ export function ProjectsList() {
 
     return matchesTab && matchesSearch;
   }).sort((a, b) => {
-    // Aplica a regra de ordenação escolhida no Select
     switch (sortBy) {
-      case "PRIORITY_DESC": return b.priorityScore - a.priorityScore; // Maior prioridade primeiro
-      case "PRIORITY_ASC": return a.priorityScore - b.priorityScore;  // Menor prioridade primeiro
-      case "NEWEST": return b.createdAt - a.createdAt;                // Mais recentes primeiro
-      case "OLDEST": return a.createdAt - b.createdAt;                // Mais antigos primeiro
+      case "PRIORITY_DESC": return b.priorityScore - a.priorityScore;
+      case "PRIORITY_ASC": return a.priorityScore - b.priorityScore;  
+      case "NEWEST": return b.createdAt - a.createdAt;                
+      case "OLDEST": return a.createdAt - b.createdAt;                
       default: return 0;
     }
   });
@@ -164,20 +197,20 @@ export function ProjectsList() {
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
-      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
-      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted/10" };
+      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted" };
+      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
     }
   };
 
   const getPriorityConfig = (score?: number) => {
     if (!score) return null;
-    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600", bg: "bg-red-600/10 border-red-200" };
-    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-orange-600", bg: "bg-orange-600/10 border-orange-200" };
-    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-600/10 border-blue-200" };
-    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200" };
+    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600", bg: "bg-red-600/10 border-red-200 dark:border-red-900" };
+    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-orange-600", bg: "bg-orange-600/10 border-orange-200 dark:border-orange-900" };
+    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-600/10 border-blue-200 dark:border-blue-900" };
+    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200 dark:border-emerald-900" };
   };
 
-  const tabs = [
+  const allTabsConfig = [
     { id: "MINE", label: "Minhas Obras", icon: UserCircle, count: counts.MINE },
     { id: "ALL", label: "Todas", count: counts.ALL },
     { id: "DEMAND", label: "Demandas", count: counts.DEMAND },
@@ -186,6 +219,8 @@ export function ProjectsList() {
     { id: "COMPLETED", label: "Concluídas", count: counts.COMPLETED },
     { id: "INVALID", label: "Inválidas", count: counts.INVALID },
   ];
+
+  const tabsToRender = allTabsConfig.filter(tab => visibleTabs.includes(tab.id));
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
@@ -209,7 +244,6 @@ export function ProjectsList() {
 
       {/* BARRA DE PESQUISA E FILTRO DE ORDENAÇÃO */}
       <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-        {/* Input de Busca */}
         <div className="relative w-full md:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -219,11 +253,10 @@ export function ProjectsList() {
             placeholder="Buscar por código, título ou local..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm transition-all"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm transition-all"
           />
         </div>
 
-        {/* Dropdown de Ordenação */}
         <div className="relative w-full md:w-auto flex items-center gap-2 ml-auto">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
@@ -231,7 +264,7 @@ export function ProjectsList() {
           <select
             value={sortBy}
             onChange={(e: any) => setSortBy(e.target.value)}
-            className="flex h-10 w-full md:w-[220px] rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm appearance-none cursor-pointer"
+            className="flex h-10 w-full md:w-[220px] rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm appearance-none cursor-pointer"
           >
             <option value="PRIORITY_DESC">Maior Prioridade</option>
             <option value="PRIORITY_ASC">Menor Prioridade</option>
@@ -241,28 +274,38 @@ export function ProjectsList() {
         </div>
       </div>
 
-      {/* NAVEGAÇÃO POR ABAS */}
-      <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide border-b border-border">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
-              className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-t-md"
-                }`}
-            >
-              {tab.icon && <tab.icon className="w-4 h-4" />}
-              {tab.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                }`}>
-                {tab.count}
-              </span>
-            </button>
-          );
-        })}
+      {/* NAVEGAÇÃO POR ABAS + BOTÃO DE CONFIGURAÇÃO */}
+      <div className="flex items-center border-b border-border">
+        <div className="flex space-x-1 overflow-x-auto pb-[-1px] scrollbar-hide flex-1">
+          {tabsToRender.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"
+                  }`}
+              >
+                {tab.icon && <tab.icon className="w-4 h-4" />}
+                {tab.label}
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                  }`}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        
+        <button
+          onClick={() => setIsPreferencesModalOpen(true)}
+          className="ml-2 p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors border border-transparent hover:border-border"
+          title="Configurar visibilidade das abas"
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Lista de Cards */}
@@ -277,7 +320,7 @@ export function ProjectsList() {
             {activeTab === "MINE" && !searchTerm ? (
               <>
                 <UserCircle className="w-12 h-12 text-muted-foreground/30 mb-3" />
-                <p className="text-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
+                <p className="text-card-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
                 <p className="text-muted-foreground text-sm mt-1">Quando um administrador te adicionar a uma equipe, a demanda aparecerá aqui.</p>
               </>
             ) : (
@@ -307,7 +350,7 @@ export function ProjectsList() {
                         {project.referenceCode}
                       </span>
                     )}
-                    <h3 className="font-semibold text-base leading-tight">{project.title}</h3>
+                    <h3 className="font-semibold text-base leading-tight text-card-foreground">{project.title}</h3>
                     {project.description && (
                       <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
                         {project.description}
@@ -342,11 +385,11 @@ export function ProjectsList() {
 
                 {(project.status === "EXECUTION" || project.status === "COMPLETED") && (
                   <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-medium">
+                    <div className="flex justify-between text-xs font-medium text-foreground">
                       <span>Avanço Físico</span>
                       <span>{project.progress}%</span>
                     </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden border border-border/50">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
                         style={{ width: `${project.progress}%` }}
@@ -383,7 +426,7 @@ export function ProjectsList() {
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
                       className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
                         ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
-                        : 'bg-muted text-muted-foreground/50 border border-border cursor-not-allowed'
+                        : 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
                         }`}
                     >
                       {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
@@ -439,6 +482,13 @@ export function ProjectsList() {
         locationString={mapLocationView || ""}
       />
 
+      <TabPreferencesModal
+        isOpen={isPreferencesModalOpen}
+        onClose={() => setIsPreferencesModalOpen(false)}
+        availableTabs={allTabsConfig.map(t => ({ id: t.id as TabType, label: t.label }))}
+        visibleTabs={visibleTabs}
+        onToggleTab={handleToggleTabVisibility}
+      />
     </div>
   );
 }
