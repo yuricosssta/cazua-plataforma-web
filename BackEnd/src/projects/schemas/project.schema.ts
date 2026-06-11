@@ -11,6 +11,7 @@ export enum ProjectStatus {
   EXECUTION = 'EXECUTION',
   COMPLETED = 'COMPLETED',
   INVALID = 'INVALID',
+  ON_HOLD = 'ON_HOLD',
 }
 
 @Schema({ timestamps: true })

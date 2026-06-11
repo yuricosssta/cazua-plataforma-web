@@ -1,6 +1,6 @@
 //src/types/project.ts
 
-export type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED" | "INVALID";
+export type ProjectStatus = "DEMAND" | "PLANNING" | "EXECUTION" | "COMPLETED" | "INVALID" | "ON_HOLD";
 
 export type TimelineEventType = "COMMENT" | "STATUS_CHANGE" | "DOCUMENT" | "REPORT";
 
