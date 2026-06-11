@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal, PauseCircle
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -32,7 +32,8 @@ export function ProjectsList() {
   const [projects, setProjects] = useState<any[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
 
-  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED"];
+  // Array atualizado com o novo status
+  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD", "INVALID"];
   const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
 
   const currentOrg = useSelector(selectCurrentOrg);
@@ -164,6 +165,7 @@ export function ProjectsList() {
     PLANNING: projects.filter(p => p.status === "PLANNING").length,
     EXECUTION: projects.filter(p => p.status === "EXECUTION").length,
     COMPLETED: projects.filter(p => p.status === "COMPLETED").length,
+    ON_HOLD: projects.filter(p => p.status === "ON_HOLD").length,
     INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
@@ -197,6 +199,8 @@ export function ProjectsList() {
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
+      // Nova escala Stone Escura para Paralisada
+      case "ON_HOLD": return { label: "Paralisada", icon: PauseCircle, color: "text-stone-50", bg: "bg-stone-800 dark:bg-stone-700 border border-stone-900 dark:border-stone-600" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted" };
       default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
     }
@@ -211,11 +215,12 @@ export function ProjectsList() {
   };
 
   const allTabsConfig = [
-    { id: "MINE", label: "Minhas Obras", icon: UserCircle, count: counts.MINE },
+    { id: "MINE", label: "Minhas", icon: UserCircle, count: counts.MINE },
     { id: "ALL", label: "Todas", count: counts.ALL },
     { id: "DEMAND", label: "Demandas", count: counts.DEMAND },
     { id: "PLANNING", label: "Planejamento", count: counts.PLANNING },
     { id: "EXECUTION", label: "Em Execução", count: counts.EXECUTION },
+    { id: "ON_HOLD", label: "Paralisadas", count: counts.ON_HOLD },
     { id: "COMPLETED", label: "Concluídas", count: counts.COMPLETED },
     { id: "INVALID", label: "Inválidas", count: counts.INVALID },
   ];
@@ -223,7 +228,7 @@ export function ProjectsList() {
   const tabsToRender = allTabsConfig.filter(tab => visibleTabs.includes(tab.id));
 
   return (
-    <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
+    <div className="max-w-6xl mx-auto w-full flex flex-col space-y-3 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
       {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -383,7 +388,7 @@ export function ProjectsList() {
                   </div>
                 </div>
 
-                {(project.status === "EXECUTION" || project.status === "COMPLETED") && (
+                {(project.status === "EXECUTION" || project.status === "COMPLETED" || project.status === "ON_HOLD") && project.progress !== undefined && (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-medium text-foreground">
                       <span>Avanço Físico</span>
@@ -391,7 +396,10 @@ export function ProjectsList() {
                     </div>
                     <div className="w-full h-2 bg-secondary rounded-full overflow-hidden border border-border/50">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          project.status === 'ON_HOLD' ? 'bg-stone-500' :
+                          project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'
+                        }`}
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
