@@ -33,7 +33,7 @@ export function ProjectsList() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Array atualizado com o novo status
-  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD", "INVALID"];
+  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD"];
   const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
 
   const currentOrg = useSelector(selectCurrentOrg);

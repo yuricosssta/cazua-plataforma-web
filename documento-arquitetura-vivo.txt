@@ -1,3 +1,38 @@
+=== SPRINT 12 - 12/06/2026 ===
+=== Resumo Técnico de Fechamento: Refatoração do Emissor de Pareceres e Simulação A4 ===
+
+**Decisões de Arquitetura:**
+
+* **Persistência Integral de Rascunho Local:** Alteração do schema de cache do `localStorage` (chave `draft_parecer_{id}`). O dado salvo transitou de uma string plana para um objeto JSON estruturado `{ text, attachments }`. Isso garante a amarração temporal entre o texto em andamento e as URLs dos arquivos já persistidos no Cloudflare R2, eliminando o gargalo de anexos órfãos após o desmonte (unmount) acidental do componente.
+* **Fonte de Verdade de UI (Single Source of Truth):** Extração das options do select de status para a constante `STATUS_OPTIONS` acoplada ao type `ProjectStatus`. Isso unifica a regra de negócio visual e engloba nativamente o novo status `ON_HOLD` sem necessidade de manipulação do DOM.
+
+**Definições de Infraestrutura:**
+
+* **Motor WYSIWYG Nativo (CSS Grid):** Substituição de recálculos dispendiosos de JavaScript (`scrollHeight` no *event loop* do React) por uma arquitetura responsiva baseada em CSS Grid. O emprego de um *ghost element* invisível força fisicamente o container da "Folha A4" a expandir em exata sincronia com a volumetria do texto digitado no `<textarea>`.
+* **Quebra de Página Infinita (Tiling):** Adoção de `repeating-linear-gradient` com espaçamento milimétrico fixo (`297mm`) renderizado em GPU pelo navegador, fornecendo limitadores visuais de página consistentes com a biblioteca de exportação PDF, independente do crescimento vertical do modal e preservando os 60 FPS da UI.
+* **Refatoração do Bloco de Assinatura:** Remoção de âncoras absolutas propensas a quebra de Z-index e vazamento de texto. O bloco de assinatura foi realocado para o fluxo natural do DOM (block flow), sendo automaticamente deslocado para baixo à medida que o texto preenche as páginas virtuais simuladas.
+
+
+=== SPRINT 11 - 11/06/2026 ===
+### Resumo Técnico de Fechamento: Implementação de Aba "Paradas" e Preferências de Visibilidade
+
+**Decisões de Arquitetura:**
+
+* **Expansão de Domínio:** Inserção do status `ON_HOLD` no enum `ProjectStatus` (`project.schema.ts`) para representar o ciclo de vida de obras paralisadas ou suspensas.
+* **Validação (BFF):** Atualização dos contratos Zod (`createProjectSchema`, `emitParecerSchema`, `bulkImportItemSchema`) em `projects.zod.ts` para suportar o tráfego seguro do novo status.
+* **Tipagem Front-end:** Extensão das interfaces em `src/types/project.ts` (`ProjectStatus` e `TabType`), garantindo consistência estrita de ponta a ponta.
+* **Gerenciamento de Estado UI:** Adoção da Web Storage API (`localStorage` via chave `cazua_tab_preferences`) para persistir preferências do usuário de forma assíncrona, não poluindo a store global do Redux com metadados visuais.
+* **Separação de Responsabilidades:** Desacoplamento da interface de configuração através do componente isolado `TabPreferencesModal.tsx`.
+
+**Definições de Infraestrutura:**
+
+* **Adaptação para Dark Mode:** Refatoração massiva em `ProjectsList.tsx` e `TabPreferencesModal.tsx`, substituindo cores absolutas por design tokens nativos (`bg-background`, `bg-card`, `text-foreground`, `border-border`) integrados ao Tailwind CSS e Shadcn UI.
+* **Identidade Visual B2B (Status `ON_HOLD`):** Definição de paleta baseada em tons `stone` escuros (`bg-stone-800 dark:bg-stone-700`) e iconografia semântica (`PauseCircle` do `lucide-react`) para diferenciar o status sem acionar gatilhos visuais de erro (reservados para o vermelho crítico).
+* **Prevenção de Falhas de UI:** Implementação de lógicas de *fallback* e bloqueios no `ProjectsList.tsx` para impedir a deleção de todas as abas e autoajustar a aba ativa caso a atual seja ocultada.
+
+Defina o objetivo técnico ou funcional para iniciarmos o próximo Sprint.
+
+
 === SPRINT 10 - 11/06/2026 ===
 === Resumo Técnico de Fechamento: Preferências de Visibilidade de Abas e Adaptação para Dark Mode ===
 
