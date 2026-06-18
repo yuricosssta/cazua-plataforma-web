@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AppDispatch, RootState } from '@/lib/redux/store';
 import { fetchPostById } from '@/lib/redux/slices/postsSlice';
-import { BlogPostContent } from '@/components/BlogPostContent';
+import { BlogPostContent } from '@/components/posts/BlogPostContent';
 
 export default function PostDetailPage() {
   const dispatch = useDispatch<AppDispatch>();

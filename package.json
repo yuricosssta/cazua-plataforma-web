@@ -1,5 +1,8 @@
 {
 	"devDependencies": {
 		"@types/jest": "30.0.0"
+	},
+	"dependencies": {
+		"opencode-ai": "1.17.7"
 	}
 }

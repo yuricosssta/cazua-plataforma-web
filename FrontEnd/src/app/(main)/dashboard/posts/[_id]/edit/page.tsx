@@ -1,6 +1,6 @@
 "use client";
 
-import PostForm from '@/components/PostForm';
+import PostForm from '@/components/posts/PostForm';
 import { fetchPostById, updatePost, deletePost } from '@/lib/redux/slices/postsSlice';
 import { AppDispatch, RootState } from '@/lib/redux/store';
 import { IPost } from '@/types/post';

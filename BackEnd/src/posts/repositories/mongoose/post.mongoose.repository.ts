@@ -1,21 +1,18 @@
-//src/post/repositories/mongoose/post.mongoose.repository.ts
-
-import { IPost } from '../../schemas/models/post.interface';
-import { PostRepository, PaginateOptions } from '../post.repository'; // Importando a interface do local correto
+// src/posts/repositories/mongoose/post.mongoose.repository.ts
 import { InjectModel } from '@nestjs/mongoose';
+import { Model, FilterQuery, Types } from 'mongoose';
+import { IPost } from '../../schemas/models/post.interface';
+import { PostRepository, PaginateOptions } from '../post.repository';
 import { Post } from '../../schemas/post.schema';
-import { Model, FilterQuery } from 'mongoose';
 
 export class PostMongooseRepository implements PostRepository {
-  constructor(@InjectModel(Post.name) private postModel: Model<Post>) { }
+  constructor(@InjectModel(Post.name) private postModel: Model<Post>) {}
 
-  getAllPosts(options: PaginateOptions): Promise<IPost[]> {
-    // Monta o filtro dinamicamente
+  async getAllPosts(options: PaginateOptions): Promise<IPost[]> {
     const filter: FilterQuery<Post> = {};
 
-    // Se o organizationId vier, adiciona ao filtro.
-    if (options.organizationId && options.organizationId == 'undefined') {
-      filter.organizationId = options.organizationId;
+    if (options.organizationId && options.organizationId !== 'undefined') {
+      filter.organizationId = new Types.ObjectId(options.organizationId);
     }
 
     return this.postModel
@@ -26,21 +23,18 @@ export class PostMongooseRepository implements PostRepository {
       .exec();
   }
 
-  // Função para contar o total de documentos (Considerando o filtro)
-  getTotalPostsCount(organizationId?: string): Promise<number> {
+  async getTotalPostsCount(organizationId?: string): Promise<number> {
     const filter: FilterQuery<Post> = {};
 
-    if (organizationId && organizationId == 'undefined') {
-      filter.organizationId = organizationId;
+    if (organizationId && organizationId !== 'undefined') {
+      filter.organizationId = new Types.ObjectId(organizationId);
     }
 
     return this.postModel.countDocuments(filter).exec();
   }
 
-  searchPost(term: string): Promise<IPost[]> {
+  async searchPost(term: string): Promise<IPost[]> {
     const regex = new RegExp(term, 'i');
-    // Nota: Futuramente você pode querer adicionar o organizationId aqui também
-    // para buscar posts apenas dentro da empresa atual.
     return this.postModel
       .find({
         $or: [{ title: regex }, { description: regex }, { author: regex }, { content: regex }],
@@ -48,107 +42,37 @@ export class PostMongooseRepository implements PostRepository {
       .exec();
   }
   
-  getPost(postId: string): Promise<IPost> {
-    return this.postModel.findById(postId).exec();
+  async getPost(postId: string): Promise<IPost> {
+    if (!Types.ObjectId.isValid(postId)) return null;
+    return this.postModel.findById(new Types.ObjectId(postId)).exec();
   }
 
   async createPost(post: IPost): Promise<IPost> {
+    if (post.organizationId) {
+      post.organizationId = new Types.ObjectId(post.organizationId) as any;
+    }
     const createPost = new this.postModel(post);
-    console.log('Post criado dentro do post.mongoose.repository: ', createPost);
-    return await createPost.save(); // Agora retorna o objeto salvo
+    return await createPost.save();
   }
 
-  async updatePost(
-    postId: string,
-    post: Partial<IPost>,
-  ): Promise<IPost | null> {
+  async updatePost(postId: string, post: Partial<IPost>): Promise<IPost | null> {
+    if (!Types.ObjectId.isValid(postId)) return null;
+    
     const updateData = Object.fromEntries(
       Object.entries(post).filter(([, value]) => value !== undefined),
     );
 
-    const result = await this.postModel
-      .findOneAndUpdate({ _id: postId }, { $set: updateData }, { new: true })
+    return this.postModel
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(postId) }, 
+        { $set: updateData }, 
+        { new: true }
+      )
       .exec();
-
-    return result;
   }
 
   async deletePost(postId: string): Promise<IPost | null> {
-    const result = this.postModel.findByIdAndDelete({ _id: postId }).exec();
-    return result;
+    if (!Types.ObjectId.isValid(postId)) return null;
+    return this.postModel.findByIdAndDelete(new Types.ObjectId(postId)).exec();
   }
 }
-
-// import { IPost } from '../../schemas/models/post.interface';
-// import { PostRepository } from '../post.repository';
-// import { InjectModel } from '@nestjs/mongoose';
-// import { Post } from '../../schemas/post.schema';
-// import { Model } from 'mongoose';
-
-// // Interface para definir os parâmetros de paginação
-// export interface PaginateOptions {
-//   limit: number;
-//   skip: number;
-// }
-
-// export class PostMongooseRepository implements PostRepository {
-//   constructor(@InjectModel(Post.name) private postModel: Model<Post>) { }
-
-//   // getAllPosts(): Promise<IPost[]> {
-//   //   return this.postModel.find({});
-//   // }
-//   getAllPosts(options: PaginateOptions): Promise<IPost[]> {
-//     return this.postModel
-//       .find({})
-//       .sort({ created_at: -1 }) // Ordena pelos mais recentes primeiro
-//       .skip(options.skip)       // Pula os documentos das páginas anteriores
-//       .limit(options.limit)     // Limita o número de resultados
-//       .exec();
-//   }
-
-//   // Função para contar o total de documentos
-//   getTotalPostsCount(): Promise<number> {
-//     return this.postModel.countDocuments({}).exec();
-//   }
-
-//   searchPost(term: string): Promise<IPost[]> {
-//     const regex = new RegExp(term, 'i');
-//     return this.postModel
-//       .find({
-//         $or: [{ title: regex }, { description: regex }, { author: regex }, { content: regex }],
-//       })
-//       .exec();
-//   }
-  
-//   getPost(postId: string): Promise<IPost> {
-//     return this.postModel.findById(postId).exec();
-//   }
-
-//   async createPost(post: IPost): Promise<void> {
-//     const createPost = new this.postModel(post);
-//     console.log('Post criado dentro do post.mongoose.repository: ', createPost);
-//     await createPost.save();
-//   }
-
-//   async updatePost(
-//     postId: string,
-//     post: Partial<IPost>,
-//   ): Promise<IPost | null> {
-//     const updateData = Object.fromEntries(
-//       Object.entries(post).filter(([, value]) => value !== undefined),
-//     );
-
-//     const result = await this.postModel
-//       .findOneAndUpdate({ _id: postId }, { $set: updateData }, { new: true })
-//       // .findOneAndUpdate({ id: postId }, { $set: updateData }, { new: true }) 
-//       .exec();
-
-//     return result;
-//   }
-//   async deletePost(postId: string): Promise<IPost | null> {
-//     const result = this.postModel.findByIdAndDelete({ _id: postId }).exec();
-//     // const result = this.postModel.findByIdAndDelete({ id: postId }).exec();
-
-//     return result;
-//   }
-// }
