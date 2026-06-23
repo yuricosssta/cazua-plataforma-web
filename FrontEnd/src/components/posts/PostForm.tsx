@@ -33,7 +33,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
     description: '',
     content: initialData?.content || '',
     published: true,
-    author: getAuthorName(),
+    author: getAuthorName(), 
   });
 
   const [isLoadingText, setIsLoadingText] = useState<boolean>(false);

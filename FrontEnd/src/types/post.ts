@@ -1,11 +1,13 @@
+// src/types/post.ts
 export interface IPost {
-  _id?: string;
+  id?: string;
   title: string;
   content: string;
   description?: string;
-  created_at?: Date; 
-  modified_at?: Date;
+  created_at?: Date | string;
+  modified_at?: Date | string;
   image?: string;
   author?: string;
   published?: boolean;
+  organizationId?: string;
 }

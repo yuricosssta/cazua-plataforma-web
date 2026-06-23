@@ -1,3 +1,24 @@
+=== SPRINT 13 - 23/06/2026 ===
+O objetivo desta Sprint foi finalizado com sucesso. Abaixo está a documentação oficial para integrar ao `documento-arquitetura-vivo.txt`.
+
+=== SPRINT ATUAL ===
+=== Resumo Técnico de Fechamento: Refatoração do Módulo Posts, Implementação de BFF e Higienização de UI ===
+
+**1. Decisões de Arquitetura (BFF, Redux, Validação, Repositories)**
+
+* **Padrão BFF (Backend-For-Frontend):** Estabelecido proxy reverso seguro no Next.js (`Server-Side Route Handlers`). O front-end agora desconhece a URL do micro-serviço e não manipula tokens de autenticação diretamente, delegando a injeção ao servidor de borda via cookies estritos.
+* **Contratos Simétricos (Zod):** Implementação da fonte única de verdade (`post.zod.ts`). O BFF valida e rejeita lixo na borda (evitando tráfego inútil), e o NestJS barra requisições externas não autorizadas.
+* **Gerenciamento de Estado (Redux):** Desacoplamento do micro-serviço. O `postsSlice` agora consome estritamente o serviço local (`/api/posts`). Higienização total de vazamento de infraestrutura do Mongoose (substituição massiva de `_id` por `id`).
+* **Isolamento de Banco de Dados:** Correção do `PostMongooseRepository`. Aplicação estrita de `new Types.ObjectId(id)` e mitigação de bugs lógicos (`organizationId !== 'undefined'`), garantindo que a camada de Service continue agnóstica ao MongoDB.
+
+**2. Definições de Infraestrutura (Variáveis, Rotas, UI)**
+
+* **Roteamento (Next.js App Router):** Implementação padronizada no diretório correto de rotas de API (`src/app/api/posts/...`) utilizando suporte assíncrono moderno (`await cookies()`).
+* **UI/UX e Design Tokens:** Refatoração do `PostForm.tsx`. Remoção absoluta de cores estáticas. Imposição do padrão B2B Minimalista com variáveis semânticas do Tailwind v4 (`bg-background`, `bg-card`, `text-foreground`, `border-border`), garantindo suporte nativo a Dark Mode.
+* **Geometria:** Border-radius padronizado em 4px (`rounded-md`) e adoção exclusiva da biblioteca `lucide-react` para iconografia.
+
+
+
 === SPRINT 12 - 12/06/2026 ===
 === Resumo Técnico de Fechamento: Refatoração do Emissor de Pareceres e Simulação A4 ===
 

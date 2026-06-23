@@ -1,6 +1,6 @@
 //src/lib/services/organizationService.ts
 import axios from 'axios';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../../app/api/axiosInstance';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 

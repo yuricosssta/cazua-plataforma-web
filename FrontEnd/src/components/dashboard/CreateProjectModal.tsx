@@ -6,7 +6,7 @@ import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as M
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 import { UpgradeModal } from "./UpgradeModal";
 
 // Importações do OpenLayers

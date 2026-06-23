@@ -1,5 +1,5 @@
 // src/lib/services/projectService.ts
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../../app/api/axiosInstance';
 
 // LISTAGEM DE PROJETOS / DEMANDAS
 export const listProjects = async (orgId: string) => {

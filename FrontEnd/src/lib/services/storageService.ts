@@ -1,5 +1,5 @@
 //src/lib/services/storageService.ts
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 import axios from "axios";
 import imageCompression from 'browser-image-compression';
 

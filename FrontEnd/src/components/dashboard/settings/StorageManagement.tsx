@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 
 // Limites fixos em Bytes
 const LIMITS = {

@@ -24,7 +24,7 @@ export default function EditPostPage() {
 
   const handleSubmit = (postData: IPost) => {
     dispatch(updatePost(postData)).then(() => {
-      router.push('/posts');
+      router.push('dashboard/posts'); 
     });
   };
 
@@ -32,7 +32,7 @@ export default function EditPostPage() {
     // Adiciona uma confirmação para o usuário
     if (window.confirm('Tem certeza que deseja deletar esta publicação? Esta ação não pode ser desfeita.')) {
       dispatch(deletePost(id)).then(() => {
-        router.push('/posts'); // Redireciona para a lista de posts após deletar
+        router.push('dashboard/posts'); // Redireciona para a lista de posts após deletar
       });
     }
   };

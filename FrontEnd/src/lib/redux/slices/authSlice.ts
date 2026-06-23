@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { RootState } from '../store';
 import { jwtDecode } from 'jwt-decode';
-import axiosInstance from '@/lib/api/axiosInstance';
+import axiosInstance from '@/app/api/axiosInstance';
 
 interface UserPayload {
   sub: string;

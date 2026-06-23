@@ -23,7 +23,8 @@ export class PostController {
     @Req() req: any,
   ) {
     limit = limit > 100 ? 100 : limit;
-    const orgId = req.organizationId || ''; 
+    // const orgId = req.organizationId || ''; 
+    const orgId = '';
     return this.postService.getAllPosts(page, limit, orgId);
   }
 
