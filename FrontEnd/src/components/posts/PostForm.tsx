@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { IPost } from '@/types/post';
 import MarkdownPreview from './MarkdownPreview';
 import { AudioTranscriber } from '../AudioTranscriber';
 import { summarizeTextAPI } from '@/lib/services/summaryService';
-import { Wand2, Save } from 'lucide-react';
+import { Wand2, Save, AlertCircle } from 'lucide-react';
 import { selectCurrentUser } from '@/lib/redux/slices/authSlice';
 import { useSelector } from 'react-redux';
 import MDEditor from '@uiw/react-md-editor';
@@ -15,10 +16,12 @@ interface PostFormProps {
   onSubmit: (post: Omit<IPost, 'id'> | IPost) => void;
   initialData?: IPost | null;
   isLoading: boolean;
+  serverError?: string | null; // Nova propriedade
 }
 
-export default function PostForm({ onSubmit, initialData, isLoading }: PostFormProps) {
+export default function PostForm({ onSubmit, initialData, isLoading, serverError }: PostFormProps) {
   const user = useSelector(selectCurrentUser);
+  const { theme } = useTheme();
 
   const getAuthorName = () => {
     if (initialData?.author) return initialData.author;
@@ -59,7 +62,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
     }
   }, [initialData, user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const { checked } = e.target as HTMLInputElement;
@@ -102,10 +105,19 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
     }
   };
 
-  const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground transition-all";
+  const inputClass = "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground transition-all";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 bg-card p-6 rounded-md border border-border shadow-sm">
+      
+      {/* Exibição de Erro do Servidor / Zod */}
+      {serverError && (
+        <div className="flex items-center gap-2 p-4 text-sm font-medium text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-md">
+          <AlertCircle size={18} className="shrink-0" />
+          <p>{serverError}</p>
+        </div>
+      )}
+
       <div className="space-y-2">
         <label htmlFor="title" className="text-sm font-medium leading-none text-foreground">Título</label>
         <input
@@ -114,9 +126,21 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
           id="title"
           value={post.title}
           onChange={handleChange}
-          className={inputClass}
+          className={`${inputClass} h-10`}
           placeholder="Digite o título do post..."
           required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="description" className="text-sm font-medium leading-none text-foreground">Resumo / Descrição</label>
+        <textarea
+          name="description"
+          id="description"
+          value={post.description}
+          onChange={handleChange}
+          className={`${inputClass} min-h-[80px] resize-y`}
+          placeholder="Breve resumo da publicação..."
         />
       </div>
 
@@ -129,7 +153,7 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
           value={post.image}
           onChange={handleChange}
           placeholder="https://exemplo.com/imagem.png"
-          className={inputClass}
+          className={`${inputClass} h-10`}
         />
       </div>
 
@@ -140,16 +164,18 @@ export default function PostForm({ onSubmit, initialData, isLoading }: PostFormP
           <AudioTranscriber />
         </div>
 
-        <MDEditor
-          className={`${inputClass} !h-auto min-h-[300px]`}
-          value={post.content}
-          onChange={handleEditorChange}
-          height={300}
-          preview="edit"
-          textareaProps={{
-            placeholder: 'Escreva seu conteúdo aqui...'
-          }}
-        />
+        <div data-color-mode={theme === 'dark' ? 'dark' : 'light'} className="rounded-md overflow-hidden border border-input">
+          <MDEditor
+            className="!h-auto min-h-[300px] border-none"
+            value={post.content}
+            onChange={handleEditorChange}
+            height={300}
+            preview="edit"
+            textareaProps={{
+              placeholder: 'Escreva seu conteúdo aqui...'
+            }}
+          />
+        </div>
 
         <div className="flex flex-col gap-2">
           <button

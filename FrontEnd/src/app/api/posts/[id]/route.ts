@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { updatePostSchema } from '@/validations/post.zod';
 
-const NEST_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function GET(request: Request, context: { params: { id: string } }) {
   const cookieStore = await cookies();
@@ -14,7 +14,12 @@ export async function GET(request: Request, context: { params: { id: string } })
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
       headers: { ...(token && { 'Authorization': `Bearer ${token}` }) },
     });
-    const data = await nestResponse.json();
+    let data = await nestResponse.json();
+
+    if (data && data._id) {
+      data.id = data._id;
+    }
+
     return NextResponse.json(data, { status: nestResponse.status });
   } catch (error) {
     return NextResponse.json({ error: 'Erro de comunicação (GET Post)' }, { status: 500 });
@@ -38,7 +43,12 @@ export async function PUT(request: Request, context: { params: { id: string } })
       },
       body: JSON.stringify(validatedData),
     });
-    const data = await nestResponse.json();
+    let data = await nestResponse.json();
+
+    if (data && data._id) {
+      data.id = data._id;
+    }
+    
     return NextResponse.json(data, { status: nestResponse.status });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Payload inválido' }, { status: 400 });

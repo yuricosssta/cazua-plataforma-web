@@ -6,12 +6,16 @@ import { PostRepository, PaginateOptions } from '../post.repository';
 import { Post } from '../../schemas/post.schema';
 
 export class PostMongooseRepository implements PostRepository {
-  constructor(@InjectModel(Post.name) private postModel: Model<Post>) {}
+  constructor(@InjectModel(Post.name) private postModel: Model<Post>) { }
 
   async getAllPosts(options: PaginateOptions): Promise<IPost[]> {
     const filter: FilterQuery<Post> = {};
 
-    if (options.organizationId && options.organizationId !== 'undefined') {
+    if (
+      options.organizationId &&
+      options.organizationId !== 'undefined' &&
+      Types.ObjectId.isValid(options.organizationId)
+    ) {
       filter.organizationId = new Types.ObjectId(options.organizationId);
     }
 
@@ -41,7 +45,7 @@ export class PostMongooseRepository implements PostRepository {
       })
       .exec();
   }
-  
+
   async getPost(postId: string): Promise<IPost> {
     if (!Types.ObjectId.isValid(postId)) return null;
     return this.postModel.findById(new Types.ObjectId(postId)).exec();
@@ -57,15 +61,15 @@ export class PostMongooseRepository implements PostRepository {
 
   async updatePost(postId: string, post: Partial<IPost>): Promise<IPost | null> {
     if (!Types.ObjectId.isValid(postId)) return null;
-    
+
     const updateData = Object.fromEntries(
       Object.entries(post).filter(([, value]) => value !== undefined),
     );
 
     return this.postModel
       .findOneAndUpdate(
-        { _id: new Types.ObjectId(postId) }, 
-        { $set: updateData }, 
+        { _id: new Types.ObjectId(postId) },
+        { $set: updateData },
         { new: true }
       )
       .exec();
