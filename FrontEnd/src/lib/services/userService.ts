@@ -1,5 +1,5 @@
 // src/lib/services/userService.ts
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../../app/api/axiosInstance';
 
 export const apiUpdateProfile = async (userId: string, name: string) => {
   try {

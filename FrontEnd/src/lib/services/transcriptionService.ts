@@ -1,4 +1,4 @@
-import axiosInstance from '@/lib/api/axiosInstance';
+import axiosInstance from '@/app/api/axiosInstance';
 
 // Interface para a resposta da API
 interface TranscriptionResponse {

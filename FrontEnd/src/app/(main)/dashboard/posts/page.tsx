@@ -1,6 +1,6 @@
 // "use client";
 
-import { PostList } from '@/components/PostList';
+import { PostList } from '@/components/posts/PostList';
 import { store } from "@/lib/redux/store";
 import { fetchPosts } from "@/lib/redux/slices/postsSlice";
 

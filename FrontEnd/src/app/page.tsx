@@ -6,8 +6,8 @@ import { PricingSection } from "@/components/landing/PricingSection";
 import { LandingPageHeader } from "@/components/LandingPageHeader";
 
 export const metadata: Metadata = {
-  title: 'Cazuá | O software definitivo para a sua construtora',
-  description: 'Pare de perder dinheiro no canteiro de obras. Sistema simples e integrado para requisição de materiais, aprovações e controle de orçamento.',
+  title: 'Cazuá | Gestão inteligente de projetos',
+  description: 'Pare de perder dinheiro no canteiro de obras e projetos. Sistema simples e integrado para requisição de materiais, aprovações e controle de orçamento.',
 };
 
 export default function HomePage() {

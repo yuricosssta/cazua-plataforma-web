@@ -9,7 +9,7 @@ import {
   Download, Upload, FileSpreadsheet, CheckCircle2,
   Trash2, AlertTriangle, Save, Loader2, X
 } from "lucide-react";
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 import Papa from 'papaparse';
 import { UpgradeModal } from "../UpgradeModal";
 

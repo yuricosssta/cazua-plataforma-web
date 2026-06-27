@@ -1,5 +1,5 @@
 //src/lib/services/resourceService.ts
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../../app/api/axiosInstance';
 
 // --- ENUMS ---
 export enum ResourceType {

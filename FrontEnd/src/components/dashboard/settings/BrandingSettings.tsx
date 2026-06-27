@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { UploadCloud, Loader2, CheckCircle } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 import { updateCurrentOrgSettings } from "@/lib/redux/slices/organizationSlice";
 import { uploadFileToR2 } from "@/lib/services/storageService"; // IMPORT NOVO
 

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import axiosInstance from "@/lib/api/axiosInstance";
+import axiosInstance from "@/app/api/axiosInstance";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

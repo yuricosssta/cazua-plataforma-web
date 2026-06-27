@@ -1,5 +1,5 @@
 // src/lib/services/planningService.ts
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../../app/api/axiosInstance';
 
 // --- INTERFACES DE DTOs ---
 export interface UploadPlanningPayload {

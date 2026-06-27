@@ -1,3 +1,68 @@
+=== SPRINT 15 - 27/06/2026 ===
+=== Resumo Técnico de Fechamento: Unificação de Busca Textual no Módulo de Posts ===
+
+1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
+
+Repositórios (Mongoose): Alteração no contrato de paginação (PaginateOptions) para injetar o parâmetro opcional term. Aplicação de cláusula $or com expressão regular (Regex i) no filtro principal dos métodos getAllPosts e getTotalPostsCount. Isso garante a integridade matemática da paginação sobre conjuntos de dados filtrados.
+
+Expurgo de Código Morto: Remoção estrutural do método isolado searchPost no contrato abstrato e na implementação do Mongoose, centralizando a responsabilidade de leitura no método principal de listagem.
+
+Contrato Front-end (Redux): Preservação absoluta da barreira BFF. Atualização do slice de estado (fetchPosts Thunk) e do postService.ts para serializar o termo dinamicamente via URLSearchParams, garantindo propagação previsível da requisição até a borda (Next.js Route Handlers).
+
+2. Definições de Infraestrutura (Variáveis, Rotas, UI)
+
+Roteamento Backend (NestJS): Unificação de endpoint. A rota legada @Get('search') foi depreciada e removida. A busca ocorre nativamente na rota paginada primária (GET /posts), absorvendo o parâmetro via @Query('term').
+
+Proteção de Infraestrutura (Front-end): Implementação de Debounce lógico (500ms) no controle de estado transiente do input de busca. A interface aguarda a inércia da digitação antes de acionar a store do Redux, mitigando gargalos de I/O de rede e chamadas redundantes ao banco de dados.
+
+Geometria e Design B2B: Refatoração do cabeçalho da UI (PostList.tsx). O input de busca respeita os tokens semânticos de alto contraste (bg-background, text-foreground, border-border, focus em ring-ring). A geometria mantém-se travada no padrão da marca (rounded-md, equivalente a 4px), utilizando exclusivamente o vetor Search da biblioteca lucide-react.
+
+=== SPRINT 14 - 24/06/2026 ===
+=== SPRINT DE CORREÇÕES (HOTFIX) FINALIZADA ===
+=== Resumo Técnico de Fechamento Complementar: Redes Docker, Contratos BFF e RBAC na UI ===
+
+Adicione o complemento abaixo ao documento-arquitetura-vivo.txt para registrar o débito técnico resolvido.
+
+1. Decisões de Arquitetura (BFF, Redux, RBAC)
+
+Adaptação de Contrato (BFF): Implementada sanitização de payload no Next.js Route Handlers. O vazamento da chave legada _id do MongoDB foi interceptado na borda e transmutado para id, garantindo o respeito ao contrato estrito (IPost) esperado pela UI sem onerar o Client-Side.
+
+Manejo de Erros no Redux: Adoção do método .unwrap() nos Thunks de mutação (ex: createNewPost). Erros emitidos pelo BFF (400, 401, 500) agora estouram o bloco catch do componente, permitindo que a interface retenha o usuário no formulário e exiba feedbacks destrutivos contextualizados.
+
+Role-Based Access Control (RBAC) na UI: Injeção de estado híbrido de autorização (user.role e currentOrg.role) nos componentes de listagem. Botões de mutação (Criar, Editar, Deletar) e Empty States acionáveis foram blindados na interface, visíveis estritamente para perfis ADMIN ou OWNER.
+
+2. Definições de Infraestrutura (Redes e Variáveis de Ambiente)
+
+Segregação de DNS (Server-to-Server vs Client-to-Server): Estabelecimento do padrão arquitetural de conectividade para ambientes orquestrados (Docker/Vercel).
+
+NEXT_PUBLIC_API_BASE_URL: Expõe a rota para o navegador (Client-Side) realizar fetches legados.
+
+INTERNAL_API_URL: Variável sigilosa (Server-Side) utilizada estritamente pelo BFF para resolução de DNS interno na rede Docker (http://backend:3001), evitando roteamento desnecessário pela internet pública e eliminando o erro de loopback (ECONNREFUSED no localhost). O sistema possui fallback nativo para operar sem intervenções na Vercel.
+
+O módulo Posts está homologado, blindado e aderente à arquitetura de referência.
+
+
+=== SPRINT 13 - 23/06/2026 ===
+O objetivo desta Sprint foi finalizado com sucesso. Abaixo está a documentação oficial para integrar ao `documento-arquitetura-vivo.txt`.
+
+=== SPRINT ATUAL ===
+=== Resumo Técnico de Fechamento: Refatoração do Módulo Posts, Implementação de BFF e Higienização de UI ===
+
+**1. Decisões de Arquitetura (BFF, Redux, Validação, Repositories)**
+
+* **Padrão BFF (Backend-For-Frontend):** Estabelecido proxy reverso seguro no Next.js (`Server-Side Route Handlers`). O front-end agora desconhece a URL do micro-serviço e não manipula tokens de autenticação diretamente, delegando a injeção ao servidor de borda via cookies estritos.
+* **Contratos Simétricos (Zod):** Implementação da fonte única de verdade (`post.zod.ts`). O BFF valida e rejeita lixo na borda (evitando tráfego inútil), e o NestJS barra requisições externas não autorizadas.
+* **Gerenciamento de Estado (Redux):** Desacoplamento do micro-serviço. O `postsSlice` agora consome estritamente o serviço local (`/api/posts`). Higienização total de vazamento de infraestrutura do Mongoose (substituição massiva de `_id` por `id`).
+* **Isolamento de Banco de Dados:** Correção do `PostMongooseRepository`. Aplicação estrita de `new Types.ObjectId(id)` e mitigação de bugs lógicos (`organizationId !== 'undefined'`), garantindo que a camada de Service continue agnóstica ao MongoDB.
+
+**2. Definições de Infraestrutura (Variáveis, Rotas, UI)**
+
+* **Roteamento (Next.js App Router):** Implementação padronizada no diretório correto de rotas de API (`src/app/api/posts/...`) utilizando suporte assíncrono moderno (`await cookies()`).
+* **UI/UX e Design Tokens:** Refatoração do `PostForm.tsx`. Remoção absoluta de cores estáticas. Imposição do padrão B2B Minimalista com variáveis semânticas do Tailwind v4 (`bg-background`, `bg-card`, `text-foreground`, `border-border`), garantindo suporte nativo a Dark Mode.
+* **Geometria:** Border-radius padronizado em 4px (`rounded-md`) e adoção exclusiva da biblioteca `lucide-react` para iconografia.
+
+
+
 === SPRINT 12 - 12/06/2026 ===
 === Resumo Técnico de Fechamento: Refatoração do Emissor de Pareceres e Simulação A4 ===
 

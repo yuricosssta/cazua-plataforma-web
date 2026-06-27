@@ -1,3 +1,5 @@
+//src/posts/schemas/models/post.interface.ts
+
 export interface IPost {
   id?: string;
   title: string;
