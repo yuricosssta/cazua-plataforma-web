@@ -5,10 +5,15 @@ import { updatePostSchema } from '@/validations/post.zod';
 
 const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-export async function GET(request: Request, context: { params: { id: string } }) {
+async function getAuthHeader(request: Request) {
   const cookieStore = await cookies();
-  // const token = cookieStore.get('access_token')?.value;
-  const authorization = request.headers.get('authorization');
+  const cookieToken = cookieStore.get('access_token')?.value;
+  const headerToken = request.headers.get('authorization');
+  return headerToken || (cookieToken ? `Bearer ${cookieToken}` : undefined);
+}
+
+export async function GET(request: Request, context: { params: { id: string } }) {
+  const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
   const { id } = context.params;
@@ -16,7 +21,6 @@ export async function GET(request: Request, context: { params: { id: string } })
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
       headers: {
-        // ...(token && { 'Authorization': `Bearer ${token}` }),
         ...(authorization && { 'Authorization': authorization }),
         ...(orgId && { 'x-org-id': orgId }),
         ...(orgRole && { 'x-org-role': orgRole }),
@@ -31,9 +35,7 @@ export async function GET(request: Request, context: { params: { id: string } })
 }
 
 export async function PUT(request: Request, context: { params: { id: string } }) {
-  const cookieStore = await cookies();
-  // const token = cookieStore.get('access_token')?.value;
-  const authorization = request.headers.get('authorization');
+  const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
   const { id } = context.params;
@@ -46,7 +48,6 @@ export async function PUT(request: Request, context: { params: { id: string } })
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        // ...(token && { 'Authorization': `Bearer ${token}` }),
         ...(authorization && { 'Authorization': authorization }),
         ...(orgId && { 'x-org-id': orgId }),
         ...(orgRole && { 'x-org-role': orgRole }),
@@ -64,9 +65,7 @@ export async function PUT(request: Request, context: { params: { id: string } })
 }
 
 export async function DELETE(request: Request, context: { params: { id: string } }) {
-  const cookieStore = await cookies();
-  // const token = cookieStore.get('access_token')?.value;
-  const authorization = request.headers.get('authorization');
+  const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
   const { id } = context.params;
@@ -75,7 +74,6 @@ export async function DELETE(request: Request, context: { params: { id: string }
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
       method: 'DELETE',
       headers: {
-        // ...(token && { 'Authorization': `Bearer ${token}` }),
         ...(authorization && { 'Authorization': authorization }),
         ...(orgId && { 'x-org-id': orgId }),
         ...(orgRole && { 'x-org-role': orgRole }),

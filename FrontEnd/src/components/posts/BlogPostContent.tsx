@@ -4,9 +4,14 @@
 import { IPost } from "@/types/post";
 import Link from "next/link";
 import MarkdownPreview from "./MarkdownPreview";
-import { ArrowLeft, Calendar, User, Edit } from "lucide-react";
+import { ArrowLeft, Calendar, User, Edit, Edit2 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export const BlogPostContent = ({ post }: { post: IPost | null }) => {
+  const currentOrg = useSelector((state: any) => state.organizations?.currentOrganization);
+  const user = useSelector((state: any) => state.auth?.user);
+  const isAdmin = currentOrg?.role === 'ADMIN' || currentOrg?.role === 'OWNER' || user?.role === 'ADMIN';
+
   if (!post) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-muted-foreground">
@@ -56,7 +61,7 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
           </div>
         </header>
 
-        {/* CORREÇÃO 3: aspect-video adicionado para evitar deslocamento de layout; rounded-md padronizado */}
+        {/* aspect-video adicionado para evitar deslocamento de layout; rounded-md padronizado */}
         <div className="relative w-full aspect-video overflow-hidden rounded-md border border-border bg-muted mb-10 shadow-sm">
           <img
             src={post.image || "https://placehold.co/1200x600"}
@@ -70,14 +75,19 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
         </article>
 
         <div className="mt-16 pt-8 border-t border-border">
-          {/* CORREÇÃO 2: Roteamento absoluto para se manter na área autenticada */}
-          <Link
-            href={`/dashboard/posts/${post.id}/edit`}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2"
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Editar
-          </Link>
+          {/* Controles do Card (Apenas Administradores) */}
+          {isAdmin && (
+            <div className="flex items-center gap-2 mt-3">
+              <Link
+                href={`/dashboard/posts/${post.id}/edit`}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 gap-2"
+              >
+                <Edit2 size={14} />
+                Editar
+              </Link>
+
+            </div>
+          )}
         </div>
 
       </div>

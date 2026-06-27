@@ -8,15 +8,15 @@ const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cookieStore = await cookies();
-  // const token = cookieStore.get('access_token')?.value;
-  const authorization = request.headers.get('authorization');
+  const cookieToken = cookieStore.get('access_token')?.value;
+  const headerToken = request.headers.get('authorization');
+  const authorization = headerToken || (cookieToken ? `Bearer ${cookieToken}` : undefined);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
 
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts?${searchParams.toString()}`, {
-      headers: { 
-        // ...(token && { 'Authorization': `Bearer ${token}` }),
+      headers: {
         ...(authorization && { 'Authorization': authorization }),
         ...(orgId && { 'x-org-id': orgId }),
         ...(orgRole && { 'x-org-role': orgRole }),
@@ -42,8 +42,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
-  // const token = cookieStore.get('access_token')?.value;
-  const authorization = request.headers.get('authorization');
+  const cookieToken = cookieStore.get('access_token')?.value;
+  const headerToken = request.headers.get('authorization');
+  const authorization = headerToken || (cookieToken ? `Bearer ${cookieToken}` : undefined);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
 
@@ -55,19 +56,18 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // ...(token && { 'Authorization': `Bearer ${token}` }),
         ...(authorization && { 'Authorization': authorization }),
         ...(orgId && { 'x-org-id': orgId }),
         ...(orgRole && { 'x-org-role': orgRole }),
       },
       body: JSON.stringify(validatedData),
     });
-    
+
     const data = await nestResponse.json();
     if (data && data._id) data.id = data._id;
 
     if (!nestResponse.ok) {
-        return NextResponse.json({ error: data.message || 'Falha ao salvar a publicação' }, { status: nestResponse.status });
+      return NextResponse.json({ error: data.message || 'Falha ao salvar a publicação' }, { status: nestResponse.status });
     }
     return NextResponse.json(data, { status: 201 });
   } catch (error: any) {

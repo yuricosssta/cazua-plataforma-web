@@ -11,10 +11,6 @@ import { Trash2, Edit2, Plus } from "lucide-react";
 export const PostList = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { posts, status, error, currentPage, totalPages } = useSelector((state: RootState) => state.posts);
-  
-  // Extrai as credenciais para verificação de permissões
-  // Nota: Utilizando 'any' no state para contornar caso a tipagem estrita do RootState falhe aqui, 
-  // mas acessando as propriedades mapeadas pelo axiosInstance.
   const currentOrg = useSelector((state: any) => state.organizations?.currentOrganization);
   const user = useSelector((state: any) => state.auth?.user);
 
@@ -104,13 +100,13 @@ export const PostList = () => {
         {posts.map((post) => (
           <div className="break-words flex flex-col" key={post.id}>
             <Link href={`/dashboard/posts/${post.id}`}>
-              <div className="fill aspect-[16/9] relative cursor-pointer bg-muted rounded-md overflow-hidden border border-border shadow-sm">
+              {/* <div className="fill aspect-[16/9] relative cursor-pointer bg-muted rounded-md overflow-hidden border border-border shadow-sm">
                  <img 
                   alt={post.title} 
                   className="object-cover w-full h-full hover:scale-105 transition-transform duration-500"
                   src={post.image || "https://placehold.co/600x400"}
                 /> 
-              </div>
+              </div> */}
             </Link>
             <div className="flex flex-col flex-grow gap-3 mt-4">
               <h2 className="font-sans font-semibold tracking-tighter text-primary text-2xl md:text-3xl hover:text-primary/80 transition-colors">
@@ -121,7 +117,7 @@ export const PostList = () => {
                 {post.description || post.content}
               </div>
               
-              <div className="flex flex-col gap-1 mt-auto pt-4 border-t border-border mt-4">
+              <div className="flex flex-col gap-1 mt-auto pt-4 border-t border-border">
                 <div className="text-sm font-medium text-muted-foreground mt-2">
                   {post.author} | {Intl.DateTimeFormat("pt-br", { dateStyle: 'medium' }).format(
                     new Date(post.modified_at || post.created_at || new Date())
