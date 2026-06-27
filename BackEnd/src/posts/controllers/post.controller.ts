@@ -11,21 +11,21 @@ import { createPostSchema, CreatePostDto, updatePostSchema, UpdatePostDto } from
 import { IPost } from '../schemas/models/post.interface';
 
 @UseInterceptors(LoggingInterceptor)
-@UseGuards(AuthGuard, TenantGuard) 
+@UseGuards(AuthGuard, TenantGuard)
 @Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly postService: PostService) { }
 
   @Get()
   async getAllPosts(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('term') term: string,
     @Req() req: any,
   ) {
     limit = limit > 100 ? 100 : limit;
-    const orgId = req.organizationId || ''; 
-    // const orgId = '';
-    return this.postService.getAllPosts(page, limit, orgId);
+    const orgId = req.organizationId || '';
+    return this.postService.getAllPosts(page, limit, orgId, term);
   }
 
   @Get('search')
@@ -40,12 +40,12 @@ export class PostController {
 
   @Post()
   async createPost(
-    @Body(new ZodValidationPipe(createPostSchema)) createPostDto: CreatePostDto, 
+    @Body(new ZodValidationPipe(createPostSchema)) createPostDto: CreatePostDto,
     @Req() req: any
   ) {
     return this.postService.createPost({
-      ...createPostDto, 
-      organizationId: req.organizationId,      
+      ...createPostDto,
+      organizationId: req.organizationId,
       created_at: new Date(),
       modified_at: new Date(),
       author: createPostDto.author || req.user?.name || 'Anônimo',
@@ -74,7 +74,7 @@ export class PostController {
   @Delete(':postId')
   async deletePost(@Param('postId') postId: string, @Req() req: any) {
     const post = await this.postService.getPost(postId);
-    
+
     if (post.organizationId?.toString() !== req.organizationId?.toString()) {
       throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
     }
@@ -82,7 +82,7 @@ export class PostController {
     if (req.user?.role !== 'ADMIN' && post.author !== req.user.name) {
       throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
     }
-    
+
     return this.postService.deletePost(postId);
   }
 }

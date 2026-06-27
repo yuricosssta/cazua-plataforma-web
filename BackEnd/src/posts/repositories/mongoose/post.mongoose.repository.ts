@@ -19,6 +19,11 @@ export class PostMongooseRepository implements PostRepository {
       filter.organizationId = new Types.ObjectId(options.organizationId);
     }
 
+    if (options.term) {
+      const regex = new RegExp(options.term, 'i');
+      filter.$or = [{ title: regex }, { description: regex }, { author: regex }, { content: regex }];
+    }
+
     return this.postModel
       .find(filter)
       .sort({ created_at: -1 })
@@ -27,11 +32,16 @@ export class PostMongooseRepository implements PostRepository {
       .exec();
   }
 
-  async getTotalPostsCount(organizationId?: string): Promise<number> {
+  async getTotalPostsCount(organizationId?: string, term?: string): Promise<number> {
     const filter: FilterQuery<Post> = {};
 
-    if (organizationId && organizationId !== 'undefined') {
+    if (organizationId && organizationId !== 'undefined' && Types.ObjectId.isValid(organizationId)) {
       filter.organizationId = new Types.ObjectId(organizationId);
+    }
+
+    if (term) {
+      const regex = new RegExp(term, 'i');
+      filter.$or = [{ title: regex }, { description: regex }, { author: regex }, { content: regex }];
     }
 
     return this.postModel.countDocuments(filter).exec();

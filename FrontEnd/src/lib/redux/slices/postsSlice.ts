@@ -33,28 +33,34 @@ const initialState: PostsState = {
   error: null,
 };
 
-export const fetchPosts = createAsyncThunk<PaginatedPostsResult, { page: number; limit?: number }>(
+export const fetchPosts = createAsyncThunk(
   'posts/fetchPosts',
-  async ({ page, limit = 10 }) => postService.getPosts(page, limit)
+  async ({ page = 1, limit = 10, term }: { page?: number; limit?: number; term?: string }, { rejectWithValue }) => {
+    try {
+      return await postService.getPosts(page, limit, term);
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Erro ao carregar publicações');
+    }
+  }
 );
 
 export const fetchPostById = createAsyncThunk<IPost, string>(
-  'posts/fetchPostById', 
+  'posts/fetchPostById',
   async (id) => postService.getPostById(id)
 );
 
 export const createNewPost = createAsyncThunk<IPost, Omit<IPost, 'id'>>(
-  'posts/createNewPost', 
+  'posts/createNewPost',
   async (newPost) => postService.createPost(newPost)
 );
 
 export const updatePost = createAsyncThunk<IPost, { id: string; data: Partial<IPost> }>(
-  'posts/updatePost', 
+  'posts/updatePost',
   async ({ id, data }) => postService.updatePost(id, data)
 );
 
 export const deletePost = createAsyncThunk<string, string>(
-  'posts/deletePost', 
+  'posts/deletePost',
   async (id) => postService.deletePost(id).then(() => id)
 );
 

@@ -16,14 +16,12 @@ export interface PaginatedPostsResult {
 export class PostService {
   constructor(private readonly postRepository: PostRepository) { }
 
-  // Adicionado o parâmetro opcional organizationId
-  async getAllPosts(page: number, limit: number, organizationId?: string): Promise<PaginatedPostsResult> {
+  async getAllPosts(page: number, limit: number, organizationId?: string, term?: string): Promise<PaginatedPostsResult> {
     const skip = (page - 1) * limit;
 
-    // Passamos o organizationId para o repositório filtrar (se ele existir)
     const [posts, total] = await Promise.all([
-      this.postRepository.getAllPosts({ limit, skip, organizationId }),
-      this.postRepository.getTotalPostsCount(organizationId),
+      this.postRepository.getAllPosts({ limit, skip, organizationId, term }),
+      this.postRepository.getTotalPostsCount(organizationId, term),
     ]);
 
     const totalPages = Math.ceil(total / limit);

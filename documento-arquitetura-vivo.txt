@@ -1,3 +1,22 @@
+=== SPRINT 15 - 27/06/2026 ===
+=== Resumo Técnico de Fechamento: Unificação de Busca Textual no Módulo de Posts ===
+
+1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
+
+Repositórios (Mongoose): Alteração no contrato de paginação (PaginateOptions) para injetar o parâmetro opcional term. Aplicação de cláusula $or com expressão regular (Regex i) no filtro principal dos métodos getAllPosts e getTotalPostsCount. Isso garante a integridade matemática da paginação sobre conjuntos de dados filtrados.
+
+Expurgo de Código Morto: Remoção estrutural do método isolado searchPost no contrato abstrato e na implementação do Mongoose, centralizando a responsabilidade de leitura no método principal de listagem.
+
+Contrato Front-end (Redux): Preservação absoluta da barreira BFF. Atualização do slice de estado (fetchPosts Thunk) e do postService.ts para serializar o termo dinamicamente via URLSearchParams, garantindo propagação previsível da requisição até a borda (Next.js Route Handlers).
+
+2. Definições de Infraestrutura (Variáveis, Rotas, UI)
+
+Roteamento Backend (NestJS): Unificação de endpoint. A rota legada @Get('search') foi depreciada e removida. A busca ocorre nativamente na rota paginada primária (GET /posts), absorvendo o parâmetro via @Query('term').
+
+Proteção de Infraestrutura (Front-end): Implementação de Debounce lógico (500ms) no controle de estado transiente do input de busca. A interface aguarda a inércia da digitação antes de acionar a store do Redux, mitigando gargalos de I/O de rede e chamadas redundantes ao banco de dados.
+
+Geometria e Design B2B: Refatoração do cabeçalho da UI (PostList.tsx). O input de busca respeita os tokens semânticos de alto contraste (bg-background, text-foreground, border-border, focus em ring-ring). A geometria mantém-se travada no padrão da marca (rounded-md, equivalente a 4px), utilizando exclusivamente o vetor Search da biblioteca lucide-react.
+
 === SPRINT 14 - 24/06/2026 ===
 === SPRINT DE CORREÇÕES (HOTFIX) FINALIZADA ===
 === Resumo Técnico de Fechamento Complementar: Redes Docker, Contratos BFF e RBAC na UI ===
