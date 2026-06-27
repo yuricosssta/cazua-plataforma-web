@@ -9,7 +9,7 @@ import Link from "next/link";
  
      return (
      <div>       
-         <Link href={`/posts/${post._id}/edit`} className="btn btn-secondary">
+         <Link href={`/posts/${post.id}/edit`} className="btn btn-secondary">
            Editar
          </Link>             
      </div>
