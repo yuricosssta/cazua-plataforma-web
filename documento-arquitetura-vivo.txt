@@ -1,3 +1,28 @@
+=== SPRINT 14 - 24/06/2026 ===
+=== SPRINT DE CORREÇÕES (HOTFIX) FINALIZADA ===
+=== Resumo Técnico de Fechamento Complementar: Redes Docker, Contratos BFF e RBAC na UI ===
+
+Adicione o complemento abaixo ao documento-arquitetura-vivo.txt para registrar o débito técnico resolvido.
+
+1. Decisões de Arquitetura (BFF, Redux, RBAC)
+
+Adaptação de Contrato (BFF): Implementada sanitização de payload no Next.js Route Handlers. O vazamento da chave legada _id do MongoDB foi interceptado na borda e transmutado para id, garantindo o respeito ao contrato estrito (IPost) esperado pela UI sem onerar o Client-Side.
+
+Manejo de Erros no Redux: Adoção do método .unwrap() nos Thunks de mutação (ex: createNewPost). Erros emitidos pelo BFF (400, 401, 500) agora estouram o bloco catch do componente, permitindo que a interface retenha o usuário no formulário e exiba feedbacks destrutivos contextualizados.
+
+Role-Based Access Control (RBAC) na UI: Injeção de estado híbrido de autorização (user.role e currentOrg.role) nos componentes de listagem. Botões de mutação (Criar, Editar, Deletar) e Empty States acionáveis foram blindados na interface, visíveis estritamente para perfis ADMIN ou OWNER.
+
+2. Definições de Infraestrutura (Redes e Variáveis de Ambiente)
+
+Segregação de DNS (Server-to-Server vs Client-to-Server): Estabelecimento do padrão arquitetural de conectividade para ambientes orquestrados (Docker/Vercel).
+
+NEXT_PUBLIC_API_BASE_URL: Expõe a rota para o navegador (Client-Side) realizar fetches legados.
+
+INTERNAL_API_URL: Variável sigilosa (Server-Side) utilizada estritamente pelo BFF para resolução de DNS interno na rede Docker (http://backend:3001), evitando roteamento desnecessário pela internet pública e eliminando o erro de loopback (ECONNREFUSED no localhost). O sistema possui fallback nativo para operar sem intervenções na Vercel.
+
+O módulo Posts está homologado, blindado e aderente à arquitetura de referência.
+
+
 === SPRINT 13 - 23/06/2026 ===
 O objetivo desta Sprint foi finalizado com sucesso. Abaixo está a documentação oficial para integrar ao `documento-arquitetura-vivo.txt`.
 

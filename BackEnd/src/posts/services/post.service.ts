@@ -49,8 +49,6 @@ export class PostService {
   }
 
   async createPost(post: IPost) {
-    // Como adicionamos o campo organizationId no Schema e Interface,
-    // o spread operator (...post) já vai passar o ID automaticamente se ele vier do DTO.
     const newPost = await this.postRepository.createPost({
       ...post
     });

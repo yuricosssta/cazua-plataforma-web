@@ -12,6 +12,7 @@ export interface IOrgSettings {
 
 export interface IOrganization {
   _id: string;
+  id?: string; // Alias para _id, caso seja necessário
   name: string;
   acronym?: string;
   slug: string;

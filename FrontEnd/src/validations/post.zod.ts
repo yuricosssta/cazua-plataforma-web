@@ -8,6 +8,7 @@ export const createPostSchema = z.object({
   image: z.string().url('Formato de URL inválido').optional().or(z.literal('')),
   author: z.string().optional(),
   published: z.boolean().default(true),
+  organizationId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'O ID da organização fornecido é inválido.').optional(),
 });
 
 export const updatePostSchema = createPostSchema.partial();

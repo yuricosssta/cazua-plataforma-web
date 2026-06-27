@@ -11,7 +11,7 @@ import { createPostSchema, CreatePostDto, updatePostSchema, UpdatePostDto } from
 import { IPost } from '../schemas/models/post.interface';
 
 @UseInterceptors(LoggingInterceptor)
-// @UseGuards(AuthGuard, TenantGuard) 
+@UseGuards(AuthGuard, TenantGuard) 
 @Controller('posts')
 export class PostController {
   constructor(private readonly postService: PostService) {}

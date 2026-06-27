@@ -37,5 +37,5 @@ export class CreatePostDto {
   
   @IsOptional()
   @IsMongoId({ message: 'O ID da organização fornecido é inválido.' })
-  organizationId?: string;
+  organizationId: string;
 }

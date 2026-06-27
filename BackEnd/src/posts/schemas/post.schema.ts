@@ -13,10 +13,10 @@ export class Post implements IPost {
   @Prop({ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Organization', // Isso permite usar .populate('organizationId') no futuro
-    required: false,     // Permite salvar posts sem empresa
-    index: true          // CRUCIAL: Deixa as buscas por empresa rápidas
+    required: false,     
+    index: true          // buscas por empresa rápidas
   })
-  organizationId?: string;
+  organizationId: string;
   @Prop({ required: true })
   title: string;
   @Prop()
