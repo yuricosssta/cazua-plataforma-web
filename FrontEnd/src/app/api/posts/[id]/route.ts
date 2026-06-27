@@ -12,11 +12,11 @@ async function getAuthHeader(request: Request) {
   return headerToken || (cookieToken ? `Bearer ${cookieToken}` : undefined);
 }
 
-export async function GET(request: Request, context: { params: { id: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
-  const { id } = context.params;
 
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
@@ -34,11 +34,11 @@ export async function GET(request: Request, context: { params: { id: string } })
   }
 }
 
-export async function PUT(request: Request, context: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
-  const { id } = context.params;
 
   try {
     const body = await request.json();
@@ -64,11 +64,11 @@ export async function PUT(request: Request, context: { params: { id: string } })
   }
 }
 
-export async function DELETE(request: Request, context: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
   const orgRole = request.headers.get('x-org-role');
-  const { id } = context.params;
 
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
