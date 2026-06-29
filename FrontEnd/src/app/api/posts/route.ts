@@ -3,9 +3,19 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createPostSchema } from '@/validations/post.zod';
 
-const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+// const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+function getNestApiUrl() {
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL;
+  }
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  return 'http://localhost:3001';
+}
 
 export async function GET(request: Request) {
+  const NEST_API_URL = getNestApiUrl();
   const { searchParams } = new URL(request.url);
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get('access_token')?.value;
@@ -41,6 +51,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const NEST_API_URL = getNestApiUrl();
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get('access_token')?.value;
   const headerToken = request.headers.get('authorization');
