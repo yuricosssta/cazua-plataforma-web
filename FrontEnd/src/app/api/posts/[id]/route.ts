@@ -3,7 +3,16 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { updatePostSchema } from '@/validations/post.zod';
 
-const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+// const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+function getNestApiUrl() {
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL;
+  }
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  return 'http://localhost:3001';
+}
 
 async function getAuthHeader(request: Request) {
   const cookieStore = await cookies();
@@ -13,6 +22,7 @@ async function getAuthHeader(request: Request) {
 }
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
@@ -35,6 +45,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 }
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
@@ -65,6 +76,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
   const authorization = await getAuthHeader(request);
   const orgId = request.headers.get('x-org-id');
