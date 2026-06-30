@@ -29,11 +29,11 @@ export function Sidebar() {
   ];
 
   const managementLinks = [
-    { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
-    { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
-    { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
     { name: "Almoxarifado Central", href: "/dashboard/resources", icon: <Banknote className="w-4 h-4" /> },
     { name: "Planejamento", href: "/dashboard/planning", icon: <BarChart3 className="w-4 h-4" /> },
+    { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
+    { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
+    { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
   ];
 
   const monetizationLinks = [
@@ -43,8 +43,8 @@ export function Sidebar() {
   ];
 
   const settingsLinks = [
-    { name: "Configurações", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
     { name: "Armazenamento", href: "/dashboard/storage", icon: <Archive className="w-4 h-4" /> },
+    { name: "Configurações", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   return (

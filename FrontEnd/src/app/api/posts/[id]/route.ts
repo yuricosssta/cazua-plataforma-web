@@ -1,39 +1,14 @@
 // src/app/api/posts/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { updatePostSchema } from '@/validations/post.zod';
-
-// const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-function getNestApiUrl() {
-    if (process.env.NODE_ENV === 'production') {
-      return process.env.NEXT_PUBLIC_API_BASE_URL; 
-  }
-
-  if (process.env.INTERNAL_API_URL) {
-    return process.env.INTERNAL_API_URL;
-  }
-  
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
-  }
-
-  return 'http://localhost:3001';
-}
-
-async function getAuthHeader(request: Request) {
-  const cookieStore = await cookies();
-  const cookieToken = cookieStore.get('access_token')?.value;
-  const headerToken = request.headers.get('authorization');
-  return headerToken || (cookieToken ? `Bearer ${cookieToken}` : undefined);
-}
+import { getNestApiUrl, getBffAuthHeader, getBffOrgHeaders } from '@/lib/api/serverUtils';
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
-  const authorization = await getAuthHeader(request);
-  const orgId = request.headers.get('x-org-id');
-  const orgRole = request.headers.get('x-org-role');
-
+  const authorization = await getBffAuthHeader(request);
+  const { orgId, orgRole } = getBffOrgHeaders(request);
+  
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
       headers: {
@@ -53,9 +28,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
-  const authorization = await getAuthHeader(request);
-  const orgId = request.headers.get('x-org-id');
-  const orgRole = request.headers.get('x-org-role');
+  const authorization = await getBffAuthHeader(request);
+  const { orgId, orgRole } = getBffOrgHeaders(request);
 
   try {
     const body = await request.json();
@@ -84,9 +58,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   const NEST_API_URL = getNestApiUrl();
   const { id } = await context.params;
-  const authorization = await getAuthHeader(request);
-  const orgId = request.headers.get('x-org-id');
-  const orgRole = request.headers.get('x-org-role');
+  const authorization = await getBffAuthHeader(request);
+  const { orgId, orgRole } = getBffOrgHeaders(request);
 
   try {
     const nestResponse = await fetch(`${NEST_API_URL}/posts/${id}`, {
