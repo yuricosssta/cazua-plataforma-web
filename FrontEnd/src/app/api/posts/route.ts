@@ -17,6 +17,7 @@ function getNestApiUrl() {
 export async function GET(request: Request) {
   const NEST_API_URL = getNestApiUrl();
   const { searchParams } = new URL(request.url);
+  console.log(`[BFF GET] Iniciando fetch para: ${NEST_API_URL}/posts?${searchParams.toString()}`);
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get('access_token')?.value;
   const headerToken = request.headers.get('authorization');
@@ -35,8 +36,14 @@ export async function GET(request: Request) {
     });
 
     const textResponse = await nestResponse.text();
+
+    if (!nestResponse.ok) {
+      console.error(`[BFF GET] NestJS retornou erro ${nestResponse.status}:`, textResponse);
+    }
+
     let data;
     try { data = JSON.parse(textResponse); } catch (e) {
+      console.error('[BFF GET] Falha ao fazer parse do JSON. Resposta original:', textResponse);
       return NextResponse.json({ error: 'Resposta inválida do micro-serviço' }, { status: nestResponse.status || 500 });
     }
 
@@ -46,6 +53,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(data, { status: nestResponse.status });
   } catch (error: any) {
+    console.error('[BFF GET] Falha catastrófica no Fetch:', error.message || error);
     return NextResponse.json({ error: 'Erro de conexão com o back-end' }, { status: 500 });
   }
 }
