@@ -5,12 +5,18 @@ import { updatePostSchema } from '@/validations/post.zod';
 
 // const NEST_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 function getNestApiUrl() {
+    if (process.env.NODE_ENV === 'production') {
+      return process.env.NEXT_PUBLIC_API_BASE_URL; 
+  }
+
   if (process.env.INTERNAL_API_URL) {
     return process.env.INTERNAL_API_URL;
   }
+  
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
+
   return 'http://localhost:3001';
 }
 
