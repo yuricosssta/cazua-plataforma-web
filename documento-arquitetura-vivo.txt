@@ -1,3 +1,28 @@
+=== SPRINT 16 - 30/06/2026 ===
+====================================================================
+ATUALIZAÇÃO DE ARQUITETURA: BFF, Segurança e Resiliência (Next.js 15)
+====================================================================
+
+1. Centralização do Backend-For-Frontend (BFF):
+   - Criado o utilitário padrão `src/lib/api/serverUtils.ts` para as Serverless Functions do Next.js.
+   - Aplicação do princípio DRY (Don't Repeat Yourself) para injetar configurações de rede e segurança em todas as rotas `/api/...`, substituindo código duplicado nas chamadas de fetch interno.
+
+2. Resolução de Roteamento Dinâmico (Vercel vs Docker):
+   - O Next.js foi blindado contra o "Build-Time Inlining" de variáveis de ambiente.
+   - Implementada a função estrita `getNestApiUrl()`, que utiliza validação por `NODE_ENV === 'production'` para ignorar variáveis de container (ex: `http://backend:3001`) quando o deploy ocorre na Vercel, forçando o uso da `NEXT_PUBLIC_API_BASE_URL`.
+
+3. Estratégia de Transição de Segurança (Strangler Fig Pattern):
+   - O BFF agora implementa Resolução Híbrida de Tokens (`getBffAuthHeader`). 
+   - Ele aceita tanto o padrão legado (Token trafegado via `Authorization` Header injetado pelo Redux) quanto o novo padrão alvo (Cookies `HttpOnly`). Isso permite migrar módulos um a um para alta segurança (contra ataques XSS) sem quebrar o sistema atual.
+
+4. Propagação de Contexto (Multi-tenancy):
+   - As informações do Tenant (`x-org-id` e `x-org-role`) são lidas de forma nativa pelo utilitário `getBffOrgHeaders` no Server-Side e repassadas de forma invisível para o NestJS, garantindo que o `TenantGuard` atue perfeitamente.
+
+5. Compatibilidade Next.js 15:
+   - Todas as rotas dinâmicas do BFF (ex: `[id]/route.ts`) foram atualizadas para tratar `params` como uma Promise (ex: `const { id } = await context.params`), cumprindo a nova assinatura da framework e evitando falhas de compilação em produção.
+====================================================================
+
+
 === SPRINT 15 - 27/06/2026 ===
 === Resumo Técnico de Fechamento: Unificação de Busca Textual no Módulo de Posts ===
 

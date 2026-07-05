@@ -15,6 +15,7 @@ import {
   Menu,
   Archive,
   Banknote,
+  Megaphone,
   X
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/dashboard/OrgSwitcher";
@@ -34,6 +35,7 @@ export function Sidebar() {
     { name: "Projetos e Demandas", href: "/dashboard/projects", icon: <LayoutDashboard className="w-4 h-4" /> },
     { name: "Publicações", href: "/dashboard/posts", icon: <BookOpenText className="w-4 h-4" /> },
     { name: "Recursos Humanos", href: "/dashboard/people", icon: <Users className="w-4 h-4" /> },
+    { name: "Marketing", href: "/dashboard/marketing/reels", icon: <Megaphone className="w-4 h-4" /> },
   ];
 
   const monetizationLinks = [

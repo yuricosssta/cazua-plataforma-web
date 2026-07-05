@@ -6,6 +6,7 @@ import { ReduxProvider } from "@/providers/ReduxProvider";
 import { cn } from "../lib/utils";
 import { ThemeProvider } from "../providers/ThemeProvider";
 import AuthInitializer from "@/providers/AuthInitializer";
+import { Toaster as Toast } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -47,6 +48,8 @@ export default function RootLayout({
           <ReduxProvider>
             <AuthInitializer>
               {children}
+              <Toast richColors position="top-right" />
+              {/* <Toast className="text-sm" position="top-right" /> */}
             </AuthInitializer>
           </ReduxProvider>
         </ThemeProvider>

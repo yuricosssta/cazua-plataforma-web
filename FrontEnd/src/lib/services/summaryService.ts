@@ -1,23 +1,41 @@
-import axios from 'axios';
+//src/lib/services/summaryService.ts
+import { CreateRellDto } from '@/validations/summary.zod';
+import axiosInstance from '@/app/api/axiosInstance'; // Ajuste o caminho se sua instância estiver em outro diretório
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/summary/text`; 
+export const summaryService = {
+  /**
+   * Envia um texto para a API de resumo via BFF.
+   */
+  async summarizeText(text: string): Promise<string> {
+    try {
+      const response = await axiosInstance.post(
+        '/api/summary/text',
+        { text },
+        { baseURL: '' } // Sobrescreve a base URL para rotear para o BFF do Next.js
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 'Não foi possível gerar o resumo. Entre em contato com o suporte se persistir.'
+      );
+    }
+  },
 
-/**
- * Envia um texto para a API de resumo e retorna o resumo em string.
- * @param text O texto a ser resumido.
- * @returns Uma Promise que resolve para o texto resumido.
- */
-export const summarizeTextAPI = async (text: string): Promise<string> => {
-  try {
-    const response = await axios.post(API_URL, {
-      text: text, 
-    });
-    
-    return response.data;
-  } catch (error) {
-    // Trata erros de rede ou da API
-    console.error('Erro ao chamar a API de resumo:', error);
-    // Lança um erro para que o componente possa tratá-lo
-    throw new Error('Não foi possível gerar o resumo. Entre em contato com o suporte se persistir.');
+  /**
+   * Envia os dados do formulário para geração de roteiro de publicidade via BFF.
+   */
+  async generateReel(data: CreateRellDto): Promise<string> {
+    try {
+      const response = await axiosInstance.post(
+        '/api/summary/reels/generate',
+        data,
+        { baseURL: '' } // Sobrescreve a base URL para rotear para o BFF do Next.js
+      );
+      return response.data; // O Axios converte text/plain para string automaticamente
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 'Erro ao gerar o conteúdo de publicidade.'
+      );
+    }
   }
 };
