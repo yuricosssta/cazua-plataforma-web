@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes';
 import { IPost } from '@/types/post';
 import MarkdownPreview from './MarkdownPreview';
 import { AudioTranscriber } from '../AudioTranscriber';
-import { summarizeTextAPI } from '@/lib/services/summaryService';
+import { summaryService } from '@/lib/services/summaryService';
 import { Wand2, Save, AlertCircle } from 'lucide-react';
 import { selectCurrentUser } from '@/lib/redux/slices/authSlice';
 import { useSelector } from 'react-redux';
@@ -96,7 +96,7 @@ export default function PostForm({ onSubmit, initialData, isLoading, serverError
     setOrganizeError(null);
 
     try {
-      const result = await summarizeTextAPI(post.content);
+      const result = await summaryService.summarizeText(post.content);
       setPost(prev => ({ ...prev, content: result }));
     } catch (err: any) {
       setOrganizeError("Erro ao organizar: " + err.message);

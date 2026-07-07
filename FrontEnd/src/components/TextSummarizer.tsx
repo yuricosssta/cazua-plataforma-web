@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { summarizeTextAPI } from '@/lib/services/summaryService';
+import { summaryService } from '@/lib/services/summaryService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -25,7 +25,7 @@ export const TextSummarizer = () => {
     setError(null);     // Limpa o erro anterior
 
     try {
-      const result = await summarizeTextAPI(inputText);
+      const result = await summaryService.summarizeText(inputText);
       // Atualiza o estado com o resultado
       setSummary(result);
     } catch (err: any) {
