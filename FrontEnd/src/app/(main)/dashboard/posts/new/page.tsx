@@ -8,7 +8,6 @@ import { AppDispatch, RootState } from '@/lib/redux/store';
 import { IPost } from '@/types/post';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import AltaireForm from '@/components/posts/AltaireForm';
 
 export default function NewPostPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -32,12 +31,7 @@ export default function NewPostPage() {
   return (
     <div className="relative pt-30 max-w-6xl mx-auto px-4 py-8 break-words"> 
       <h1 className="text-3xl font-bold mb-6 text-foreground">Criar Nova Publicação</h1>
-      {/* <PostForm 
-        onSubmit={handleSubmit} 
-        isLoading={status === 'loading'} 
-        serverError={localError} 
-      /> */}
-      <AltaireForm 
+      <PostForm 
         onSubmit={handleSubmit} 
         isLoading={status === 'loading'} 
         serverError={localError} 
