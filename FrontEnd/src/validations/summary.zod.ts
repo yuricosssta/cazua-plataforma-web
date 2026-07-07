@@ -1,7 +1,7 @@
 //src/validations/summary.zod.ts
 import { z } from 'zod';
 
-export const createRellSchema = z.object({
+export const createReelSchema = z.object({
   tema: z.string().min(1, 'O tema é obrigatório'),
   publico_alvo: z.string().min(1, 'O público-alvo é obrigatório'),
   conteudo_tipo: z.string().min(1, 'O tipo de conteúdo é obrigatório'),
@@ -13,4 +13,4 @@ export const createRellSchema = z.object({
   rascunho: z.string().min(1, 'O rascunho é obrigatório'),
 });
 
-export type CreateRellDto = z.infer<typeof createRellSchema>;
+export type CreateReelDto = z.infer<typeof createReelSchema>;

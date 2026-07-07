@@ -1,7 +1,7 @@
 //src/app/api/summary/reels/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getNestApiUrl, getBffAuthHeader, getBffOrgHeaders } from '@/lib/api/serverUtils';
-import { createRellSchema } from '@/validations/summary.zod';
+import { createReelSchema } from '@/validations/summary.zod';
 
 
 
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        const parseResult = createRellSchema.safeParse(body);
+        const parseResult = createReelSchema.safeParse(body);
         if (!parseResult.success) {
             return NextResponse.json(
                 { message: 'Dados inválidos.', errors: parseResult.error.format() },

@@ -1,3 +1,23 @@
+=== SPRINT 17 - 05/07/2026 ===
+=== Resumo Técnico de Fechamento: Módulo de Geração de Conteúdo (Reels IA) ===
+
+**1. Decisões de Arquitetura (BFF, Validação e Gerenciamento de Estado)**
+
+* **Padrão BFF (Backend-For-Frontend):** Implementação de Route Handlers proxy (`/api/summary/reels/generate` e `/api/summary/text`) no Next.js. A camada de borda agora atua como escudo, injetando de forma transparente os tokens de autorização e o contexto de Multi-tenancy (`x-org-id`, `x-org-role`).
+* **Contratos Simétricos (Zod):** Estabelecimento do `createRellSchema` operando simultaneamente na validação do formulário (Client-side via `zodResolver`) e na sanitização de borda (BFF), impedindo tráfego malformado antes de atingir o micro-serviço.
+* **Gerenciamento de Estado de UI:** Utilização da Web Storage API (`localStorage`) para persistência transiente (draft) do formulário e do retorno da IA. A estratégia preserva a árvore global do Redux imaculada, focando apenas em dados de domínio consolidados.
+* **Persistência Postergada:** O armazenamento em banco de dados foi desvinculado da geração. O NestJS atua como ponte transacional para a OpenAI, delegando a gravação final para um fluxo de aprovação manual do usuário.
+* **Interceptação de Rede:** Adaptação do `summaryService.ts` para forçar o roteamento via `axiosInstance` local (`baseURL: ''`), garantindo que os interceptadores do Redux apliquem a autenticação sem quebrar o fluxo.
+
+**2. Definições de Infraestrutura (Rotas, Controladores e UI)**
+
+* **Roteamento Back-end (NestJS):** Correção de colisão de rotas no `SummaryController`. Segregação semântica entre os endpoints de sumarização (`POST /summary/text`) e geração de roteiros (`POST /summary/reels/generate`).
+* **Composição de UI (ReelGenerator.tsx):** Adoção de grid CSS estrutural de duas colunas (Setup de IA vs Edição de Rascunho).
+* **Design Tokens e Geometria B2B:** Imposição do mapeamento de variáveis semânticas do Tailwind v4 (`bg-card`, `bg-background`, `border-border`, `text-foreground`) assegurando suporte nativo a Dark Mode. Raio de borda rigidamente travado em 4px (`rounded-md`) e iconografia `lucide-react`.
+* **Feedback de Ação:** Integração do sistema de toast (`sonner`) para notificar os estados da transação de rede (geração, erro, limpeza de cache).
+
+Como próximo passo, dimensione a arquitetura de persistência: inicie o desenho do esquema no Mongoose (`ReelSchema` ou `ContentSchema`) e a rota correspondente de `POST /summary/reels/save` no NestJS, implementando o Padrão de Repositório para armazenar o rascunho aprovado. Defina quando deseja iniciar esta etapa.
+
 === SPRINT 16 - 30/06/2026 ===
 ====================================================================
 ATUALIZAÇÃO DE ARQUITETURA: BFF, Segurança e Resiliência (Next.js 15)

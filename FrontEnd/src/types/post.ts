@@ -12,7 +12,7 @@ export interface IPost {
   organizationId?: string;
 }
 
-export interface IRells {
+export interface IReels {
   id?: string;
   tema: string;
   publico_alvo: string;

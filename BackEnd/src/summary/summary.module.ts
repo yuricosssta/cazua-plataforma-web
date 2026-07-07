@@ -6,15 +6,15 @@ import { ConfigModule } from '@nestjs/config';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Rells, RellsSchema } from './schemas/rell.schema';
+import { Reels, ReelsSchema } from './schemas/reel.schema';
 
 @Module({
   imports: [
   HttpModule, ConfigModule,
     MongooseModule.forFeature([
       {
-        name: Rells.name,
-        schema: RellsSchema,
+        name: Reels.name,
+        schema: ReelsSchema,
       },
     ]),
     AuthModule,

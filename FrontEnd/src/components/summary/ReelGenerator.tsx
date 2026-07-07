@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Wand2, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createRellSchema, CreateRellDto } from '@/validations/summary.zod';
+import { createReelSchema, CreateReelDto } from '@/validations/summary.zod';
 import { summaryService } from '@/lib/services/summaryService';
 
 const LOCAL_STORAGE_FORM_KEY = 'cazua_reel_form_draft';
@@ -17,8 +17,8 @@ export default function ReelGenerator() {
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  const form = useForm<CreateRellDto>({
-    resolver: zodResolver(createRellSchema),
+  const form = useForm<CreateReelDto>({
+    resolver: zodResolver(createReelSchema),
     defaultValues: {
       tema: '',
       publico_alvo: '',
@@ -61,7 +61,7 @@ export default function ReelGenerator() {
     }
   }, [generatedContent]);
 
-  const onSubmit = async (data: CreateRellDto) => {
+  const onSubmit = async (data: CreateReelDto) => {
     setIsGenerating(true);
     toast.info('Iniciando geração do roteiro com IA...', { duration: 3000 });
 
@@ -114,52 +114,70 @@ export default function ReelGenerator() {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Tema</label>
-              <input
+              <textarea
                 {...form.register('tema')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
               />
               {form.formState.errors.tema && <p className="text-xs text-destructive">{form.formState.errors.tema.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Público-Alvo</label>
-              <input
+              <textarea
                 {...form.register('publico_alvo')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
               />
               {form.formState.errors.publico_alvo && <p className="text-xs text-destructive">{form.formState.errors.publico_alvo.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Tipo de Conteúdo</label>
-              <input
+              <textarea
                 {...form.register('conteudo_tipo')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
               />
               {form.formState.errors.conteudo_tipo && <p className="text-xs text-destructive">{form.formState.errors.conteudo_tipo.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Linha Editorial</label>
-              <input
+              <textarea
                 {...form.register('linha_editorial')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
               />
               {form.formState.errors.linha_editorial && <p className="text-xs text-destructive">{form.formState.errors.linha_editorial.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Objetivo</label>
-              <input
+              <textarea
                 {...form.register('objetivo')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
               />
               {form.formState.errors.objetivo && <p className="text-xs text-destructive">{form.formState.errors.objetivo.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-sm font-medium text-foreground">Tom de Voz</label>
+              <textarea
+                {...form.register('tom_voz')}
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+              />
+              {form.formState.errors.tom_voz && <p className="text-xs text-destructive">{form.formState.errors.tom_voz.message}</p>}
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-sm font-medium text-foreground">Saída Desejada</label>
+              <textarea
+                {...form.register('saida')}
+                className="w-full min-h-[80px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+              />
+              {form.formState.errors.saida && <p className="text-xs text-destructive">{form.formState.errors.saida.message}</p>}
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-medium text-foreground">Duração</label>
               <input
                 {...form.register('duracao')}
@@ -167,31 +185,13 @@ export default function ReelGenerator() {
               />
               {form.formState.errors.duracao && <p className="text-xs text-destructive">{form.formState.errors.duracao.message}</p>}
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Tom de Voz</label>
-              <input
-                {...form.register('tom_voz')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {form.formState.errors.tom_voz && <p className="text-xs text-destructive">{form.formState.errors.tom_voz.message}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Saída Desejada</label>
-              <input
-                {...form.register('saida')}
-                className="w-full h-10 px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {form.formState.errors.saida && <p className="text-xs text-destructive">{form.formState.errors.saida.message}</p>}
-            </div>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Rascunho Base / Ideias</label>
             <textarea
               {...form.register('rascunho')}
-              className="w-full min-h-[100px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+              className="w-full min-h-[200px] px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
             />
             {form.formState.errors.rascunho && <p className="text-xs text-destructive">{form.formState.errors.rascunho.message}</p>}
           </div>

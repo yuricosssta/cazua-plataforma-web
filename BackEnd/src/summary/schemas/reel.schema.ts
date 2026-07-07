@@ -1,12 +1,12 @@
-//src/summary/schemas/rell.schema.ts
+//src/summary/schemas/Reel.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { IRells } from './models/rell.interface';
+import { IReels } from './models/reel.interface';
 import mongoose, { HydratedDocument } from 'mongoose';
 
-export type RellsDocument = HydratedDocument<IRells>;
+export type ReelsDocument = HydratedDocument<IReels>;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'modified_at' } })
-export class Rells implements IRells {
+export class Reels implements IReels {
 
     @Prop({ type: mongoose.Schema.Types.ObjectId })
     id?: string;
@@ -47,4 +47,4 @@ export class Rells implements IRells {
     published?: boolean;
 }
 
-export const RellsSchema = SchemaFactory.createForClass(Rells);
+export const ReelsSchema = SchemaFactory.createForClass(Reels);

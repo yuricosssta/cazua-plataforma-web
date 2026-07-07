@@ -2,9 +2,9 @@
 import { Injectable, InternalServerErrorException, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import OpenAI from "openai";
 import { ConfigService } from '@nestjs/config';
-import { summaryInstructions, rellAltaireInstructions } from './summary.instructions';
-import { IRells } from '../summary/schemas/models/rell.interface';
-import { CreateRellDto } from './validations/summary.zod';
+import { summaryInstructions, ReelAltaireInstructions } from './instructions/summary.instructions';
+import { IReels } from '../summary/schemas/models/reel.interface';
+import { CreateReelDto } from './validations/summary.zod';
 
 @Injectable()
 export default class SummaryService {
@@ -54,9 +54,9 @@ export default class SummaryService {
     }
   }
 
-  async createRells(rell: CreateRellDto): Promise<string> {
-    const padraoResposta = rellAltaireInstructions(rell as IRells);
-    this.logger.log('Instruções para criação de Rell geradas.');
+  async createReels(Reel: CreateReelDto): Promise<string> {
+    const padraoResposta = ReelAltaireInstructions(Reel as IReels);
+    this.logger.log('Instruções para criação de Reel geradas.');
 
     try {
       const response = await this.client.responses.create({

@@ -1,5 +1,5 @@
 //BackEnd/src/summary/summary.instructions.ts
-import { IRells } from "./schemas/models/rell.interface";
+import { IReels } from "../schemas/models/reel.interface";
 
 //Instruções para organização de informações para a IA
 export const summaryInstructions = `Atue como um Redator de Material Didático Sênior especializado em converter transcrições de aulas em textos de estudo completos. Sua tarefa é transformar a transcrição fornecida em um material de leitura extenso, detalhado e exaustivo.
@@ -31,8 +31,8 @@ Restrições Negativas:
 Sua resposta deve conter apenas o conteúdo em Markdown formatado corretamente.
 `;
 
-//Instruções para a criação de Rells para a IA
-export const rellInstructions = `Atue como um Redator de Material Didático Sênior especializado em converter transcrições de aulas em textos de estudo completos. Sua tarefa é transformar a transcrição fornecida em um material de leitura extenso, detalhado e exaustivo.
+//Instruções para a criação de Reels para a IA
+export const ReelInstructions = `Atue como um Redator de Material Didático Sênior especializado em converter transcrições de aulas em textos de estudo completos. Sua tarefa é transformar a transcrição fornecida em um material de leitura extenso, detalhado e exaustivo.
 
 Diretrizes de Conteúdo:
 1. EXAUSTIVIDADE É PRIORIDADE: É proibido resumir, condensar ou simplificar excessivamente os conceitos. Se o orador gastou 5 minutos explicando um conceito com exemplos, o texto deve refletir essa profundidade.
@@ -61,7 +61,7 @@ Restrições Negativas:
 Sua resposta deve conter apenas o conteúdo em Markdown formatado corretamente.
 `;
 
-export const rellAltaireInstructions = (rell: IRells) => `Você agora é meu roteirista profissional, com anos de experiência em criação de conteúdo para as redes socias. Seu objetivo é me ajudar a criar os melhores roteiros possíveis para cada conteúdo que eu solicitar.
+export const ReelAltaireInstructions = (Reel: IReels) => `Você agora é meu roteirista profissional, com anos de experiência em criação de conteúdo para as redes socias. Seu objetivo é me ajudar a criar os melhores roteiros possíveis para cada conteúdo que eu solicitar.
 Crie um roteiro completo seguindo a estrutura abaixo:
 01. Gancho inicial (forte o suficiente para reter 5 segundos)
 02. Promessa clara
@@ -74,15 +74,15 @@ Crie um roteiro completo seguindo a estrutura abaixo:
 08. CTA estratégico no final (em 2 partes: Fixar o aprendizado que foi passado no conteúdo em um passo a passo mais simples para aplicarem e direcionar a ação com gatilho do porque eles devem executá-la)
 
 INFORMAÇÕES DO MEU CONTEÚDO:
-Tema: ${rell.tema}
-Público alvo: ${rell.publico_alvo}
-Tipo de conteúdo: ${rell.conteudo_tipo}
-Pilar da Linha Editorial: ${rell.linha_editorial}
-Objetivo do conteúdo: ${rell.objetivo}
-Duração desejada: ${rell.duracao}
-Tom de voz: ${rell.tom_voz}
-Saída desejada: ${rell.saida}
-Rascunho do conteúdo: ${rell.rascunho}
+Tema: ${Reel.tema}
+Público alvo: ${Reel.publico_alvo}
+Tipo de conteúdo: ${Reel.conteudo_tipo}
+Pilar da Linha Editorial: ${Reel.linha_editorial}
+Objetivo do conteúdo: ${Reel.objetivo}
+Duração desejada: ${Reel.duracao}
+Tom de voz: ${Reel.tom_voz}
+Saída desejada: ${Reel.saida}
+Rascunho do conteúdo: ${Reel.rascunho}
 
 DETALHES OBRIGATÓRIOS E RESTRIÇÕES: 
 Evite palavras difíceis 

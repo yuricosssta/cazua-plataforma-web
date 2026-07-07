@@ -12,10 +12,10 @@ export default function ReelsPage() {
     <div className="flex flex-col space-y-6 w-full max-w-7xl mx-auto p-6">
       <div className="flex flex-col space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Criação de Conteúdo Publicitário
+          Criação de Conteúdo Publicitário - Vídeos até 60 segundos
         </h1>
         <p className="text-muted-foreground text-sm">
-          Utilize o motor de inteligência artificial para estruturar roteiros técnicos alinhados à sua linha editorial. Suas configurações em andamento são salvas localmente.
+          Crie roteiros técnicos alinhados à sua linha editorial. Suas configurações em andamento são salvas localmente.
         </p>
       </div>
 

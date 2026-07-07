@@ -2,7 +2,7 @@
 import { Controller, HttpCode, HttpStatus, Post, Body, UseGuards, Req } from '@nestjs/common';
 import SummaryService from './summary.service';
 import { ZodValidationPipe } from '../shared/pipe/zod-validation.pipe';
-import { createRellSchema, CreateRellDto } from './validations/summary.zod';
+import { createReelSchema, CreateReelDto } from './validations/summary.zod';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('summary')
@@ -18,17 +18,17 @@ export class SummaryController {
 
     @HttpCode(HttpStatus.OK)
     @Post('reels/generate')
-    createRells(
-        @Body(new ZodValidationPipe(createRellSchema)) rellDto: CreateRellDto,
+    createReels(
+        @Body(new ZodValidationPipe(createReelSchema)) ReelDto: CreateReelDto,
         @Req() req: any
     ): Promise<string> {
         const orgId = req.organizationId || req.headers['x-org-id'];
         
         const payload = {
-            ...rellDto,
+            ...ReelDto,
             organizationId: orgId
         };
         
-        return this.summaryService.createRells(payload);
+        return this.summaryService.createReels(payload);
     }
 }

@@ -1,5 +1,5 @@
-//src/summary/schemas/models/rell.interface.ts
-export interface IRells {
+//src/summary/schemas/models/Reel.interface.ts
+export interface IReels {
   id?: string;
   tema: string;
   publico_alvo: string;
