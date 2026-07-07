@@ -1,3 +1,48 @@
+=== SPRINT 17 - 05/07/2026 ===
+=== Resumo Técnico de Fechamento: Módulo de Geração de Conteúdo (Reels IA) ===
+
+**1. Decisões de Arquitetura (BFF, Validação e Gerenciamento de Estado)**
+
+* **Padrão BFF (Backend-For-Frontend):** Implementação de Route Handlers proxy (`/api/summary/reels/generate` e `/api/summary/text`) no Next.js. A camada de borda agora atua como escudo, injetando de forma transparente os tokens de autorização e o contexto de Multi-tenancy (`x-org-id`, `x-org-role`).
+* **Contratos Simétricos (Zod):** Estabelecimento do `createRellSchema` operando simultaneamente na validação do formulário (Client-side via `zodResolver`) e na sanitização de borda (BFF), impedindo tráfego malformado antes de atingir o micro-serviço.
+* **Gerenciamento de Estado de UI:** Utilização da Web Storage API (`localStorage`) para persistência transiente (draft) do formulário e do retorno da IA. A estratégia preserva a árvore global do Redux imaculada, focando apenas em dados de domínio consolidados.
+* **Persistência Postergada:** O armazenamento em banco de dados foi desvinculado da geração. O NestJS atua como ponte transacional para a OpenAI, delegando a gravação final para um fluxo de aprovação manual do usuário.
+* **Interceptação de Rede:** Adaptação do `summaryService.ts` para forçar o roteamento via `axiosInstance` local (`baseURL: ''`), garantindo que os interceptadores do Redux apliquem a autenticação sem quebrar o fluxo.
+
+**2. Definições de Infraestrutura (Rotas, Controladores e UI)**
+
+* **Roteamento Back-end (NestJS):** Correção de colisão de rotas no `SummaryController`. Segregação semântica entre os endpoints de sumarização (`POST /summary/text`) e geração de roteiros (`POST /summary/reels/generate`).
+* **Composição de UI (ReelGenerator.tsx):** Adoção de grid CSS estrutural de duas colunas (Setup de IA vs Edição de Rascunho).
+* **Design Tokens e Geometria B2B:** Imposição do mapeamento de variáveis semânticas do Tailwind v4 (`bg-card`, `bg-background`, `border-border`, `text-foreground`) assegurando suporte nativo a Dark Mode. Raio de borda rigidamente travado em 4px (`rounded-md`) e iconografia `lucide-react`.
+* **Feedback de Ação:** Integração do sistema de toast (`sonner`) para notificar os estados da transação de rede (geração, erro, limpeza de cache).
+
+Como próximo passo, dimensione a arquitetura de persistência: inicie o desenho do esquema no Mongoose (`ReelSchema` ou `ContentSchema`) e a rota correspondente de `POST /summary/reels/save` no NestJS, implementando o Padrão de Repositório para armazenar o rascunho aprovado. Defina quando deseja iniciar esta etapa.
+
+=== SPRINT 16 - 30/06/2026 ===
+====================================================================
+ATUALIZAÇÃO DE ARQUITETURA: BFF, Segurança e Resiliência (Next.js 15)
+====================================================================
+
+1. Centralização do Backend-For-Frontend (BFF):
+   - Criado o utilitário padrão `src/lib/api/serverUtils.ts` para as Serverless Functions do Next.js.
+   - Aplicação do princípio DRY (Don't Repeat Yourself) para injetar configurações de rede e segurança em todas as rotas `/api/...`, substituindo código duplicado nas chamadas de fetch interno.
+
+2. Resolução de Roteamento Dinâmico (Vercel vs Docker):
+   - O Next.js foi blindado contra o "Build-Time Inlining" de variáveis de ambiente.
+   - Implementada a função estrita `getNestApiUrl()`, que utiliza validação por `NODE_ENV === 'production'` para ignorar variáveis de container (ex: `http://backend:3001`) quando o deploy ocorre na Vercel, forçando o uso da `NEXT_PUBLIC_API_BASE_URL`.
+
+3. Estratégia de Transição de Segurança (Strangler Fig Pattern):
+   - O BFF agora implementa Resolução Híbrida de Tokens (`getBffAuthHeader`). 
+   - Ele aceita tanto o padrão legado (Token trafegado via `Authorization` Header injetado pelo Redux) quanto o novo padrão alvo (Cookies `HttpOnly`). Isso permite migrar módulos um a um para alta segurança (contra ataques XSS) sem quebrar o sistema atual.
+
+4. Propagação de Contexto (Multi-tenancy):
+   - As informações do Tenant (`x-org-id` e `x-org-role`) são lidas de forma nativa pelo utilitário `getBffOrgHeaders` no Server-Side e repassadas de forma invisível para o NestJS, garantindo que o `TenantGuard` atue perfeitamente.
+
+5. Compatibilidade Next.js 15:
+   - Todas as rotas dinâmicas do BFF (ex: `[id]/route.ts`) foram atualizadas para tratar `params` como uma Promise (ex: `const { id } = await context.params`), cumprindo a nova assinatura da framework e evitando falhas de compilação em produção.
+====================================================================
+
+
 === SPRINT 15 - 27/06/2026 ===
 === Resumo Técnico de Fechamento: Unificação de Busca Textual no Módulo de Posts ===
 

@@ -1,11 +1,10 @@
+//src/summary/summary.service.ts
 import { Injectable, InternalServerErrorException, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import OpenAI from "openai";
 import { ConfigService } from '@nestjs/config';
-import { summaryInstructions } from './summary.instructions';
-
-// const client = new OpenAI({
-//     apiKey: process.env.OPENAI_API_KEY, 
-// });
+import { summaryInstructions, ReelAltaireInstructions } from './instructions/summary.instructions';
+import { IReels } from '../summary/schemas/models/reel.interface';
+import { CreateReelDto } from './validations/summary.zod';
 
 @Injectable()
 export default class SummaryService {
@@ -54,4 +53,32 @@ export default class SummaryService {
       );
     }
   }
+
+  async createReels(Reel: CreateReelDto): Promise<string> {
+    const padraoResposta = ReelAltaireInstructions(Reel as IReels);
+    this.logger.log('Instruções para criação de Reel geradas.');
+
+    try {
+      const response = await this.client.responses.create({
+        model: "gpt-4o-mini",
+        input: padraoResposta,
+      });
+
+      return response.output_text;
+    } catch (error) {
+      this.logger.error(`Erro ao chamar a agente: ${error.message}`, error.stack);
+
+      if (error.status === 429) {
+        throw new HttpException(
+          'O sistema de IA está temporariamente indisponível (Cota excedida). Tente novamente mais tarde.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      throw new HttpException(
+        'Erro ao processar o roteiro. Entre em contato com o suporte.',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
 }
