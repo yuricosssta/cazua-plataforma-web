@@ -62,6 +62,7 @@ export default class SummaryService {
       const response = await this.client.responses.create({
         model: "gpt-4o-mini",
         input: padraoResposta,
+        // instructions: padraoResposta,
       });
 
       return response.output_text;

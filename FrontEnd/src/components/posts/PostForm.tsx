@@ -160,9 +160,9 @@ export default function PostForm({ onSubmit, initialData, isLoading, serverError
       <div className="space-y-4">
         <label className="text-sm font-medium leading-none text-foreground">Conteúdo</label>
         
-        <div className="p-4 border border-dashed border-border rounded-md bg-muted/30">
+        {/* <div className="p-4 border border-dashed border-border rounded-md bg-muted/30">
           <AudioTranscriber />
-        </div>
+        </div> */}
 
         <div data-color-mode={theme === 'dark' ? 'dark' : 'light'} className="rounded-md overflow-hidden border border-input">
           <MDEditor
