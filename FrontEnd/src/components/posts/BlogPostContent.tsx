@@ -11,6 +11,7 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
   const currentOrg = useSelector((state: any) => state.organizations?.currentOrganization);
   const user = useSelector((state: any) => state.auth?.user);
   const isAdmin = currentOrg?.role === 'ADMIN' || currentOrg?.role === 'OWNER' || user?.role === 'ADMIN';
+  const isImageValid = post?.image && post.image.trim() !== "";
 
   if (!post) {
     return (
@@ -61,14 +62,15 @@ export const BlogPostContent = ({ post }: { post: IPost | null }) => {
           </div>
         </header>
 
-        {/* aspect-video adicionado para evitar deslocamento de layout; rounded-md padronizado */}
-        <div className="relative w-full aspect-video overflow-hidden rounded-md border border-border bg-muted mb-10 shadow-sm">
-          <img
-            src={post.image || "https://placehold.co/1200x600"}
-            alt={post.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {/* aspect-video para evitar deslocamento de layout */}
+          {isImageValid && (
+            <div className="relative w-full aspect-video overflow-hidden rounded-md border border-border bg-muted mb-10 shadow-sm">
+              <img
+                src={post.image || "https://placehold.co/1200x600"}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            </div>)}
 
         <article className="typography max-w-none">
           <MarkdownPreview markdown={post.content || "Sem conteúdo disponível."} />

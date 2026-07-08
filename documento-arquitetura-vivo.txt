@@ -1,3 +1,18 @@
+=== SPRINT 18 - 06/07/2026 ===
+=== Resumo Técnico de Fechamento: Melhoria de Ergonomia em Prompts (Módulo Summary) ===
+
+**1. Decisões de Arquitetura (Estado e Validação)**
+
+* **Preservação de Hidratação Segura:** A arquitetura de persistência local (`cazua_reel_form_draft`) via Web Storage API e a montagem protegida por `useEffect` (`isMounted`) foram rigorosamente mantidas. Isso garante o funcionamento fluido no Next.js (App Router) e previne erros de *Hydration Mismatch* no Server-Side Rendering (SSR).
+* **Consistência de Contrato (Zod):** Nenhuma mutação foi feita no esquema de validação (`createReelSchema`). A tipagem e o contrato com o BFF permanecem inalterados e confiáveis.
+
+**2. Definições de Infraestrutura (UI/UX e Design B2B)**
+
+* **Refatoração de Inputs:** Modificação estrutural no componente `ReelGenerator.tsx`. Os campos curtos (`input`) foram substituídos por áreas de texto (`textarea`) configuradas com `min-h-[80px]` e `resize-y`. Essa alteração acomoda a volumetria natural de prompts textuais para IA sem truncar a visualização.
+* **Geometria e Tokens Semânticos:** Aplicação mantida das regras B2B. As textareas respeitam o *border-radius* estrito (`rounded-md` / 4px) e consomem tokens do Tailwind nativo (`bg-background`, `border-border`, `focus:ring-ring`), garantindo suporte orgânico ao Dark Mode sem a injeção de cores absolutas. O campo `duracao` foi preservado como input, dado seu escopo numérico restrito.
+
+Defina o objetivo técnico ou funcional para iniciarmos o próximo Sprint.
+
 === SPRINT 17 - 05/07/2026 ===
 === Resumo Técnico de Fechamento: Módulo de Geração de Conteúdo (Reels IA) ===
 
