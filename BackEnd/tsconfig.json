@@ -10,6 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "resolveJsonModule": true,
+    "types": ["jest", "node"],
     "paths": {
       "src/*": ["./src/*"]
     },
