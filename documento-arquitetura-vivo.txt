@@ -1,3 +1,24 @@
+=== SPRINT 19 - 11/07/2026 ===
+
+Resumo Técnico de Fechamento: Cobertura de Testes Unitários (ResourcesController)
+1. Decisões de Arquitetura
+
+Isolamento de Camadas (Mocking): Desacoplamento absoluto da camada de serviço (ResourcesService) durante a execução da suíte do controlador por meio da injeção de espiões (jest.fn()). A estratégia bloqueia qualquer transação de regra de negócio ou chamadas de I/O ao MongoDB.
+
+Simulação de Contexto (Tenancy e RBAC): Aplicação do padrão Factory (mockRequest) para emulação determinística do objeto HTTP Request. A arquitetura garante a injeção estrita da identidade do usuário (req.user.sub) e do escopo de autorização (req.headers['x-org-role']) sem duplicação de código.
+
+Testes de Comportamento e Barreira Lógica: Estruturação de asserções negativas (rejects.toThrow) para atestar as travas físicas de Controle de Acesso Baseado em Funções (RBAC) do controlador, assegurando o disparo de ForbiddenException para acessos indevidos.
+
+Neutralização Perimetral: Utilização da diretiva overrideGuard para bypass do AuthGuard, isolando a métrica de teste exclusivamente para as regras de roteamento e extração de parâmetros.
+
+2. Definições de Infraestrutura
+
+Resolução de Conflitos de Tipagem: Expansão da árvore de dependências de desenvolvimento do back-end (via pnpm) com a injeção do pacote @types/jest, solucionando falsos-positivos do compilador TypeScript (tsc) em ambientes isolados.
+
+Expurgo de Módulos Concorrentes: Remoção da biblioteca nativa node:test para forçar o direcionamento integral das asserções e rotinas de ciclo de vida (describe, it, beforeEach) ao motor de testes estabelecido no NestJS (Jest).
+
+Estratégia de Regressão Estrutural: Definição procedimental explícita que dispensa o uso de arquivos de Snapshot no escopo de controladores REST, priorizando a avaliação contínua dos contratos de delegação.
+
 === SPRINT 18 - 06/07/2026 ===
 === Resumo Técnico de Fechamento: Melhoria de Ergonomia em Prompts (Módulo Summary) ===
 
