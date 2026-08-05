@@ -13,7 +13,7 @@ import {
 import { ProjectsService } from '../services/project.service';
 import { ProjectMemberService } from '../services/project-member.service';
 import { TimelineService } from '../services/timeline.service';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 import {
   BulkImportDto,

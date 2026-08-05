@@ -1,4 +1,36 @@
-// src/resources/validations/resource.zod.ts
+//src/summary/validations/summary.zod.ts
+import { z } from 'zod';
+
+export const createReelSchema = z.object({
+  tema: z.string().min(1, 'O tema é obrigatório'),
+  publico_alvo: z.string().min(1, 'O público-alvo é obrigatório'),
+  conteudo_tipo: z.string().min(1, 'O tipo de conteúdo é obrigatório'),
+  linha_editorial: z.string().min(1, 'A linha editorial é obrigatória'),
+  objetivo: z.string().min(1, 'O objetivo é obrigatório'),
+  duracao: z.string().min(1, 'A duração é obrigatória'),
+  tom_voz: z.string().min(1, 'O tom de voz é obrigatório'),
+  saida: z.string().min(1, 'A saída é obrigatória'),
+  rascunho: z.string().min(1, 'O rascunho é obrigatório'),
+  organizationId: z.string().optional(),
+});
+
+export type CreateReelDto = z.infer<typeof createReelSchema>;// src/validations/post.zod.ts
+import { z } from 'zod';
+
+export const createPostSchema = z.object({
+  title: z.string().min(2, 'O título é obrigatório e deve ter no mínimo 2 caracteres'),
+  description: z.string().optional(),
+  content: z.string().min(5, 'O conteúdo é obrigatório'),
+  image: z.string().url('Formato de URL inválido').optional().or(z.literal('')),
+  author: z.string().optional(),
+  published: z.boolean().default(true),
+  organizationId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'O ID da organização fornecido é inválido.').optional(),
+});
+
+export const updatePostSchema = createPostSchema.partial();
+
+export type CreatePostDto = z.infer<typeof createPostSchema>;
+export type UpdatePostDto = z.infer<typeof updatePostSchema>;// src/resources/validations/resource.zod.ts
 import { z } from 'zod';
 import { ResourceType } from '../types/resource-enums';
 import { Precision } from '../../shared/utils/precision.util'; // Importação do utilitário

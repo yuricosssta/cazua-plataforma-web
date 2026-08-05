@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ResourcesController } from './resources.controller';
 import { ResourcesService } from '../services/resources.service';
 import { ForbiddenException } from '@nestjs/common';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 
 describe('ResourcesController', () => {
   let controller: ResourcesController;

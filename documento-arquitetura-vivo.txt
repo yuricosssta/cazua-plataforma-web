@@ -1,3 +1,23 @@
+=== SPRINT 20 - 05/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura
+
+Padrão de Repositório: Isolamento do acesso a dados concluído na camada de autenticação. O AuthUsersRepository assumiu a responsabilidade exclusiva pelas interações com o Mongoose, desacoplando o AuthUsersService.
+
+Segurança e Validação de Entrada: Implementação do Zod para validação rigorosa dos payloads no controller (signInSchema), mitigando riscos de injeção de dados.
+
+Ciclo de Vida do JWT: A renovação de tokens (Refresh Token) foi refatorada para realizar uma validação ativa no banco de dados. Privilégios (isSuperAdmin) e estado operacional (isActive) agora são validados em tempo real através do instanciamento estrito via new Types.ObjectId(id).
+
+Padronização de Soft Delete: Inclusão estrutural da chave isActive no UserSchema com retrocompatibilidade para mitigar quebras em usuários legados.
+
+2. Definições de Infraestrutura
+
+Injeção de Dependências (DI): Refatoração do AuthModule para resolver vazamento de escopo. O contexto do Mongoose (MongooseModule.forFeature) e os provedores de repositório foram registrados exclusivamente onde são consumidos.
+
+Observabilidade e Compliance: Remoção de logs não conformes que expunham o payload do JWT, mantendo o ambiente de produção seguro contra vazamento de PII.
+
+Consistência de Dados: Emissão de script de atualização no nível do banco de dados (MongoDB) para normalização do estado isActive em documentos pré-existentes.
+
 === SPRINT 19 - 11/07/2026 ===
 
 Resumo Técnico de Fechamento: Cobertura de Testes Unitários (ResourcesController)

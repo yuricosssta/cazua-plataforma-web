@@ -1,7 +1,7 @@
 //src/resources/controllers/resources.controller.ts
 import { Controller, Post, Get, Patch, Body, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ResourcesService } from '../services/resources.service';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 import {
   createResourceSchema,

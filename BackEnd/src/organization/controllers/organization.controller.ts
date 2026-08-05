@@ -3,7 +3,7 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { IUser } from 'src/users/schemas/models/user.interface';
 

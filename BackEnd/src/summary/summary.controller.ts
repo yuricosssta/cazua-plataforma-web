@@ -3,7 +3,7 @@ import { Controller, HttpCode, HttpStatus, Post, Body, UseGuards, Req } from '@n
 import SummaryService from './summary.service';
 import { ZodValidationPipe } from '../shared/pipe/zod-validation.pipe';
 import { createReelSchema, CreateReelDto } from './validations/summary.zod';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('summary')
 @UseGuards(AuthGuard)
