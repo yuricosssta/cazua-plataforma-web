@@ -29,6 +29,15 @@ export class User extends Document {
 
   @Prop({ required: false })
   resetPasswordExpires: Date;
+
+  @Prop({default: true})
+  isActive?: boolean;
+
+  @Prop({ default: 0 })
+  loginAttempts: number;
+
+  @Prop({ required: false })
+  lockUntil?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -5,7 +5,7 @@ import { memoryStorage } from 'multer';
 import { PlanningService } from './planning.service';
 import { ZodValidationPipe } from '../shared/pipe/zod-validation.pipe';
 import { searchPlanningSchema as searchSchema, uploadPlanningSchema, SearchPlanningDto, UploadPlanningDto } from './validations/planning.zod';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { ConfigService } from '@nestjs/config';
 
 @Controller('planning')

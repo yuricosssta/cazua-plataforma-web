@@ -1,3 +1,39 @@
+=== SPRINT 21 - 05/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura
+
+Segurança e Proteção (Account Lockout): Implementada proteção persistente contra credential stuffing e força bruta. A regra de negócio garante que o bloqueio sobreviva à volatilidade de instâncias serverless (Vercel), diferentemente de abordagens puramente in-memory.
+
+Padrão de Repositório: Manutenção rigorosa do isolamento. As operações de incremento, bloqueio temporal e limpeza de contadores foram encapsuladas no AuthUsersRepository, mantendo o AuthService focado apenas na orquestração do fluxo de autorização.
+
+Orquestração de Estado: Injeção de validações temporais (lockUntil) tanto na emissão inicial (signIn) quanto na renovação de credenciais (refreshToken), impedindo que sessões preexistentes contornem bloqueios recentes.
+
+2. Definições de Infraestrutura
+
+Modelagem de Dados: Evolução do UserSchema para suportar o estado transacional de segurança com a inclusão de loginAttempts (Number) e lockUntil (Date).
+
+Mitigação Serverless: Adoção de persistência no MongoDB (Camada 2) para controle de taxa de longo prazo, mitigando o problema de cold starts e fragmentação de estado característicos de funções Lambda.
+
+=== SPRINT 20 - 05/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura
+
+Padrão de Repositório: Isolamento do acesso a dados concluído na camada de autenticação. O AuthUsersRepository assumiu a responsabilidade exclusiva pelas interações com o Mongoose, desacoplando o AuthUsersService.
+
+Segurança e Validação de Entrada: Implementação do Zod para validação rigorosa dos payloads no controller (signInSchema), mitigando riscos de injeção de dados.
+
+Ciclo de Vida do JWT: A renovação de tokens (Refresh Token) foi refatorada para realizar uma validação ativa no banco de dados. Privilégios (isSuperAdmin) e estado operacional (isActive) agora são validados em tempo real através do instanciamento estrito via new Types.ObjectId(id).
+
+Padronização de Soft Delete: Inclusão estrutural da chave isActive no UserSchema com retrocompatibilidade para mitigar quebras em usuários legados.
+
+2. Definições de Infraestrutura
+
+Injeção de Dependências (DI): Refatoração do AuthModule para resolver vazamento de escopo. O contexto do Mongoose (MongooseModule.forFeature) e os provedores de repositório foram registrados exclusivamente onde são consumidos.
+
+Observabilidade e Compliance: Remoção de logs não conformes que expunham o payload do JWT, mantendo o ambiente de produção seguro contra vazamento de PII.
+
+Consistência de Dados: Emissão de script de atualização no nível do banco de dados (MongoDB) para normalização do estado isActive em documentos pré-existentes.
+
 === SPRINT 19 - 11/07/2026 ===
 
 Resumo Técnico de Fechamento: Cobertura de Testes Unitários (ResourcesController)

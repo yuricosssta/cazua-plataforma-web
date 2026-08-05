@@ -4,7 +4,7 @@ import { User, UserSchema } from  './schemas/user.schema';
 import { UsersService } from './services/user.service';
 import { UsersMongooseRepository } from './repositories/mongoose/user.mongoose.repository';
 import { UsersRepository } from './repositories/user.repository';
-import { AuthUsersService } from '../auth/auth-users.service';
+import { AuthUsersService } from '../auth/services/auth-users.service';
 import { UsersController } from './controllers/user.controller';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from 'src/shared/shared.module';
@@ -14,7 +14,6 @@ import { SharedModule } from 'src/shared/shared.module';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     forwardRef(() => AuthModule),
     SharedModule
-    // AuthModule,
   ],
   controllers: [UsersController],
   providers: [
@@ -23,8 +22,7 @@ import { SharedModule } from 'src/shared/shared.module';
       provide: UsersRepository,
       useClass: UsersMongooseRepository,
     },
-    AuthUsersService,
   ],
-  exports: [UsersService, AuthUsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

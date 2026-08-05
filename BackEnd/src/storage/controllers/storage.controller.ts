@@ -2,7 +2,7 @@
 import { Get, Delete, Param, ForbiddenException, Controller, Post, Body, UseGuards, Headers, Req, BadRequestException } from '@nestjs/common';
 import { StorageService } from '../services/storage.service';
 import { GetPresignedUrlDto } from '../dto/get-presigned-url.dto';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 
 @Controller('storage')
 @UseGuards(AuthGuard)

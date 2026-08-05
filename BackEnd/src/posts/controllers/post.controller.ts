@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { PostService } from '../services/post.service';
 import { LoggingInterceptor } from '../../shared/interceptors/logging.interceptor';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 import { TenantGuard } from '../../organization/guards/tenant.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 import { createPostSchema, CreatePostDto, updatePostSchema, UpdatePostDto } from '../validations/post.zod';

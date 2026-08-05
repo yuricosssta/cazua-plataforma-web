@@ -18,5 +18,8 @@ export interface IUser {
   modified_at?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  isActive?: boolean;
+  loginAttempts?: number;
+  lockUntil?: Date;
 }
 

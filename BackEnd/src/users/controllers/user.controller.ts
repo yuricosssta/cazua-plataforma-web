@@ -23,7 +23,7 @@ import {
   updateUserSchema,
 } from '../validations/users.zod';
 import { GetUser } from '../../shared/decorators/get-user-decorator';
-import { AuthGuard } from '../../auth/auth.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
 
 @UseInterceptors(LoggingInterceptor)
 @Controller('users')
