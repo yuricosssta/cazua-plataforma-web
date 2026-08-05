@@ -1,3 +1,19 @@
+=== SPRINT 21 - 05/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura
+
+Segurança e Proteção (Account Lockout): Implementada proteção persistente contra credential stuffing e força bruta. A regra de negócio garante que o bloqueio sobreviva à volatilidade de instâncias serverless (Vercel), diferentemente de abordagens puramente in-memory.
+
+Padrão de Repositório: Manutenção rigorosa do isolamento. As operações de incremento, bloqueio temporal e limpeza de contadores foram encapsuladas no AuthUsersRepository, mantendo o AuthService focado apenas na orquestração do fluxo de autorização.
+
+Orquestração de Estado: Injeção de validações temporais (lockUntil) tanto na emissão inicial (signIn) quanto na renovação de credenciais (refreshToken), impedindo que sessões preexistentes contornem bloqueios recentes.
+
+2. Definições de Infraestrutura
+
+Modelagem de Dados: Evolução do UserSchema para suportar o estado transacional de segurança com a inclusão de loginAttempts (Number) e lockUntil (Date).
+
+Mitigação Serverless: Adoção de persistência no MongoDB (Camada 2) para controle de taxa de longo prazo, mitigando o problema de cold starts e fragmentação de estado característicos de funções Lambda.
+
 === SPRINT 20 - 05/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura

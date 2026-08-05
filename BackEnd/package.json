@@ -34,6 +34,7 @@
     "@nestjs/platform-express": "10.4.20",
     "@nestjs/platform-socket.io": "10.4.22",
     "@nestjs/swagger": "^8.1.1",
+    "@nestjs/throttler": "6.5.0",
     "@nestjs/websockets": "10.4.22",
     "@types/passport-local": "^1.0.38",
     "bcrypt": "^6.0.0",

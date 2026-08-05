@@ -16,6 +16,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ResourcesModule } from './resources/resources.module';
 import { SharedModule } from './shared/shared.module';
 import { PlanningModule } from './planning/planning.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -28,6 +29,10 @@ import { PlanningModule } from './planning/planning.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 5,
+    }]),
     EventEmitterModule.forRoot(),
     UsersModule,
     AuthModule,
