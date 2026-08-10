@@ -1,3 +1,21 @@
+=== SPRINT 22 - 10/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
+
+Padrão de Repositório Estrito: Isolamento documentado e oficializado. Services orquestram regras de negócio; Repositories interagem com a camada de dados (Mongoose).
+
+Validação de Entrada: Obrigatoriedade documentada da validação de DTOs via ZodValidationPipe antes da execução dos controllers.
+
+Integridade e Persistência: Oficialização das regras inegociáveis de Soft Delete condicional (isActive: false) e uso de bibliotecas de precisão para manipulação de estoques e orçamentos.
+
+2. Definições de Infraestrutura (Variáveis, Rotas, UI)
+
+Controle de Acesso Multi-tenant: Roteamento B2B configurado e documentado para exigir contextos explícitos via headers (x-org-id, x-org-role).
+
+Mapeamento de Domínios: Endpoints de gestão de Obras, Almoxarifado/Recursos, Storage e Planejamento integrados ao documento arquitetural.
+
+Variáveis de Ambiente: Parametrização do .env atualizada com chaves de integração para MongoDB, Cloudflare R2 e SMTP (Resend).
+
 === SPRINT 21 - 05/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura
