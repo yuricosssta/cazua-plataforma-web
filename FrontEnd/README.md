@@ -1,85 +1,110 @@
-# Escola Desafio FrontEnd
 
-Aplicação web para administração e publicação de posts educacionais, construída com [Next.js](https://nextjs.org), [Redux Toolkit](https://redux-toolkit.js.org/), [Axios](https://axios-http.com/) e [TailwindCSS](https://tailwindcss.com/).
+# Front-End - Sistema Cazuá (PropTech SaaS B2B)
 
----
-
-## 🚀 Como começar
-
-1. **Instale as dependências**
-   ```bash
-   npm install
-   ```
-
-2. **Configure a URL da API**
-   - Edite o arquivo `.env`:
-     ```
-     NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
-     ```
-
-3. **Inicie o servidor de desenvolvimento**
-   ```bash
-   npm run dev
-   ```
-   Acesse [http://localhost:3000](http://localhost:3000) no navegador.
+Interface web do SaaS para gestão de obras, controle de almoxarifado, orçamentação e comunicação corporativa no setor de construção civil. Desenvolvida com Next.js (App Router), implementa o padrão BFF (Backend For Frontend) e obedece a um design system B2B minimalista e de alto contraste.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Stack Tecnológica
 
-- **Next.js** (App Router)
-- **React 19**
-- **Redux Toolkit** (`@reduxjs/toolkit`, `react-redux`)
-- **Axios** (requisições HTTP)
-- **TailwindCSS** (estilização)
-- **TypeScript**
+* **Framework:** Next.js (App Router) + React 19
+* **Estado Global:** Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
+* **Estado Local/Preferências:** Web Storage API
+* **Estilização:** Tailwind CSS v4
+* **Componentes UI:** Shadcn UI
+* **Ícones:** `lucide-react`
+* **Requisições HTTP:** Axios (via BFF)
 
 ---
 
-## 📁 Estrutura de Pastas
+## 🛑 Regras Arquiteturais e de UI/UX Inegociáveis
+
+Para garantir a consistência visual, suporte automático a Dark Mode e manutenibilidade do código, as seguintes regras devem ser estritamente seguidas ao desenvolver novos componentes ou telas:
+
+1. **Uso de Variáveis Semânticas (Dark Mode Nativo):**
+* É **estritamente proibido** o uso de classes de cores utilitárias genéricas (ex: `bg-slate-100`, `text-zinc-900`, cores hexadecimais estáticas) para superfícies, fundos e textos principais.
+* Utilize exclusivamente as variáveis semânticas do Shadcn/Tailwind: `bg-background`, `bg-card`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `border-border`.
+* A escala `stone` está autorizada unicamente para detalhes específicos de acento.
+
+
+2. **Geometria:** O border-radius padrão do sistema é `4px`. Utilize estritamente a classe `rounded-md` do Tailwind.
+3. **Ícones:** Permitido exclusivamente o uso da biblioteca `lucide-react`.
+4. **Padrão BFF (Backend For Frontend):** Nenhuma chamada direta à API externa deve ser feita a partir de Client Components. Toda requisição deve passar pelas rotas internas em `src/app/api`, protegendo credenciais e tokens.
+
+---
+
+## 📁 Estrutura de Domínios (App Router)
+
+A navegação e divisão de módulos utiliza Route Groups para separar contextos:
+
+```text
+src/app/
+├── (auth)/                # Fluxos deslogados (Login, Cadastro, Recuperação de Senha)
+├── (main)/
+│   ├── account/           # Configurações corporativas, perfil e segurança
+│   └── dashboard/         # Core Operacional do SaaS B2B
+│       ├── projects/      # Gestão de Obras, Demandas e Pareceres
+│       ├── resources/     # Almoxarifado, Estoque e Transações
+│       ├── planning/      # Orçamentos e Composições de Custo
+│       ├── people/        # Gestão de Equipes (RBAC)
+│       ├── storage/       # Acervo Digital (Cloudflare R2)
+│       ├── marketing/     # Automações de IA (Reels/Resumos)
+│       └── master-admin/  # Painel de Controle de Tenants (Super Admin)
+├── api/                   # Camada BFF (Proxy para o NestJS backend)
 
 ```
-src/
-  app/           # Páginas e layouts do Next.js
-  components/    # Componentes reutilizáveis (Navbar, PostForm, etc)
-  lib/           # Configurações de API e Redux
-  types/         # Tipos TypeScript (ex: IPost)
+
+---
+
+## ⚙️ Configuração e Execução
+
+### 1. Variáveis de Ambiente
+
+Crie um arquivo `.env.local` na raiz do projeto contendo as seguintes definições:
+
+```env
+# URL base pública da API (Acessada via BFF)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+
+# URL usada pelo Next.js BFF na Rede Docker interna
+INTERNAL_API_URL=http://backend:3001
+
+# Coordenadas Iniciais para Módulos de Mapa/Geolocalização
+NEXT_PUBLIC_INITIAL_MAP_CENTER=-43.79, -20.65
+
 ```
 
----
+### 2. Instalação e Execução Local
 
-## 🧩 Funcionalidades
+```bash
+# Instale as dependências
+npm install
 
-- Autenticação e logout via Redux
-- Cadastro, edição e listagem de posts
-- Integração com backend via Axios
-- Formulários dinâmicos e responsivos
-- Navegação protegida para administradores
+# Inicie o servidor em modo de desenvolvimento
+npm run dev
 
----
+# Acesse a aplicação em http://localhost:3000
 
-## 📦 Variáveis de Ambiente
+```
 
-- `NEXT_PUBLIC_API_BASE_URL`: URL base da API backend
+### 3. Build e Produção
 
----
+```bash
+# Gere o build estático/otimizado
+npm run build
 
-## 🐳 Docker
+# Inicie a aplicação em produção
+npm run start
 
-Para rodar com Docker:
+```
 
-1. **Build e execute o container**
-   ```bash
-   docker-compose up --build
-   ```
-2. O app estará disponível em [http://localhost:8080](http://localhost:8080)
+### 4. Execução via Docker
 
----
+A orquestração de contêineres está configurada na infraestrutura raiz do projeto. Para iniciar o frontend de forma isolada via Docker:
 
-## 📄 Licença
+```bash
+docker-compose up --build -d
 
-MIT
+```
 
----
-
-> Desenvolvido para fins educacionais.
+O serviço será exposto na porta mapeada (padrão `3000` ou `8080`, dependendo da definição no seu `docker-compose.yml`).
