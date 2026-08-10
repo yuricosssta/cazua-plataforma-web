@@ -1,25 +1,74 @@
-# 🏗️ SaaS de Gestão Operacional e Logística
-> Transformação digital aplicada à infraestrutura urbana e construção civil.
+# Sistema Cazuá - Plataforma PropTech (SaaS B2B)
 
-Este sistema foi concebido para eliminar processos manuais e digitalizar 100% da gestão de equipes, maquinários e estoque na administração pública e privada.
+Repositório central (Monorepo) do Sistema Cazuá, um SaaS B2B orientado a eventos para gestão de obras e projetos, controle de almoxarifado, orçamentação e comunicação corporativa no setor da construção civil.
 
-## 🌟 Diferenciais Técnicos
-- **IA Generativa:** Módulo de processamento de linguagem natural para criação automática de Atas de Reunião e Pareceres Técnicos via OpenAI API.
-- **Storage de Alta Performance:** Gestão de evidências fotográficas e documentos técnicos utilizando Cloudflare R2.
-- **Arquitetura & Escalabilidade:** Backend construído com NestJS (Arquitetura Modular) e ambiente totalmente conteinerizado com Docker.
-- **Resiliência:** Implementação de cache para salvamento de rascunhos em tempo real, garantindo a integridade dos dados em campo.
+Este repositório contém a stack completa da aplicação, separada logicamente em diretórios para facilitar o gerenciamento de dependências, deploy (Vercel) e orquestração de contêineres.
 
-## 🛠 Tecnologias Utilizadas
-- **Frontend:** Next.js (App Router), Tailwind CSS, TypeScript.
-- **Backend:** Node.js, NestJS, JWT Auth.
-- **Banco de Dados:** MongoDB (ou PostgreSQL para dados relacionais).
-- **Infra:** Docker, Docker Compose, Vercel Deploy.
+## 📂 Estrutura do Repositório
 
-## 📈 Impacto Real
-- **Digitalização:** 100% dos processos analógicos migrados para digital.
-- **Eficiência:** Redução estimada de 70% no tempo de elaboração de relatórios técnicos e atas através de automação com IA.
-- **Sustentabilidade:** Eliminação total do uso de papel na Diretoria Operacional.
+```text
+/
+├── BackEnd/        # API RESTful (NestJS, MongoDB, Zod, EventEmitter2)
+├── FrontEnd/       # Interface de Usuário (Next.js App Router, Redux, Tailwind v4, Shadcn UI)
+├── docker-compose.yml
+└── README.md       # Documentação global
 
-## 🚀 Como rodar o projeto
+```
+
+## 🛑 Regras Arquiteturais Inegociáveis (Global)
+
+O projeto segue padrões rígidos de desenvolvimento para garantir escalabilidade e consistência.
+
+### Back-End
+
+1. **Padrão de Repositório:** Isolamento absoluto da camada de banco de dados. `Services` orquestram regras de negócio; `Repositories` acessam o Mongoose. Um Service nunca instancia um Model diretamente.
+2. **Tratamento de IDs:** IDs do MongoDB devem ser validados e instanciados usando `new Types.ObjectId(id)`.
+3. **Precisão Financeira:** Cálculos monetários e de estoque utilizam mitigação de ponto flutuante (ex: `Precision.round`).
+4. **Deleção Lógica (Soft Delete):** A exclusão física de registros é proibida. Utilize `isActive: false` estritamente condicionado a regras de negócio (ex: estoque zerado).
+5. **Validação:** Todo payload deve ser validado via DTOs usando Zod (`ZodValidationPipe`) antes dos controllers.
+
+### Front-End
+
+1. **Design System & Dark Mode:** Uso exclusivo de variáveis semânticas do Tailwind (`bg-background`, `bg-card`, `text-foreground`, `border-border`). É estritamente proibido usar classes de cores hexadecimais estáticas ou utilitários padrão (ex: `slate`, `zinc`).
+2. **Geometria:** O border-radius padrão do sistema é cravado em 4px (`rounded-md`).
+3. **Ícones:** Permitido exclusivamente o uso da biblioteca `lucide-react`.
+4. **Comunicação (BFF):** Nenhuma chamada à API externa é feita diretamente por Client Components. Todas as requisições passam pela camada BFF em `src/app/api`.
+
+## 🚀 Como Rodar o Projeto (Docker)
+
+A aplicação possui orquestração global via Docker Compose para ambiente de desenvolvimento e produção.
+
+### 1. Configuração de Variáveis de Ambiente
+
+Certifique-se de configurar os arquivos `.env` em seus respectivos diretórios antes de iniciar os serviços:
+
 ```bash
-docker-compose up --build
+cp BackEnd/.env.example BackEnd/.env
+cp FrontEnd/.env.example FrontEnd/.env
+
+```
+
+### 2. Execução dos Serviços
+
+Na raiz do repositório, levante a infraestrutura completa:
+
+```bash
+docker-compose up --build -d
+
+```
+
+* **BackEnd:** Disponível na rede interna `app-network` e exposto para o host na porta configurada (Padrão: `3001`).
+* **FrontEnd:** Disponível no host na porta `3000` (ou a definida no FrontEnd).
+
+Para ambientes de produção, utilize os arquivos de sobrescrita correspondentes:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+```
+
+---
+
+> Para documentações específicas de configuração de infraestrutura, rotas da API, integrações (Cloudflare R2, OpenAI, Resend) e componentes de UI, consulte os arquivos `README.md` localizados nas pastas `/BackEnd` e `/FrontEnd`.
+
+---
