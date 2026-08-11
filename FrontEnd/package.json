@@ -73,6 +73,9 @@
     "typescript": "^5"
   },
   "pnpm": {
+    "overrides": {
+      "nanoid": "^5.1.16"
+    },
     "onlyBuiltDependencies": [
       "@tailwindcss/oxide",
       "core-js",
