@@ -1,3 +1,19 @@
+=== SPRINT 23 - 11/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura
+
+Mitigação de Segurança (Front-end): Intervenção direta na árvore de dependências transitivas para sanar a vulnerabilidade de negação de serviço (DoS) vinculada a versões inseguras do nanoid.
+
+Estabilidade de Build: Aplicação de sobrescrita de versão (override) no gerenciador de pacotes, garantindo a atualização do pacote vulnerável sem forçar upgrades majoritários não testados no Next.js, Tailwind e PostCSS. Essa decisão preserva a compatibilidade de módulos (evitando conflitos CJS/ESM).
+
+2. Definições de Infraestrutura
+
+Manifesto: Atualização do package.json com diretivas de resolução de dependências.
+
+Pipeline e Cache: Invalidação dos artefatos locais (node_modules e lockfile) seguida de reconstrução limpa da árvore de pacotes.
+
+Validação Contínua: Execução do build de produção (npm run build) validada para assegurar que não houve quebra na compilação do React ou na geração de estilos do Shadcn UI/Tailwind v4.
+
 === SPRINT 22 - 10/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
