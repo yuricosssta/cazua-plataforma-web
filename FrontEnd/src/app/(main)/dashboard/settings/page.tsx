@@ -1,4 +1,3 @@
-//src/app/(main)/dashboard/settings/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -7,14 +6,16 @@ import { AppDispatch } from "@/lib/redux/store";
 import { logout } from "@/lib/redux/slices/authSlice";
 import { clearOrganizationState } from "@/lib/redux/slices/organizationSlice";
 import { DataManagement } from "@/components/dashboard/settings/DataManagement";
-import { LogOut, Palette, X } from "lucide-react";
+import { LogOut, Palette, X, Globe } from "lucide-react";
 import { BrandingSettings } from "@/components/dashboard/settings/BrandingSettings";
 import { StorageManagement } from "@/components/dashboard/settings/StorageManagement";
+import { LandingPageSettings } from "@/components/dashboard/settings/LandingPageSettings";
 
 export default function GeneralSettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
 
   const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false);
+  const [isLandingPageModalOpen, setIsLandingPageModalOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -36,7 +37,7 @@ export default function GeneralSettingsPage() {
 
       <div className="flex flex-col space-y-8">
 
-        {/* Personalização da empresa (Agora como um botão de chamada) */}
+        {/* Identidade Visual */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Identidade Visual</h2>
           <section className="flex items-center justify-between border border-border bg-card p-5 rounded-sm shadow-sm">
@@ -49,6 +50,23 @@ export default function GeneralSettingsPage() {
               className="h-9 px-4 py-2 bg-primary text-primary-foreground border border-transparent rounded-sm text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2"
             >
               <Palette className="w-4 h-4" /> Personalizar
+            </button>
+          </section>
+        </div>
+
+        {/* Presença Digital (Landing Page) */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Presença Digital</h2>
+          <section className="flex items-center justify-between border border-border bg-card p-5 rounded-sm shadow-sm">
+            <div>
+              <h3 className="text-sm font-semibold flex items-center gap-2">Site Público (Landing Page)</h3>
+              <p className="text-xs text-muted-foreground mt-1">Configure o domínio, identidade e formulários de captura do seu site público.</p>
+            </div>
+            <button
+              onClick={() => setIsLandingPageModalOpen(true)}
+              className="h-9 px-4 py-2 bg-primary text-primary-foreground border border-transparent rounded-sm text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2"
+            >
+              <Globe className="w-4 h-4" /> Configurar Site
             </button>
           </section>
         </div>
@@ -82,8 +100,6 @@ export default function GeneralSettingsPage() {
       {isBrandingModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-background w-full max-w-4xl max-h-[90vh] rounded-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-
-            {/* Header do Modal Fixo */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
               <h2 className="text-lg font-bold tracking-tight">Configurações de Identidade</h2>
               <button
@@ -93,12 +109,29 @@ export default function GeneralSettingsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Corpo Scrollável (O componente é renderizado aqui) */}
             <div className="p-6 overflow-y-auto">
               <BrandingSettings />
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* --- MODAL DE LANDING PAGE SETTINGS --- */}
+      {isLandingPageModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-background w-full max-w-4xl max-h-[90vh] rounded-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+              <h2 className="text-lg font-bold tracking-tight">Configurações do Site Público</h2>
+              <button
+                onClick={() => setIsLandingPageModalOpen(false)}
+                className="p-1.5 text-muted-foreground hover:bg-muted rounded-md transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <LandingPageSettings />
+            </div>
           </div>
         </div>
       )}
