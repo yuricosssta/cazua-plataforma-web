@@ -1,4 +1,4 @@
-//src/modules/landing-page/schemas/landing-page-config.schema.ts
+//src/landing-pages/schemas/landing-page-config.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
@@ -18,8 +18,8 @@ const ThemeConfigSchema = SchemaFactory.createForClass(ThemeConfig);
 
 @Schema({ timestamps: true, collection: 'landing_page_configs' })
 export class LandingPageConfig extends Document {
-  @Prop({ type: Types.ObjectId, required: true, index: true })
-  tenantId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, required: true, index: true, unique: true })
+  organizationId: Types.ObjectId;
 
   @Prop({ required: true, unique: true, index: true })
   domain: string;
@@ -36,14 +36,15 @@ export class LandingPageConfig extends Document {
   @Prop({ required: true })
   heroSubtitle: string;
 
+  @Prop({ type: String, required: false })
+  contentMDX?: string;
+
   @Prop({ type: ThemeConfigSchema, required: true })
   theme: ThemeConfig;
 
   @Prop({ default: true })
   isActive: boolean;
-
-  @Prop({ type: String, required: false })
-  contentMDX?: string;
 }
 
 export const LandingPageConfigSchema = SchemaFactory.createForClass(LandingPageConfig);
+//fim

@@ -2,7 +2,7 @@
 import { Controller, Post, Body, UsePipes } from '@nestjs/common';
 import { LeadService } from '../services/lead.service';
 import { createLeadSchema } from '../validations/lead.zod';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 
 @Controller('leads')
 export class LeadController {

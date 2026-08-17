@@ -1,8 +1,7 @@
-//src/modules/validations/landing-page.zod.ts
+//src/landing-pages/validations/landing-page.zod.ts
 import { z } from 'zod';
 
-export const createLandingPageSchema = z.object({
-  tenantId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'ID de tenant inválido'),
+export const upsertLandingPageSchema = z.object({
   domain: z.string().min(3),
   name: z.string().min(2),
   logoUrl: z.string().url().optional(),
@@ -14,4 +13,8 @@ export const createLandingPageSchema = z.object({
     backgroundHSL: z.string().optional(),
     foregroundHSL: z.string().optional(),
   }),
+  isActive: z.boolean(),
 });
+
+export type UpsertLandingPageDTO = z.infer<typeof upsertLandingPageSchema>;
+//fim

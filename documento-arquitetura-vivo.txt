@@ -1,3 +1,21 @@
+=== SPRINT 26 - 17/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
+
+Segurança e Tenant Isolation (NestJS): Refatoração da camada de autorização (AuthGuard e TenantGuard). O organizationId passou a ser extraído do cabeçalho x-org-id e validado contra a coleção OrganizationMember. A injeção do ID no objeto request previne Insecure Direct Object Reference (IDOR) nas rotas de manipulação da landing page.
+
+Padrão Repository e Regras de Negócio: Delegação absoluta das chamadas Mongoose ao LandingPageConfigRepository. O LandingPageConfigService orquestra a regra de negócio implementando a validação de colisão de domínios atrelados a organizações distintas (findConflictingDomain) antes de autorizar o upsert.
+
+Type Safety vs Mongoose: Resolução de erro de compilação (TS2345) gerado pela avaliação shallow do tipo utilitário Partial<T> no TypeScript em relação a propriedades aninhadas (theme). Aplicação de Type Assertion explícito para garantir a persistência correta via operador $set.
+
+2. Definições de Infraestrutura (Variáveis, Rotas, UI)
+
+Rotas de API Mapeadas e Seguras: Consolidação dos endpoints privados GET /landing-pages/me e PATCH /landing-pages/me no LandingPageConfigController, protegidos simultaneamente por validação de sessão (JWT) e validação de pertinência à organização.
+
+Mitigação de Runtime Exceptions: Implementação de checagem estática Types.ObjectId.isValid() diretamente na barreira do TenantGuard, bloqueando payloads com IDs malformados antes de consumirem processamento nas camadas de Controller e Service.
+
+Preparação para Fase 2: O ecossistema NestJS está isolado, validado e preparado para receber as requisições de proxy do Route Handler (BFF) do Next.js na próxima iteração, mantendo o tráfego do front-end seguro.
+
 === SPRINT 25 - 17/08/2026 ===
 ### Resumo Técnico de Fechamento
 

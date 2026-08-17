@@ -1,4 +1,4 @@
-//src/auth/auth.guard.ts
+//src/auth/guards/auth.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -11,28 +11,28 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
-) {}
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+    
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Token não fornecido.');
     }
+    
     try {
-      const payload = await this.jwtService.verifyAsync(
-        token,
-        {
-          secret: this.configService.get<string>('JWT_SECRET'),
-        }
-      );
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
       
       request['user'] = payload;
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Token expirado ou inválido.');
     }
+    
     return true;
   }
 

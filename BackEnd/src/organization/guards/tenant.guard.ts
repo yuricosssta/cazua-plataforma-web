@@ -15,45 +15,46 @@ import { OrganizationMember, OrganizationMemberDocument } from '../schemas/organ
 export class TenantGuard implements CanActivate {
   constructor(
     @InjectModel(OrganizationMember.name)
-    private memberModel: Model<OrganizationMemberDocument>,
-  ) { }
+    private readonly memberModel: Model<OrganizationMemberDocument>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user || (!user.sub && !user.userId)) {
-      console.error('TenantGuard: Usuário não encontrado no request. Verifique se o AuthGuard foi executado.');
-      throw new ForbiddenException('Usuário não autenticado.');
+      throw new ForbiddenException('Usuário não autenticado. Execute o AuthGuard primeiro.');
     }
+
     const userIdStr = user.sub || user.userId;
 
-
-    if (!(Types.ObjectId as any).isValid(userIdStr)) {
-      console.error('TenantGuard: ID do usuário no token não é um ObjectId válido:', userIdStr);
-      throw new UnauthorizedException('Token de usuário inválido.');
+    if (!Types.ObjectId.isValid(userIdStr)) {
+      throw new UnauthorizedException('ID de usuário inválido no token.');
     }
 
     const orgIdHeader = request.headers['x-org-id'];
     if (!orgIdHeader) {
-      throw new BadRequestException('O cabeçalho x-org-id é obrigatório.');
+      throw new BadRequestException('O cabeçalho x-org-id é obrigatório para esta rota.');
     }
 
-    if (!(Types.ObjectId as any).isValid(orgIdHeader)) {
-      throw new BadRequestException(`ID da organização inválido: ${orgIdHeader}`);
+    if (!Types.ObjectId.isValid(orgIdHeader as string)) {
+      throw new BadRequestException('ID da organização malformado.');
     }
+
+    const organizationId = new Types.ObjectId(orgIdHeader as string);
+    const userId = new Types.ObjectId(userIdStr as string);
 
     const membership = await this.memberModel.findOne({
-      userId: new (Types.ObjectId as any)(userIdStr),
-      organizationId: new (Types.ObjectId as any)(orgIdHeader),
+      userId,
+      organizationId,
     }).exec();
 
     if (!membership) {
-      throw new ForbiddenException('Acesso negado a esta organização.');
+      throw new ForbiddenException('Acesso negado a esta organização ou associação inativa.');
     }
 
     request['organizationId'] = membership.organizationId.toString();
-    request['userRole'] = membership.role; // Útil para verificar se é ADMIN depois
+    request['userRole'] = membership.role;
 
     return true;
   }

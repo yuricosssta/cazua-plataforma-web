@@ -3,7 +3,7 @@ import { Body, Controller, Post, HttpCode, HttpStatus, Request, UseGuards, Get, 
 import { AuthService } from '../services/auth.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { SignInDto, signInSchema } from '../dto/sign-in.dto';
-import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
