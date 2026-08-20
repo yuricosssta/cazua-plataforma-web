@@ -5,7 +5,10 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, Loader2, Globe, PaintBucket, FileText, Eye, AlertCircle } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/redux/store";
+import { landingPageService } from "@/lib/services/landingPageService";
+import { Save, Loader2, Globe, PaintBucket, FileText, Eye, AlertCircle, CheckCircle2, ExternalLink, Info } from "lucide-react";
 
 const landingPageFormSchema = z.object({
   domain: z.string().min(3, "Domínio inválido (ex: construtora.com.br)"),
@@ -46,10 +49,36 @@ function hexToHSLString(hex: string): string {
   return `${h} ${s}% ${l}%`;
 }
 
+function hslStringToHex(hslString: string): string {
+  if (!hslString) return "#000000";
+  const parts = hslString.split(' ').map(p => parseFloat(p));
+  if (parts.length < 3) return "#000000";
+  let [h, s, l] = parts;
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+  else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+  else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+  else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+  else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+  else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+  const toHex = (n: number) => {
+    const hex = Math.round((n + m) * 255).toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 export function LandingPageSettings() {
+  const currentOrgId = useSelector((state: RootState) => state.organizations.currentOrganization?._id);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const {
     register,
@@ -71,42 +100,45 @@ export function LandingPageSettings() {
   });
 
   const isActive = watch("isActive");
+  const currentDomain = watch("domain");
 
   useEffect(() => {
     async function fetchConfig() {
+      if (!currentOrgId) return;
       try {
-        // Mock payload para renderização inicial
-        const mockData = {
-          domain: "grupocazua.com.br",
-          name: "Costa Marinho Engenharia",
-          heroTitle: "Gestão Inteligente de Obras",
-          heroSubtitle: "Acompanhamento em tempo real e controle de recursos estruturais.",
-          contentMDX: "## Fale com nossos engenheiros\n<LeadCaptureForm buttonText=\"Solicitar Cotação\" />",
-          isActive: true,
-        };
+        const data = await landingPageService.getConfig(currentOrgId);
 
-        setValue("domain", mockData.domain);
-        setValue("name", mockData.name);
-        setValue("heroTitle", mockData.heroTitle);
-        setValue("heroSubtitle", mockData.heroSubtitle);
-        setValue("contentMDX", mockData.contentMDX);
-        setValue("isActive", mockData.isActive);
-        setValue("primaryColorHex", "#3b82f6"); 
-      } catch (error) {
-        setErrorMsg("Falha ao carregar configurações do site.");
+        setValue("domain", data.domain);
+        setValue("name", data.name);
+        setValue("heroTitle", data.heroTitle);
+        setValue("heroSubtitle", data.heroSubtitle);
+        setValue("contentMDX", data.contentMDX || "");
+        setValue("isActive", data.isActive);
+
+        if (data.theme && data.theme.primaryHSL) {
+          setValue("primaryColorHex", hslStringToHex(data.theme.primaryHSL));
+        }
+      } catch (error: any) {
+        if (!error.message.includes("não encontrada")) {
+          setErrorMsg(error.message || "Falha ao carregar configurações do site.");
+        }
       } finally {
         setIsLoading(false);
       }
     }
     fetchConfig();
-  }, [setValue]);
+  }, [currentOrgId, setValue]);
 
   const onSubmit = async (data: LandingPageFormData) => {
+    if (!currentOrgId) return;
+
     setIsSaving(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
+
     try {
       const payload = {
-        domain: data.domain,
+        domain: data.domain.toLowerCase().trim(),
         name: data.name,
         heroTitle: data.heroTitle,
         heroSubtitle: data.heroSubtitle,
@@ -117,9 +149,10 @@ export function LandingPageSettings() {
         },
       };
 
-      console.log("Payload submetido:", payload);
-    } catch (error) {
-      setErrorMsg("Erro ao salvar as configurações.");
+      await landingPageService.upsertConfig(currentOrgId, payload);
+      setSuccessMsg(`Configurações publicadas. O site já está acessível em seu domínio configurado.`);
+    } catch (error: any) {
+      setErrorMsg(error.message || "Erro ao salvar as configurações.");
     } finally {
       setIsSaving(false);
     }
@@ -133,12 +166,34 @@ export function LandingPageSettings() {
     );
   }
 
+  // Defina aqui o IP ou CNAME do servidor que hospeda o Next.js do Cazuá
+  const SERVER_IP = "76.76.21.21"; // Exemplo padrão Vercel. Altere conforme sua infra.
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {errorMsg && (
         <div className="flex items-center gap-2 p-3 text-sm bg-destructive/10 text-destructive border border-destructive/20 rounded-md">
-          <AlertCircle className="w-4 h-4" />
-          {errorMsg}
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <p>{errorMsg}</p>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="flex items-center justify-between p-3 text-sm bg-primary/10 text-primary border border-primary/20 rounded-md">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <p>{successMsg}</p>
+          </div>
+          {currentDomain && (
+            <a
+              href={`https://${currentDomain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 font-bold underline hover:opacity-80 transition-opacity"
+            >
+              Testar Acesso <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
         </div>
       )}
 
@@ -152,35 +207,68 @@ export function LandingPageSettings() {
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" className="sr-only peer" {...register("isActive")} />
-          <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border/60 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
         </label>
       </section>
 
       <div className={!isActive ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-        
+
         {/* Domínio e Identidade */}
         <section className="space-y-4">
           <h3 className="text-sm font-bold border-b border-border pb-2 flex items-center gap-2">
             <Globe className="w-4 h-4" /> Roteamento e Marca
           </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold">Domínio Personalizado</label>
-              <input
-                {...register("domain")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="ex: suaempresa.com.br"
-              />
-              {errors.domain && <span className="text-xs text-destructive">{errors.domain.message}</span>}
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold">Domínio Personalizado</label>
+                <input
+                  {...register("domain")}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring lowercase"
+                  placeholder="ex: construtora.com.br"
+                />
+                {errors.domain && <span className="text-xs text-destructive">{errors.domain.message}</span>}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold">Nome de Exibição</label>
+                <input
+                  {...register("name")}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                {errors.name && <span className="text-xs text-destructive">{errors.name.message}</span>}
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold">Nome de Exibição</label>
-              <input
-                {...register("name")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              {errors.name && <span className="text-xs text-destructive">{errors.name.message}</span>}
-            </div>
+
+            {/* Instrução DNS B2B */}
+            {currentDomain && currentDomain.length > 3 && (
+              <div className="p-4 bg-muted/30 border border-border rounded-md text-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold flex items-center gap-2"><Info className="w-4 h-4 text-primary" /> Configuração de Domínio (DNS)</span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Para que a landing page fique disponível, acesse o painel do seu provedor de domínio (ex: Registro.br, GoDaddy) e crie os apontamentos abaixo na <strong>Zona de DNS</strong>. A propagação pode levar algumas horas.
+                </p>
+
+                <div className="space-y-2">
+                  <p className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">1. Se for usar o domínio principal (ex: {currentDomain.replace('www.', '')}):</p>
+                  <div className="grid grid-cols-3 gap-2 font-mono bg-background p-2 rounded-sm border border-border text-center items-center">
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Tipo</span><strong>A</strong></div>
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Nome</span><strong>@</strong></div>
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">IPv4</span><strong>76.76.21.21</strong></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">2. Se for usar o subdomínio WWW (ex: www.{currentDomain.replace('www.', '')}):</p>
+                  <div className="grid grid-cols-3 gap-2 font-mono bg-background p-2 rounded-sm border border-border text-center items-center">
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Tipo</span><strong>CNAME</strong></div>
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Nome</span><strong>www</strong></div>
+                    <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Destino</span><strong>cname.vercel-dns.com</strong></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -251,7 +339,7 @@ export function LandingPageSettings() {
       <div className="pt-4 flex justify-end border-t border-border mt-8">
         <button
           type="submit"
-          disabled={isSaving}
+          disabled={isSaving || !currentOrgId}
           className="inline-flex items-center justify-center bg-primary text-primary-foreground h-9 px-6 rounded-md text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}

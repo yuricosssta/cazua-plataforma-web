@@ -1,4 +1,4 @@
-//src/landing-pages/validations/lead.zod.ts
+//src/validations/lead.zod.ts
 import { z } from 'zod';
 
 export const createLeadSchema = z.object({

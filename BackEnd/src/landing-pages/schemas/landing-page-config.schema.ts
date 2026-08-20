@@ -46,5 +46,6 @@ export class LandingPageConfig extends Document {
   isActive: boolean;
 }
 
-export const LandingPageConfigSchema = SchemaFactory.createForClass(LandingPageConfig);
+export const LandingPageConfigSchema =
+  SchemaFactory.createForClass(LandingPageConfig);
 //fim

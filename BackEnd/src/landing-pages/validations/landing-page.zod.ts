@@ -2,14 +2,22 @@
 import { z } from 'zod';
 
 export const upsertLandingPageSchema = z.object({
-  domain: z.string().min(3),
+  domain: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(
+      /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/,
+      'Domínio inválido (ex: construtora.com.br)',
+    )
+    .min(3),
   name: z.string().min(2),
   logoUrl: z.string().url().optional(),
   heroTitle: z.string().min(5),
   heroSubtitle: z.string().min(10),
   contentMDX: z.string().optional(),
   theme: z.object({
-    primaryHSL: z.string(),
+    primaryHSL: z.string().min(1),
     backgroundHSL: z.string().optional(),
     foregroundHSL: z.string().optional(),
   }),

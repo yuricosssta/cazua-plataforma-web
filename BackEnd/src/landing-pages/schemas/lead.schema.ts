@@ -5,7 +5,7 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true, collection: 'leads' })
 export class Lead extends Document {
   @Prop({ type: Types.ObjectId, required: true, index: true })
-  tenantId: Types.ObjectId;
+  organizationId: Types.ObjectId;
 
   @Prop({ required: true })
   name: string;

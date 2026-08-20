@@ -18,11 +18,11 @@ const leadFormSchema = z.object({
 type LeadFormData = z.infer<typeof leadFormSchema>;
 
 interface LeadCaptureFormProps {
-  tenantId: string;
+  organizationId: string;
   buttonText?: string;
 }
 
-export function LeadCaptureForm({ tenantId, buttonText = "Enviar" }: LeadCaptureFormProps) {
+export function LeadCaptureForm({ organizationId, buttonText = "Enviar" }: LeadCaptureFormProps) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const {
@@ -36,10 +36,11 @@ export function LeadCaptureForm({ tenantId, buttonText = "Enviar" }: LeadCapture
   const onSubmit = async (data: LeadFormData) => {
     setStatus('loading');
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
+      // BFF: repassa ao backend via rota interna, sem expor a URL do NestJS ao navegador
+      const response = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, tenantId }),
+        body: JSON.stringify({ ...data, organizationId }),
       });
 
       if (!response.ok) throw new Error('Falha ao enviar formulário');

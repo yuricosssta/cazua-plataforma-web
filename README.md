@@ -8,10 +8,13 @@ Este repositório contém a stack completa da aplicação, separada logicamente 
 
 ```text
 /
-├── BackEnd/        # API RESTful (NestJS, MongoDB, Zod, EventEmitter2)
-├── FrontEnd/       # Interface de Usuário (Next.js App Router, Redux, Tailwind v4, Shadcn UI)
+├── BackEnd/                        # API RESTful (NestJS, MongoDB, Zod, EventEmitter2)
+├── FrontEnd/                       # Interface de Usuário (Next.js App Router, Redux, Tailwind v4, Shadcn UI)
+├── api-transcreve-audio/           # Legado (NestJS) — repositório git separado
+├── frontend-transcreve-audio/      # Legado (Next.js) — repositório git separado
 ├── docker-compose.yml
-└── README.md       # Documentação global
+├── documento-arquitetura-vivo.txt  # Doc vivo de arquitetura
+└── README.md                       # Documentação global
 
 ```
 
@@ -29,7 +32,7 @@ O projeto segue padrões rígidos de desenvolvimento para garantir escalabilidad
 
 ### Front-End
 
-1. **Design System & Dark Mode:** Uso exclusivo de variáveis semânticas do Tailwind (`bg-background`, `bg-card`, `text-foreground`, `border-border`). É estritamente proibido usar classes de cores hexadecimais estáticas ou utilitários padrão (ex: `slate`, `zinc`).
+1. **Design System & Dark Mode:** Uso exclusivo de variáveis semânticas do Tailwind (`bg-background`, `bg-card`, `bg-primary`, `text-foreground`, `border-border`). É estritamente proibido usar classes de cores hexadecimais estáticas ou utilitários padrão para fundo e texto (ex: `gray`, `slate`, `zinc`). A escala `stone` é permitida apenas para acentos.
 2. **Geometria:** O border-radius padrão do sistema é cravado em 4px (`rounded-md`).
 3. **Ícones:** Permitido exclusivamente o uso da biblioteca `lucide-react`.
 4. **Comunicação (BFF):** Nenhuma chamada à API externa é feita diretamente por Client Components. Todas as requisições passam pela camada BFF em `src/app/api`.
@@ -60,15 +63,12 @@ docker-compose up --build -d
 * **BackEnd:** Disponível na rede interna `app-network` e exposto para o host na porta configurada (Padrão: `3001`).
 * **FrontEnd:** Disponível no host na porta `3000` (ou a definida no FrontEnd).
 
-Para ambientes de produção, utilize os arquivos de sobrescrita correspondentes:
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-```
+Para ambientes de desenvolvimento, o `docker-compose.override.yml` (gitignored) sobrescreve os serviços com volumes de source e portas locais (`3001`/`3000`). **Não há `docker-compose.prod.yml` commitado** — ignore qualquer referência a ele.
 
 ---
 
 > Para documentações específicas de configuração de infraestrutura, rotas da API, integrações (Cloudflare R2, OpenAI, Resend) e componentes de UI, consulte os arquivos `README.md` localizados nas pastas `/BackEnd` e `/FrontEnd`.
+
+> Para orientação operacional de agentes de IA (comandos, gotchas e regras não negociáveis), consulte o `AGENTS.md` na raiz.
 
 ---

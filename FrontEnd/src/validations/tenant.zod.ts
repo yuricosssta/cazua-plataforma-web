@@ -8,7 +8,7 @@ export const tenantThemeSchema = z.object({
 });
 
 export const tenantLandingPageSchema = z.object({
-  tenantId: z.string(),
+  organizationId: z.string(),
   domain: z.string(),
   name: z.string(),
   logoUrl: z.string().url().optional(),

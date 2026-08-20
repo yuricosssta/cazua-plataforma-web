@@ -30,16 +30,18 @@ cp .env.example .env
 
 ```bash
 # Instalar dependências
-npm install
+pnpm install
 
 # Rodar em modo desenvolvimento
-npm run start:dev
+pnpm run start:dev
 
 # Build e execução para produção
-npm run build
-npm run start:prod
+pnpm run build
+pnpm run start:prod
 
 ```
+
+> O lockfile versionado é o `pnpm-lock.yaml` (use `pnpm`). O CI em `workflows/main.yml` ainda roda `npm install`/`npm run test` — mantenha ambos funcionando.
 
 ### 3. Docker
 
@@ -127,9 +129,11 @@ Gestão de inventário, aprovação e rastreabilidade de materiais alocados.
 ## 🧰 Comandos de Manutenção
 
 ```bash
-npm run lint       # Auditoria estática de código (ESLint)
-npm run format     # Formatação (Prettier)
-npm run test       # Execução da suíte unitária
-npm run test:e2e   # Execução de testes de integração e fluxo
+pnpm run lint       # Auditoria estática de código (ESLint) — roda com --fix
+pnpm run format     # Formatação (Prettier)
+pnpm run test       # Execução da suíte unitária
+pnpm run test:e2e   # Execução de testes de integração e fluxo
 
 ```
+
+> Para gotchas operacionais, comandos e o restante das regras inegociáveis, consulte o `AGENTS.md` na raiz do monorepo.

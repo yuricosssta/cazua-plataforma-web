@@ -5,34 +5,29 @@ import { ArrowRight } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { tenantLandingPageSchema } from '@/validations/tenant.zod';
 import { LeadCaptureForm } from '@/components/landing/LeadCaptureForm';
+import { getNestApiUrl } from '@/lib/api/serverUtils';
 
-// Mock function atualizado - Substitua pela chamada ao BFF
+// Busca real no BackEnd (RSC): endpoint público retorna a config ativa por domínio
 async function getTenantConfig(domain: string) {
-  return {
-    tenantId: '60d5ecb8b392d7001f112233',
-    domain: domain,
-    name: 'Costa Marinho Engenharia',
-    heroTitle: 'Gestão Inteligente de Obras',
-    heroSubtitle: 'Acompanhamento em tempo real e controle de recursos estruturais.',
-    contentMDX: `
-## Fale com nossos engenheiros
-Deixe seus dados para receber um orçamento detalhado para sua obra corporativa.
+  const response = await fetch(
+    `${getNestApiUrl()}/public/landing-pages/${encodeURIComponent(domain)}`,
+    { cache: 'no-store' }
+  );
 
-<LeadCaptureForm buttonText="Solicitar Cotação" />
-    `,
-    theme: {
-      primaryHSL: '210 100% 50%',
-    },
-    isActive: true,
-  };
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
 }
 
 export default async function TenantLandingPage({
   params,
 }: {
-  params: { domain: string };
+  params: Promise<{ domain: string }>;
 }) {
-  const rawData = await getTenantConfig(params.domain);
+  const { domain } = await params;
+  const rawData = await getTenantConfig(domain);
   const parseResult = tenantLandingPageSchema.safeParse(rawData);
 
   if (!parseResult.success || !parseResult.data.isActive) {
@@ -42,9 +37,9 @@ export default async function TenantLandingPage({
   const tenant = parseResult.data;
   const loginUrl = `https://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'cazua.com.br'}/login?tenant=${tenant.domain}`;
 
-  // Dicionário MDX: Injeta o tenantId no formulário para segurança contra adulteração
+  // Dicionário MDX: Injeta o organizationId no formulário contra adulteração
   const mdxComponents = {
-    LeadCaptureForm: (props: any) => <LeadCaptureForm tenantId={tenant.tenantId} {...props} />,
+    LeadCaptureForm: (props: any) => <LeadCaptureForm organizationId={tenant.organizationId} {...props} />,
     h2: (props: any) => <h2 className="text-3xl font-bold mt-8 mb-4" {...props} />,
     p: (props: any) => <p className="text-muted-foreground mb-6" {...props} />,
   };
