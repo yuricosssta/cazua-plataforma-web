@@ -1,3 +1,257 @@
+=== SPRINT 26 - 17/08/2026 ===
+Resumo Técnico de Fechamento
+1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
+
+Segurança e Tenant Isolation (NestJS): Refatoração da camada de autorização (AuthGuard e TenantGuard). O organizationId passou a ser extraído do cabeçalho x-org-id e validado contra a coleção OrganizationMember. A injeção do ID no objeto request previne Insecure Direct Object Reference (IDOR) nas rotas de manipulação da landing page.
+
+Padrão Repository e Regras de Negócio: Delegação absoluta das chamadas Mongoose ao LandingPageConfigRepository. O LandingPageConfigService orquestra a regra de negócio implementando a validação de colisão de domínios atrelados a organizações distintas (findConflictingDomain) antes de autorizar o upsert.
+
+Type Safety vs Mongoose: Resolução de erro de compilação (TS2345) gerado pela avaliação shallow do tipo utilitário Partial<T> no TypeScript em relação a propriedades aninhadas (theme). Aplicação de Type Assertion explícito para garantir a persistência correta via operador $set.
+
+2. Definições de Infraestrutura (Variáveis, Rotas, UI)
+
+Rotas de API Mapeadas e Seguras: Consolidação dos endpoints privados GET /landing-pages/me e PATCH /landing-pages/me no LandingPageConfigController, protegidos simultaneamente por validação de sessão (JWT) e validação de pertinência à organização.
+
+Mitigação de Runtime Exceptions: Implementação de checagem estática Types.ObjectId.isValid() diretamente na barreira do TenantGuard, bloqueando payloads com IDs malformados antes de consumirem processamento nas camadas de Controller e Service.
+
+Preparação para Fase 2: O ecossistema NestJS está isolado, validado e preparado para receber as requisições de proxy do Route Handler (BFF) do Next.js na próxima iteração, mantendo o tráfego do front-end seguro.
+
+=== SPRINT 25 - 17/08/2026 ===
+### Resumo Técnico de Fechamento
+
+**1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)**
+
+* **Roteamento Multi-tenant (Edge Middleware):** Implementação centralizada no Next.js (`middleware.ts`) interceptando o cabeçalho `host` para reescrita transparente das rotas públicas (`/sites/[domain]`), preservando a URL do cliente.
+* **Isolamento de Estado (Redux):** Estado global restrito aos módulos `(main)` e `(auth)`. A camada pública de landing pages opera puramente com Server Components (RSC) e estado local efêmero nos Client Components (ex: `<LeadCaptureForm/>`).
+* **Padrão Repository (Backend NestJS):** Isolamento absoluto na camada de acesso a dados. O `LandingPageConfigRepository` e o `LeadRepository` encapsulam as chamadas ao Mongoose. Mutação de estado via Soft Delete (`isActive: false`).
+* **Event-Driven Architecture (EDA):** Emissão de eventos assíncronos (`lead.created` via `EventEmitter2`) no `LeadService` para gerenciar notificações externas de forma desacoplada do fluxo de resposta HTTP.
+
+**2. Definições de Infraestrutura (Variáveis, Rotas, UI)**
+
+* **Validação e Segurança:** Uso obrigatório de Zod end-to-end (`tenantLandingPageSchema`). Validação de domínios e injeção do `tenantId` encapsulada no servidor.
+* **Motor MDX (next-mdx-remote):** Renderização no servidor de conteúdos customizados pela construtora, provendo um dicionário restrito de componentes React mapeados, mitigando riscos de XSS.
+* **UI/UX e Tailwind v4:** Conversão algorítmica de Hexadecimal para HSL no componente `LandingPageSettings.tsx` durante o `onSubmit`. Injeção dinâmica de propriedades CSS nativas (`--primary`) na raiz da landing page, mantendo estrita compatibilidade com classes semânticas (`bg-background`, `text-foreground`, `rounded-md`) e Dark Mode nativo.
+
+---
+
+### Mapa Completo de Arquivos do Front-end
+
+```text
+FrontEnd/src$ ls -R
+.:
+app  components  lib  providers  types  validations
+
+./app:
+(auth)  (main)   api   globals.css   layout.tsx   page.tsx   robots.ts   sitemap.ts   sites
+
+./app/(auth):
+forgot-password  login  reset-password  signup
+
+./app/(auth)/forgot-password:
+page.tsx
+
+./app/(auth)/login:
+page.tsx
+
+./app/(auth)/reset-password:
+page.tsx
+
+./app/(auth)/signup:
+page.tsx
+
+./app/(main):
+account  dashboard  layout.tsx
+
+./app/(main)/account:
+layout.tsx  organization  profile  security  settings
+
+./app/(main)/account/organization:
+page.tsx
+
+./app/(main)/account/profile:
+page.tsx
+
+./app/(main)/account/security:
+page.tsx
+
+./app/(main)/account/settings:
+page.tsx
+
+./app/(main)/dashboard:
+layout.tsx  marketing  master-admin  page.tsx  people  planning  posts  projects  resources  settings  storage
+
+./app/(main)/dashboard/marketing:
+reels
+
+./app/(main)/dashboard/marketing/reels:
+page.tsx
+
+./app/(main)/dashboard/master-admin:
+page.tsx
+
+./app/(main)/dashboard/people:
+page.tsx
+
+./app/(main)/dashboard/planning:
+page.tsx
+
+./app/(main)/dashboard/posts:
+[id]   new   page.tsx
+
+./app/(main)/dashboard/posts/[id]:
+edit  page.tsx
+
+./app/(main)/dashboard/posts/[id]/edit:
+page.tsx
+
+./app/(main)/dashboard/posts/new:
+page.tsx
+
+./app/(main)/dashboard/projects:
+[id]   page.tsx
+
+./app/(main)/dashboard/projects/[id]:
+page.tsx
+
+./app/(main)/dashboard/resources:
+page.tsx
+
+./app/(main)/dashboard/settings:
+page.tsx
+
+./app/(main)/dashboard/storage:
+page.tsx
+
+./app/api:
+axiosInstance.ts  posts  summary
+
+./app/api/posts:
+[id]   route.ts
+
+./app/api/posts/[id]:
+route.ts
+
+./app/api/summary:
+reels  text
+
+./app/api/summary/reels:
+generate
+
+./app/api/summary/reels/generate:
+route.ts
+
+./app/api/summary/text:
+route.ts
+
+./app/sites:
+[domain]
+
+./app/sites/[domain]:
+page.tsx
+
+./components:
+AdmPost.tsx            Footer.tsx             Spinner.tsx              UserNav.tsx       color-mode-switcher.tsx  layout    resources
+AudioTranscriber.tsx  LandingPageHeader.tsx  TextSummarizer.tsx       UserProfile.tsx  dashboard                planning  summary
+ClientOnly.tsx        LogoBloco.tsx          TranscriptionModal.tsx  auth              landing                  posts     ui
+
+./components/auth:
+SessionExpiredModal.tsx  SessionWarningModal.tsx
+
+./components/dashboard:
+ActivityLog.tsx              DashboardMetrics.tsx  ExportPdfModal.tsx    OrgSwitcher.tsx            PersonalTasksPanel.tsx   TimelineEventCard.tsx
+CreateOrganizationModal.tsx  EmailsAndAuth.tsx      ManageTeamDrawer.tsx  OrganizationPeople.tsx    ProjectsList.tsx         UpgradeModal.tsx
+CreateProjectModal.tsx       EmitParecerModal.tsx  MyProfile.tsx          OrganizationSettings.tsx  TabPreferencesModal.tsx  settings
+
+./components/dashboard/settings:
+BrandingSettings.tsx  DataManagement.tsx  LandingPageSettings.tsx  StorageManagement.tsx
+
+./components/landing:
+ComercialLogin.tsx  FeatureSection.tsx  HeroSection.tsx  LeadCaptureForm.tsx  PricingSection.tsx
+
+./components/layout:
+Header.tsx  SettingsSidebar.tsx  Sidebar.tsx
+
+./components/planning:
+SearchCompositionsModal.tsx  UploadCostsModal.tsx  UploadPlanningModal.tsx
+
+./components/posts:
+BlogPostContent.tsx  MarkdownPreview.tsx  PostForm.tsx  PostList.tsx
+
+./components/resources:
+AddStockModal.tsx          EditResourceModal.tsx          ProjectCostSummary.tsx   RequestResourceModal.tsx  TransactionHistory.tsx
+AllocateDirectlyModal.tsx  ManageWarehouseTeamDrawer.tsx  ProjectCostTab.tsx       ResourceCatalog.tsx
+CreateResourceModal.tsx    PendingRequests.tsx            ProjectResourcesTab.tsx  ReturnResourceModal.tsx
+
+./components/summary:
+ReelGenerator.tsx
+
+./components/ui:
+MapViewer.tsx  aspect-ratio.tsx  badge.tsx  checkbox.tsx        input.tsx  separator.tsx  textarea.tsx
+alert.tsx      avatar.tsx        card.tsx   dropdown-menu.tsx  label.tsx  sheet.tsx
+
+./lib:
+api  date.ts  markdownExample.ts  redux  services  utils.ts
+
+./lib/api:
+serverUtils.ts
+
+./lib/redux:
+slices  store.ts
+
+./lib/redux/slices:
+authSlice.ts  organizationSlice.ts  planningSlice.ts  postsSlice.ts  resourcesSlice.ts  userSlice.ts
+
+./lib/services:
+organizationService.ts  postService.ts     resourceService.ts  summaryService.ts        userService.ts
+planningService.ts      projectService.ts  storageService.ts   transcriptionService.ts
+
+./providers:
+AuthInitializer.tsx  ReduxProvider.tsx  ThemeProvider.tsx
+
+./types:
+organization.ts  post.ts  project.ts  user.ts
+
+./validations:
+post.zod.ts  summary.zod.ts  tenant.zod.ts
+
+```
+
+=== SPRINT 24 - 16/08/2026 ===
+### Resumo Técnico de Fechamento
+
+**1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)**
+
+* **Roteamento Multi-tenant (Edge Middleware):** Implementação de `middleware.ts` no Next.js para interceptação via cabeçalho `host`, reescrevendo requisições de domínios customizados para a rota estática `/sites/[domain]/...` sem alterar a URL no navegador.
+* **Padrão Repository Estrito:**
+* Criação de `LandingPageConfigRepository` e `LeadRepository` no NestJS, isolando completamente o acesso aos models do Mongoose da camada de Service.
+* Uso mandatório e tratamento explícito de `new Types.ObjectId(id)` na entrada dos dados nos Services.
+* Aplicação de deleção lógica (`isActive: false`) na gestão da visibilidade das landing pages.
+
+
+* **Event-Driven Architecture (EDA):** Configuração do módulo de Leads (`LeadService`) para emitir o evento `lead.created` assincronamente via `EventEmitter2`. Isso desacopla a resposta HTTP ao usuário final do processamento pesado (disparo de webhooks ou e-mails para a construtora).
+* **Isolamento de Estado (Redux):** Manutenção do Redux restrito ao ambiente logado. O roteador público opera via Server Components (RSC) otimizando SEO, consumindo estado efêmero apenas no formulário de client-side (`LeadCaptureForm`).
+
+---
+
+**2. Definições de Infraestrutura (Variáveis, Rotas, UI)**
+
+* **Variáveis e Rotas:**
+* Injeção e configuração da variável de ambiente `NEXT_PUBLIC_ROOT_DOMAIN`.
+* Estruturação da rota interceptadora no Front-end: `app/sites/[domain]/page.tsx`.
+* Mapeamento das rotas API no NestJS: `POST /leads` (público) e `GET/PATCH /landing-pages/me` (privado/dashboard).
+
+
+* **Motor de Componentes Dinâmicos (MDX):**
+* Adoção de `next-mdx-remote/rsc` no Next.js para renderização Server-Side de conteúdos customizados pelas construtoras.
+* Mapeamento seguro de injeção de componentes: O componente `<LeadCaptureForm/>` é injetado programaticamente via dicionário MDX recebendo o `tenantId` encapsulado pelo servidor, mitigando vulnerabilidades de XSS (Cross-Site Scripting).
+
+
+* **UI/UX e Validação Estrita (Zod):**
+* Validação end-to-end (Client/Server) utilizando schemas centralizados do Zod (`landingPageFormSchema`, `createLeadSchema`).
+* O componente de configuração (`LandingPageSettings.tsx`) foi construído convertendo valores Hexadecimais matematicamente para HSL (`h s% l%`) no momento do submit, mantendo a compatibilidade obrigatória com as variáveis semânticas do Tailwind v4 (`--primary`, `bg-background`).
+* Remoção do uso do `.default(true)` no schema Zod integrado ao React Hook Form, ajustando a inferência de tipos e eliminando conflitos de controle de estado do React.
+
+
 === SPRINT 23 - 11/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura

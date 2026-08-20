@@ -127,7 +127,7 @@ export class OrganizationService {
           email: userData.email,
           password: userData.password,
         });
-      } catch (error) {
+      } catch {
         throw new BadRequestException('Erro ao criar o usuário base.');
       }
     }
@@ -249,6 +249,12 @@ export class OrganizationService {
     const org = await this.orgModel.findOne({ slug }).exec();
     if (!org) throw new BadRequestException('Organização não encontrada');
     return org;
+  }
+
+  // VALIDAÇÃO: Verifica se a organização existe (usada por módulos que recebem orgId externo)
+  async existsById(id: Types.ObjectId): Promise<boolean> {
+    const count = await this.orgModel.countDocuments({ _id: id }).exec();
+    return count > 0;
   }
 
   // Helper simples para gerar slug

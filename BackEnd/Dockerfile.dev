@@ -13,6 +13,10 @@ RUN pnpm install
 # mas copiamos aqui para o build da imagem não vir vazio
 COPY . .
 
+# Executa como usuário não-root (uid 1000) para os artefatos gerados
+# nos bind mounts (dist/) pertencerem ao usuário do host
+USER node
+
 EXPOSE 3001
 
 # Comando padrão do Nest para Hot Reload

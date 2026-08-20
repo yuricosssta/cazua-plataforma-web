@@ -7,7 +7,7 @@ Interface web do SaaS para gestão de obras, controle de almoxarifado, orçament
 
 ## 🛠️ Stack Tecnológica
 
-* **Framework:** Next.js (App Router) + React 19
+* **Framework:** Next.js (App Router) + React 18
 * **Estado Global:** Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
 * **Estado Local/Preferências:** Web Storage API
 * **Estilização:** Tailwind CSS v4
@@ -22,7 +22,7 @@ Interface web do SaaS para gestão de obras, controle de almoxarifado, orçament
 Para garantir a consistência visual, suporte automático a Dark Mode e manutenibilidade do código, as seguintes regras devem ser estritamente seguidas ao desenvolver novos componentes ou telas:
 
 1. **Uso de Variáveis Semânticas (Dark Mode Nativo):**
-* É **estritamente proibido** o uso de classes de cores utilitárias genéricas (ex: `bg-slate-100`, `text-zinc-900`, cores hexadecimais estáticas) para superfícies, fundos e textos principais.
+* É **estritamente proibido** o uso de classes de cores utilitárias genéricas (ex: `bg-gray-100`, `bg-slate-100`, `text-zinc-900`, cores hexadecimais estáticas) para superfícies, fundos e textos principais.
 * Utilize exclusivamente as variáveis semânticas do Shadcn/Tailwind: `bg-background`, `bg-card`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `border-border`.
 * A escala `stone` está autorizada unicamente para detalhes específicos de acento.
 
@@ -72,29 +72,34 @@ INTERNAL_API_URL=http://backend:3001
 # Coordenadas Iniciais para Módulos de Mapa/Geolocalização
 NEXT_PUBLIC_INITIAL_MAP_CENTER=-43.79, -20.65
 
+# Domínio raiz (usado pelo middleware.ts para landing pages multi-tenant)
+NEXT_PUBLIC_ROOT_DOMAIN=grupocazua.com.br
+
 ```
 
 ### 2. Instalação e Execução Local
 
 ```bash
 # Instale as dependências
-npm install
+pnpm install
 
 # Inicie o servidor em modo de desenvolvimento
-npm run dev
+pnpm run dev
 
 # Acesse a aplicação em http://localhost:3000
 
 ```
 
+> O lockfile versionado é o `pnpm-lock.yaml` (use `pnpm`).
+
 ### 3. Build e Produção
 
 ```bash
 # Gere o build estático/otimizado
-npm run build
+pnpm run build
 
 # Inicie a aplicação em produção
-npm run start
+pnpm run start
 
 ```
 
@@ -108,3 +113,11 @@ docker-compose up --build -d
 ```
 
 O serviço será exposto na porta mapeada (padrão `3000` ou `8080`, dependendo da definição no seu `docker-compose.yml`).
+
+---
+
+## 🏢 Multi-Tenancy
+
+O `middleware.ts` na raiz do projeto reescreve subdomínios não-raiz para `src/app/sites/${hostname}` (landing pages multi-tenant), usando `NEXT_PUBLIC_ROOT_DOMAIN`. Ajustes de roteamento por subdomínio devem ser feitos nesse arquivo.
+
+> Para gotchas operacionais, comandos e o restante das regras inegociáveis, consulte o `AGENTS.md` na raiz do monorepo.

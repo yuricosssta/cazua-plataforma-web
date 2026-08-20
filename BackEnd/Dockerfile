@@ -27,9 +27,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
 # No NestJS, precisamos da node_modules (com as prod-deps) e da dist/
-COPY --from=builder /usr/app/node_modules ./node_modules
-COPY --from=builder /usr/app/dist ./dist
-COPY --from=builder /usr/app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
 
 USER appuser
 EXPOSE 3001

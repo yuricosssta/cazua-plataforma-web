@@ -17,6 +17,7 @@ import { ResourcesModule } from './resources/resources.module';
 import { SharedModule } from './shared/shared.module';
 import { PlanningModule } from './planning/planning.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { LandingPageModule } from './landing-pages/landing-page.module';
 
 @Module({
   imports: [
@@ -29,10 +30,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 5,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 10000,
+        limit: 5,
+      },
+    ]),
     EventEmitterModule.forRoot(),
     UsersModule,
     AuthModule,
@@ -43,10 +46,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ProjectsModule,
     StorageModule,
     ResourcesModule,
-    SharedModule, 
+    SharedModule,
     PlanningModule,
+    LandingPageModule,
   ],
   controllers: [AppController],
-  providers: [AppService],// { provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [AppService], // { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}
