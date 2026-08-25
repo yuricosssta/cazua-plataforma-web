@@ -1,0 +1,14 @@
+# cloudflare-worker/wrangler.toml
+name = "cazua-tenant-router"
+main = "worker.js"
+compatibility_date = "2024-08-25"
+compatibility_flags = ["nodejs_compat"]
+
+# Variáveis de ambiente (não-sensíveis)
+[vars]
+ROOT_DOMAIN = "grupocazua.com.br"
+APP_DOMAIN = "www.grupocazua.com.br"
+VERCEL_ORIGIN = "vanguardatech.vercel.app"
+
+# Secrets (configurar via: wrangler secret put ROOT_DOMAIN / APP_DOMAIN / VERCEL_ORIGIN)
+# Ou no dashboard Cloudflare: Workers > cazua-tenant-router > Settings > Variables

@@ -8,10 +8,14 @@ import { Types } from 'mongoose';
 import { LandingPageConfigRepository } from '../repositories/landing-page-config.repository';
 import { UpsertLandingPageDTO } from '../validations/landing-page.zod';
 import { LandingPageConfig } from '../schemas/landing-page-config.schema';
+import { OrganizationService } from '../../organization/services/organization.service';
 
 @Injectable()
 export class LandingPageConfigService {
-  constructor(private readonly repository: LandingPageConfigRepository) {}
+  constructor(
+    private readonly repository: LandingPageConfigRepository,
+    private readonly organizationService: OrganizationService,
+  ) {}
 
   // Acesso Público: Rota consumida pelo Front-end Next.js para renderizar a Landing Page
   async getConfigByDomain(domain: string) {
@@ -64,5 +68,22 @@ export class LandingPageConfigService {
   async disableConfig(orgIdString: string) {
     const organizationId = new Types.ObjectId(orgIdString);
     await this.repository.softDelete(organizationId);
+  }
+
+  // Acesso Público via Slug: Usado pelo Cloudflare Worker para subdomínios Cazuá
+  async getConfigBySlug(slug: string) {
+    const org = await this.organizationService.findOneBySlug(slug);
+    if (!org) {
+      throw new NotFoundException(
+        `Organização não encontrada para o slug: ${slug}`,
+      );
+    }
+    const config = await this.repository.findByOrganizationId(org._id);
+    if (!config || !config.isActive) {
+      throw new NotFoundException(
+        `Configuração não encontrada ou inativa para o slug: ${slug}`,
+      );
+    }
+    return config;
   }
 }
