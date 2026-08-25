@@ -73,7 +73,7 @@ function hslStringToHex(hslString: string): string {
 }
 
 export function LandingPageSettings() {
-  const currentOrgId = useSelector((state: RootState) => state.organizations.currentOrganization?._id);
+  const currentOrgId = useSelector((state: RootState) => state.organizations.currentOrganization?.organizationId?._id);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

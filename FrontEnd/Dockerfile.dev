@@ -1,5 +1,5 @@
 # Dockerfile.dev frontend para desenvolvimento com hot reload
-FROM node:22-alpine
+FROM node:22-slim
 WORKDIR /app
 
 # Instala o pnpm
@@ -11,13 +11,10 @@ ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_INITIAL_MAP_CENTER
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_INITIAL_MAP_CENTER=$NEXT_PUBLIC_INITIAL_MAP_CENTER
+ENV CI=true
 RUN pnpm install
 
 # Não precisamos de COPY . . aqui se usarmos volumes no docker-compose
-
-# Executa como usuário não-root (uid 1000) para os artefatos gerados
-# nos bind mounts (.next/) pertencerem ao usuário do host
-USER node
 
 EXPOSE 3000
 
