@@ -74,6 +74,8 @@ function hslStringToHex(hslString: string): string {
 
 export function LandingPageSettings() {
   const currentOrgId = useSelector((state: RootState) => state.organizations.currentOrganization?.organizationId?._id);
+  const orgSlug = useSelector((state: RootState) => state.organizations.currentOrganization?.organizationId?.slug);
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'grupocazua.com.br';
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -179,21 +181,33 @@ export function LandingPageSettings() {
       )}
 
       {successMsg && (
-        <div className="flex items-center justify-between p-3 text-sm bg-primary/10 text-primary border border-primary/20 rounded-md">
-          <div className="flex items-center gap-2">
+        <div className="flex items-start justify-between p-3 text-sm bg-primary/10 text-primary border border-primary/20 rounded-md gap-4">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <p>{successMsg}</p>
           </div>
-          {currentDomain && (
-            <a
-              href={`https://${currentDomain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 font-bold underline hover:opacity-80 transition-opacity"
-            >
-              Testar Acesso <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+            {currentDomain && (
+              <a
+                href={`https://${currentDomain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-bold underline hover:opacity-80 transition-opacity text-xs"
+              >
+                Testar Domínio Próprio <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+            {orgSlug && (
+              <a
+                href={`https://${orgSlug}.${rootDomain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-bold underline hover:opacity-80 transition-opacity text-xs"
+              >
+                Acessar Subdomínio Cazuá <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
         </div>
       )}
 
@@ -247,7 +261,7 @@ export function LandingPageSettings() {
                   <span className="font-semibold flex items-center gap-2"><Info className="w-4 h-4 text-primary" /> Configuração de Domínio (DNS)</span>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  Para que a landing page fique disponível, acesse o painel do seu provedor de domínio (ex: Registro.br, GoDaddy) e crie os apontamentos abaixo na <strong>Zona de DNS</strong>. A propagação pode levar algumas horas.
+                  Para que a landing page fique disponível, acesse o painel do seu provedor de domínio (ex: Registro.br, GoDaddy) e crie os apontamentos abaixo na <strong>Zona de DNS</strong>. A propagação pode levar <strong>até 24 horas</strong>.
                 </p>
 
                 <div className="space-y-2">
@@ -267,6 +281,25 @@ export function LandingPageSettings() {
                     <div className="flex flex-col"><span className="text-muted-foreground text-[10px] uppercase">Destino</span><strong>cname.vercel-dns.com</strong></div>
                   </div>
                 </div>
+
+                {orgSlug && (
+                  <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-sm">
+                    <p className="font-semibold text-xs text-primary flex items-center gap-1">
+                      <Globe className="w-3 h-3" /> Acesso Imediato (Subdomínio Cazuá):
+                    </p>
+                    <a
+                      href={`https://${orgSlug}.${rootDomain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary underline break-all mt-1 inline-block"
+                    >
+                      https://{orgSlug}.{rootDomain}
+                    </a>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Funciona imediatamente — sem configuração DNS. Compartilhe este link enquanto o domínio próprio propaga.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,0 +1,21 @@
+{
+  "name": "cazua-tenant-router",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker para roteamento de subdomínios multi-tenant do Cazuá",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "secret:root": "wrangler secret put ROOT_DOMAIN",
+    "secret:app": "wrangler secret put APP_DOMAIN"
+  },
+  "devDependencies": {
+    "wrangler": "^3.60.0",
+    "@cloudflare/workers-types": "^4.20240801.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

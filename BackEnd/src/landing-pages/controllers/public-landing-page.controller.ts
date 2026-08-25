@@ -38,4 +38,22 @@ export class PublicLandingPageController {
       isActive: config.isActive,
     };
   }
+
+  @Get('by-slug/:slug')
+  async getBySlug(@Param('slug') slug: string) {
+    const config = await this.service.getConfigBySlug(slug);
+
+    // DTO público idêntico ao getByDomain
+    return {
+      tenantId: config.organizationId.toString(),
+      domain: config.domain,
+      name: config.name,
+      logoUrl: config.logoUrl,
+      heroTitle: config.heroTitle,
+      heroSubtitle: config.heroSubtitle,
+      contentMDX: config.contentMDX,
+      theme: config.theme,
+      isActive: config.isActive,
+    };
+  }
 }

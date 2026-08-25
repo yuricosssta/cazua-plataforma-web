@@ -12,16 +12,29 @@ export const config = {
 export default async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get('host') || '';
+  const tenantSlug = req.headers.get('x-cazua-tenant-slug');
 
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
   const appDomain = `app.${rootDomain}`;
+  const wwwDomain = `www.${rootDomain}`;
 
-  const isMainDomain = hostname === rootDomain || hostname === appDomain;
+  // 1. Requisição via Cloudflare Worker (subdomínio Cazuá)
+  // O Worker adiciona o header x-cazua-tenant-slug com o slug da organização
+  if (tenantSlug) {
+    return NextResponse.rewrite(
+      new URL(`/src/app/sites/${tenantSlug}.${rootDomain}${url.pathname}`, req.url),
+    );
+  }
+
+  // 2. Domínio principal da aplicação (app.grupocazua.com.br ou www.grupocazua.com.br)
+  const isMainDomain = hostname === rootDomain || hostname === appDomain || hostname === wwwDomain;
   const isLocalHost = hostname.includes('localhost');
 
   if (isMainDomain || isLocalHost) {
     return NextResponse.next();
   }
 
+  // 3. Domínio customizado do tenant (ex: construtora.com.br)
+  // Roteia para /src/app/sites/[domain] onde [domain] = hostname completo
   return NextResponse.rewrite(new URL(`/src/app/sites/${hostname}${url.pathname}`, req.url));
 }
