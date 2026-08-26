@@ -22,7 +22,7 @@ export default async function middleware(req: NextRequest) {
   // O Worker adiciona o header x-cazua-tenant-slug com o slug da organização
   if (tenantSlug) {
     return NextResponse.rewrite(
-      new URL(`/src/app/sites/${tenantSlug}.${rootDomain}${url.pathname}`, req.url),
+      new URL(`/sites/${hostname}${url.pathname}`, req.url)
     );
   }
 
@@ -35,6 +35,6 @@ export default async function middleware(req: NextRequest) {
   }
 
   // 3. Domínio customizado do tenant (ex: construtora.com.br)
-  // Roteia para /src/app/sites/[domain] onde [domain] = hostname completo
-  return NextResponse.rewrite(new URL(`/src/app/sites/${hostname}${url.pathname}`, req.url));
+  return NextResponse.rewrite(new URL(`/sites/${hostname}${url.pathname}`, req.url));
+    
 }
