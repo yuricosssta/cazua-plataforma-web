@@ -12,6 +12,27 @@ export default {
     const appDomain = env.APP_DOMAIN || `www.${rootDomain}`;
     const vercelOrigin = env.VERCEL_ORIGIN || 'vanguardatech.vercel.app';
 
+    // Paths que passam direto para Vercel ORIGIN (sem headers de tenant)
+    const PASSTHROUGH_PATHS = [
+      '/_next/',
+      '/_static/',
+      '/_vercel/',
+      '/favicon.ico',
+      '/robots.txt',
+      '/sitemap.xml',
+    ];
+
+    // Early return para assets estáticos
+    if (PASSTHROUGH_PATHS.some(p => url.pathname.startsWith(p))) {
+      return fetch(`https://${vercelOrigin}${url.pathname}${url.search}`, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        redirect: 'manual',
+        cf: { cacheTtl: 3600, cacheEverything: true },
+      });
+    }
+
     // Normaliza: remove www. do subdomínio do tenant
     // Ex: www.construtora-alpha.grupocazua.com.br -> construtora-alpha.grupocazua.com.br
     if (hostname.startsWith('www.')) {
