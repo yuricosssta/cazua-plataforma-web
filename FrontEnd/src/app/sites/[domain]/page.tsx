@@ -14,13 +14,22 @@ async function getTenantConfig(domain: string) {
   const isCazuaSubdomain = domain.endsWith(`.${ROOT_DOMAIN}`) && domain !== `www.${ROOT_DOMAIN}`;
   const slug = isCazuaSubdomain ? domain.replace(`.${ROOT_DOMAIN}`, '') : null;
 
-  const endpoint = slug
-    ? `/public/landing-pages/by-slug/${encodeURIComponent(slug)}`
-    : `/public/landing-pages/${encodeURIComponent(domain)}`;
+  let endpoint: string;
+  if (slug) {
+    endpoint = `/public/landing-pages/by-slug/${encodeURIComponent(slug)}`;
+    console.log('[getTenantConfig] Using slug endpoint:', endpoint);
+  } else {
+    endpoint = `/public/landing-pages/${encodeURIComponent(domain)}`;
+    console.log('[getTenantConfig] Using domain endpoint:', endpoint);
+  }
+
+  console.log('[getTenantConfig] isCazuaSubdomain:', isCazuaSubdomain, 'slug:', slug);
 
   const response = await fetch(`${getNestApiUrl()}${endpoint}`, { cache: 'no-store' });
 
+  console.log('[getTenantConfig] Backend response status:', response.status);
   if (!response.ok) {
+    console.error('[getTenantConfig] Backend fetch failed:', response.status, response.statusText);
     return null;
   }
 
@@ -33,10 +42,16 @@ export default async function TenantLandingPage({
   params: Promise<{ domain: string }>;
 }) {
   const { domain } = await params;
+  console.log('[TenantLandingPage] Received domain param:', domain);
+
   const rawData = await getTenantConfig(domain);
+  console.log('[TenantLandingPage] Raw data from backend:', rawData);
+
   const parseResult = tenantLandingPageSchema.safeParse(rawData);
+  console.log('[TenantLandingPage] Zod parse result:', parseResult.success ? 'Success' : parseResult.error);
 
   if (!parseResult.success || !parseResult.data.isActive) {
+    console.log('[TenantLandingPage] Not found or inactive, showing 404.');
     notFound();
   }
 

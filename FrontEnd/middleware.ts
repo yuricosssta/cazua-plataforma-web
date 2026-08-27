@@ -18,11 +18,16 @@ export default async function middleware(req: NextRequest) {
   const appDomain = `app.${rootDomain}`;
   const wwwDomain = `www.${rootDomain}`;
 
+  console.log('[Middleware] Request hostname:', hostname);
+  console.log('[Middleware] X-Cazua-Tenant-Slug:', tenantSlug);
+  console.log('[Middleware] Root Domain:', rootDomain);
+
 // 1. Requisição via Cloudflare Worker (subdomínio Cazuá)
   // O Worker adiciona o header x-cazua-tenant-slug com o slug da organização
   // O Worker sobrescreve o header 'host' para www.grupocazua.com.br, então usamos tenantSlug + rootDomain
   if (tenantSlug) {
     const cazuadomain = `${tenantSlug}.${rootDomain}`;
+    console.log('[Middleware] Rewriting for Cazuá Subdomain to:', `/sites/${cazuadomain}${url.pathname}`);
     return NextResponse.rewrite(
       new URL(`/sites/${cazuadomain}${url.pathname}`, req.url)
     );
