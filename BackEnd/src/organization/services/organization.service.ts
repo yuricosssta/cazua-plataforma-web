@@ -1,43 +1,59 @@
 // src/organization/services/organization.service.ts
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Organization, OrganizationDocument } from '../schemas/organization.schema';
-import { OrganizationMember, OrganizationMemberDocument } from '../schemas/organization-member.schema';
+import {
+  Organization,
+  OrganizationDocument,
+} from '../schemas/organization.schema';
+import {
+  OrganizationMember,
+  OrganizationMemberDocument,
+} from '../schemas/organization-member.schema';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { UsersService } from '../../users/services/user.service';
 
 @Injectable()
 export class OrganizationService {
   constructor(
-    @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
-    @InjectModel(OrganizationMember.name) private memberModel: Model<OrganizationMemberDocument>,
-    private usersService: UsersService
-  ) { }
+    @InjectModel(Organization.name)
+    private orgModel: Model<OrganizationDocument>,
+    @InjectModel(OrganizationMember.name)
+    private memberModel: Model<OrganizationMemberDocument>,
+    private usersService: UsersService,
+  ) {}
 
   // 1. CRIAÇÃO E VÍNCULO AUTOMÁTICO
   async create(createDto: CreateOrganizationDto, ownerId: string) {
-
     // 1. Busca todas as empresas onde este usuário é o DONO
-    const ownedMemberships = await this.memberModel.find({
-      userId: new (Types.ObjectId as any)(ownerId),
-      role: 'OWNER'
-    }).exec();
+    const ownedMemberships = await this.memberModel
+      .find({
+        userId: new (Types.ObjectId as any)(ownerId),
+        role: 'OWNER',
+      })
+      .exec();
 
     // Se ele já for dono de alguma empresa, precisamos verificar se ele tem o plano ENTERPRISE
     if (ownedMemberships.length >= 1) {
-      const ownedOrgIds = ownedMemberships.map(m => m.organizationId);
+      const ownedOrgIds = ownedMemberships.map((m) => m.organizationId);
 
       // Busca quantas empresas que ele é dono possuem o plano ENTERPRISE
       const enterpriseOrgsCount = await this.orgModel.countDocuments({
         _id: { $in: ownedOrgIds },
-        plan: 'ENTERPRISE'
+        plan: 'ENTERPRISE',
       });
 
       // Se NENHUMA empresa dele for ENTERPRISE, bloqueia a criação de novas.
       if (enterpriseOrgsCount === 0) {
-        throw new BadRequestException('LIMITE_FREE_EXCEDIDO: Você atingiu o limite de 1 empresa por conta. Faça o upgrade para o plano ENTERPRISE para criar e gerenciar múltiplas empresas.');
+        throw new BadRequestException(
+          'LIMITE_FREE_EXCEDIDO: Você atingiu o limite de 1 empresa por conta. Faça o upgrade para o plano ENTERPRISE para criar e gerenciar múltiplas empresas.',
+        );
       }
     }
 
@@ -45,14 +61,16 @@ export class OrganizationService {
 
     const existing = await this.orgModel.findOne({ slug });
     if (existing) {
-      throw new BadRequestException('Este endereço (URL) ou sigla já está em uso.');
+      throw new BadRequestException(
+        'Este endereço (URL) ou sigla já está em uso.',
+      );
     }
 
     const createdOrg = new this.orgModel({
       ...createDto,
       slug,
       ownerId: new (Types.ObjectId as any)(ownerId),
-      plan: 'FREE' // Toda nova empresa nasce no Free por padrão
+      plan: 'FREE', // Toda nova empresa nasce no Free por padrão
     });
     const savedOrg = await createdOrg.save();
 
@@ -81,7 +99,9 @@ export class OrganizationService {
   // 3. BUSCAR MEMBROS DA ORGANIZAÇÃO
   async findMembersByOrganization(orgId: string) {
     if (!(Types.ObjectId as any).isValid(orgId)) {
-      throw new BadRequestException('ID da organização inválido ou não fornecido.');
+      throw new BadRequestException(
+        'ID da organização inválido ou não fornecido.',
+      );
     }
 
     const memberships = await this.memberModel
@@ -93,8 +113,8 @@ export class OrganizationService {
       .exec();
 
     return memberships
-      .filter(m => m.userId)
-      .map(m => {
+      .filter((m) => m.userId)
+      .map((m) => {
         const user = m.userId as any;
         return {
           _id: user._id,
@@ -152,53 +172,69 @@ export class OrganizationService {
     return { message: 'Membro adicionado com sucesso!' };
   }
 
-  async updateMemberRole(orgId: string, adminId: string, targetUserId: string, newRole: string) {
+  async updateMemberRole(
+    orgId: string,
+    adminId: string,
+    targetUserId: string,
+    newRole: string,
+  ) {
     // Verifica se quem está pedindo é ADMIN ou OWNER
     const adminMember = await this.memberModel.findOne({
       organizationId: new (Types.ObjectId as any)(String(orgId)),
       userId: new (Types.ObjectId as any)(String(adminId)),
-      role: { $in: ['ADMIN', 'OWNER'] }
+      role: { $in: ['ADMIN', 'OWNER'] },
     });
 
     if (!adminMember) {
-      throw new ForbiddenException('Apenas administradores podem alterar cargos.');
+      throw new ForbiddenException(
+        'Apenas administradores podem alterar cargos.',
+      );
     }
 
     // Atualiza o cargo do alvo
     const updated = await this.memberModel.findOneAndUpdate(
       {
         organizationId: new (Types.ObjectId as any)(String(orgId)),
-        userId: new (Types.ObjectId as any)(String(targetUserId))
+        userId: new (Types.ObjectId as any)(String(targetUserId)),
       },
       { role: newRole },
-      { new: true }
+      { new: true },
     );
 
-    if (!updated) throw new NotFoundException('Membro não encontrado nesta organização.');
+    if (!updated)
+      throw new NotFoundException('Membro não encontrado nesta organização.');
     return { message: 'Cargo atualizado com sucesso.' };
   }
 
-  async removeMemberFromOrganization(orgId: string, adminId: string, targetUserId: string) {
+  async removeMemberFromOrganization(
+    orgId: string,
+    adminId: string,
+    targetUserId: string,
+  ) {
     // Verifica se quem está pedindo é ADMIN ou OWNER
     const adminMember = await this.memberModel.findOne({
       organizationId: new (Types.ObjectId as any)(String(orgId)),
       userId: new (Types.ObjectId as any)(String(adminId)),
-      role: { $in: ['ADMIN', 'OWNER'] }
+      role: { $in: ['ADMIN', 'OWNER'] },
     });
 
     if (!adminMember) {
-      throw new ForbiddenException('Apenas administradores podem remover membros.');
+      throw new ForbiddenException(
+        'Apenas administradores podem remover membros.',
+      );
     }
 
     if (adminId === targetUserId) {
-      throw new BadRequestException('Você não pode remover a si mesmo por aqui.');
+      throw new BadRequestException(
+        'Você não pode remover a si mesmo por aqui.',
+      );
     }
 
     // Remove o vínculo
     await this.memberModel.findOneAndDelete({
       organizationId: new (Types.ObjectId as any)(String(orgId)),
       userId: new (Types.ObjectId as any)(String(targetUserId)),
-      role: { $ne: 'OWNER' } // Proteção extra: não deixa deletar o dono supremo
+      role: { $ne: 'OWNER' }, // Proteção extra: não deixa deletar o dono supremo
     });
 
     return { message: 'Membro removido da organização.' };
@@ -210,16 +246,18 @@ export class OrganizationService {
     const adminMember = await this.memberModel.findOne({
       organizationId: new (Types.ObjectId as any)(String(orgId)),
       userId: new (Types.ObjectId as any)(String(adminId)),
-      role: { $in: ['ADMIN', 'OWNER'] }
+      role: { $in: ['ADMIN', 'OWNER'] },
     });
 
     if (!adminMember) {
-      throw new ForbiddenException('Apenas administradores podem alterar as configurações da empresa.');
+      throw new ForbiddenException(
+        'Apenas administradores podem alterar as configurações da empresa.',
+      );
     }
 
-    // Busca a organização para atualizar. 
+    // Busca a organização para atualizar.
     const orgToUpdate = await this.orgModel.findById(orgId);
-    
+
     if (!orgToUpdate) {
       throw new NotFoundException('Organização não encontrada.');
     }
@@ -227,22 +265,21 @@ export class OrganizationService {
     // Mescla o objeto antigo com as novas propriedades que vieram no payload
     const updatedSettings = {
       ...orgToUpdate.settings,
-      ...newSettings
+      ...newSettings,
     };
 
     // 3. Salva no banco de dados
     const updated = await this.orgModel.findByIdAndUpdate(
       orgId,
       { $set: { settings: updatedSettings } },
-      { new: true }
+      { new: true },
     );
 
-    return { 
-      message: 'Configurações atualizadas com sucesso.', 
-      settings: updated.settings 
+    return {
+      message: 'Configurações atualizadas com sucesso.',
+      settings: updated.settings,
     };
   }
-
 
   // BUSCA POR SLUG
   async findOneBySlug(slug: string) {
@@ -261,7 +298,8 @@ export class OrganizationService {
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .trim()
       .replace(/[^a-z0-9 ]/g, '')
       .replace(/\s+/g, '-');
@@ -277,7 +315,9 @@ export class OrganizationService {
       .exec();
 
     // 2. Extrai uma lista única com todos os IDs dos donos
-    const ownerIds = [...new Set(orgs.map(org => org.ownerId?._id).filter(Boolean))];
+    const ownerIds = [
+      ...new Set(orgs.map((org) => org.ownerId?._id).filter(Boolean)),
+    ];
 
     // 3. Busca TODAS as participações (memberships) desses donos na plataforma inteira
     const allMemberships = await this.memberModel
@@ -287,19 +327,22 @@ export class OrganizationService {
       .exec();
 
     // 4. Agrupa as participações por ID do usuário para busca rápida (O(1))
-    const membershipsByUser = allMemberships.reduce((acc, membership) => {
-      const uid = String(membership.userId);
-      if (!acc[uid]) acc[uid] = [];
-      acc[uid].push(membership);
-      return acc;
-    }, {} as Record<string, any[]>);
+    const membershipsByUser = allMemberships.reduce(
+      (acc, membership) => {
+        const uid = String(membership.userId);
+        if (!acc[uid]) acc[uid] = [];
+        acc[uid].push(membership);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
 
     // 5. Injeta o currículo completo de empresas de volta no array original
-    return orgs.map(org => {
+    return orgs.map((org) => {
       const ownerIdStr = org.ownerId ? String((org.ownerId as any)._id) : null;
       return {
         ...org,
-        ownerMemberships: ownerIdStr ? (membershipsByUser[ownerIdStr] || []) : []
+        ownerMemberships: ownerIdStr ? membershipsByUser[ownerIdStr] || [] : [],
       };
     });
   }
@@ -313,11 +356,10 @@ export class OrganizationService {
     const org = await this.orgModel.findByIdAndUpdate(
       orgId,
       { plan: newPlan },
-      { new: true }
+      { new: true },
     );
 
     if (!org) throw new BadRequestException('Organização não encontrada.');
     return org;
   }
-
 }

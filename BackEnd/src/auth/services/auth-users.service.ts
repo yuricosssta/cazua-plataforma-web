@@ -6,7 +6,7 @@ import { AuthUsersRepository } from '../repositories/auth-users.repository';
 
 @Injectable()
 export class AuthUsersService {
-  constructor(private readonly authUsersRepository: AuthUsersRepository) { }
+  constructor(private readonly authUsersRepository: AuthUsersRepository) {}
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.authUsersRepository.findByEmail(email);

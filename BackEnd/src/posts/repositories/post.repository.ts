@@ -11,7 +11,10 @@ export interface PaginateOptions {
 
 export abstract class PostRepository {
   abstract getAllPosts(options: PaginateOptions): Promise<IPost[]>;
-  abstract getTotalPostsCount(organizationId?: string, term?: string): Promise<number>;
+  abstract getTotalPostsCount(
+    organizationId?: string,
+    term?: string,
+  ): Promise<number>;
   abstract getPost(postId: string): Promise<IPost>;
   abstract createPost(post: IPost): Promise<IPost>;
   abstract searchPost(term: string): Promise<IPost[]>; // legado

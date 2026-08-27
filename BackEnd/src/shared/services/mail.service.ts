@@ -1,5 +1,9 @@
 //src/shared/services/mail.service.ts
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -38,10 +42,14 @@ export class MailService {
           <p>Se você não solicitou esta alteração, ignore este e-mail. Nenhuma mudança será feita na sua conta.</p>
         `,
       });
-      this.logger.log(`E-mail transacional de recuperação enviado para ${email}`);
+      this.logger.log(
+        `E-mail transacional de recuperação enviado para ${email}`,
+      );
     } catch (error) {
       this.logger.error('Erro ao enviar e-mail transacional', error);
-      throw new InternalServerErrorException('Falha de infraestrutura ao enviar e-mail.');
+      throw new InternalServerErrorException(
+        'Falha de infraestrutura ao enviar e-mail.',
+      );
     }
   }
 }

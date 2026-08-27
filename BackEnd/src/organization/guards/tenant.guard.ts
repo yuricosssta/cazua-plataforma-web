@@ -5,11 +5,14 @@ import {
   Injectable,
   ForbiddenException,
   BadRequestException,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { OrganizationMember, OrganizationMemberDocument } from '../schemas/organization-member.schema';
+import {
+  OrganizationMember,
+  OrganizationMemberDocument,
+} from '../schemas/organization-member.schema';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
@@ -23,7 +26,9 @@ export class TenantGuard implements CanActivate {
     const user = request.user;
 
     if (!user || (!user.sub && !user.userId)) {
-      throw new ForbiddenException('Usuário não autenticado. Execute o AuthGuard primeiro.');
+      throw new ForbiddenException(
+        'Usuário não autenticado. Execute o AuthGuard primeiro.',
+      );
     }
 
     const userIdStr = user.sub || user.userId;
@@ -34,7 +39,9 @@ export class TenantGuard implements CanActivate {
 
     const orgIdHeader = request.headers['x-org-id'];
     if (!orgIdHeader) {
-      throw new BadRequestException('O cabeçalho x-org-id é obrigatório para esta rota.');
+      throw new BadRequestException(
+        'O cabeçalho x-org-id é obrigatório para esta rota.',
+      );
     }
 
     if (!Types.ObjectId.isValid(orgIdHeader as string)) {
@@ -44,13 +51,17 @@ export class TenantGuard implements CanActivate {
     const organizationId = new Types.ObjectId(orgIdHeader as string);
     const userId = new Types.ObjectId(userIdStr as string);
 
-    const membership = await this.memberModel.findOne({
-      userId,
-      organizationId,
-    }).exec();
+    const membership = await this.memberModel
+      .findOne({
+        userId,
+        organizationId,
+      })
+      .exec();
 
     if (!membership) {
-      throw new ForbiddenException('Acesso negado a esta organização ou associação inativa.');
+      throw new ForbiddenException(
+        'Acesso negado a esta organização ou associação inativa.',
+      );
     }
 
     request['organizationId'] = membership.organizationId.toString();

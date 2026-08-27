@@ -10,7 +10,9 @@ export const upsertLandingPageSchema = z.object({
       /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/,
       'Domínio inválido (ex: construtora.com.br)',
     )
-    .min(3),
+    .min(3)
+    .optional()
+    .or(z.literal('')),
   name: z.string().min(2),
   logoUrl: z.string().url().optional(),
   heroTitle: z.string().min(5),

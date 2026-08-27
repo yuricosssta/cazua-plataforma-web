@@ -27,11 +27,11 @@ export const RoleLabels: Record<RoleType, string> = {
   OWNER: 'Proprietário',
   ADMIN: 'Administrador',
   MEMBER: 'Membro',
-  VIEWER: 'Visualizador'
+  VIEWER: 'Visualizador',
 };
 
 export const PlanLabels: Record<PlanType, string> = {
   FREE: 'Plano Gratuito',
   PRO: 'Plano PRO',
-  ENTERPRISE: 'Plano Enterprise'
+  ENTERPRISE: 'Plano Enterprise',
 };

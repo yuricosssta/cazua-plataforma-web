@@ -1,5 +1,15 @@
 //src/resources/controllers/resources.controller.ts
-import { Controller, Post, Get, Patch, Body, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Param,
+  Req,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ResourcesService } from '../services/resources.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
@@ -17,13 +27,13 @@ import {
   RejectRequestDto,
   approveRequestSchema,
   ApproveRequestDto,
-  rejectRequestSchema
+  rejectRequestSchema,
 } from '../validations/resource.zod';
 
 @Controller('organizations/:orgId/resources')
 @UseGuards(AuthGuard)
 export class ResourcesController {
-  constructor(private readonly resourcesService: ResourcesService) { }
+  constructor(private readonly resourcesService: ResourcesService) {}
 
   private extractUserId(req: any): string {
     return req.user?.sub || req.user?._id || req.user?.id;
@@ -35,10 +45,7 @@ export class ResourcesController {
 
   // --- OPERAÇÕES DE MANUTENÇÃO E PADRONIZAÇÃO ---
   // @Patch('admin/sanitize-decimals')
-  async sanitizeDecimals(
-    @Param('orgId') orgId: string,
-    @Req() req: any
-  ) {
+  async sanitizeDecimals(@Param('orgId') orgId: string, @Req() req: any) {
     const userId = this.extractUserId(req);
     const userRole = this.extractUserRole(req);
 
@@ -56,11 +63,13 @@ export class ResourcesController {
   async assignWarehouseMember(
     @Param('orgId') orgId: string,
     @Req() req: any,
-    @Body('userId') userIdToAssign: string
+    @Body('userId') userIdToAssign: string,
   ) {
     const userRole = this.extractUserRole(req);
     if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
-      throw new ForbiddenException('Apenas Administradores podem modificar a equipe do Almoxarifado.');
+      throw new ForbiddenException(
+        'Apenas Administradores podem modificar a equipe do Almoxarifado.',
+      );
     }
     return this.resourcesService.assignWarehouseMember(orgId, userIdToAssign);
   }
@@ -69,11 +78,13 @@ export class ResourcesController {
   async removeWarehouseMember(
     @Param('orgId') orgId: string,
     @Req() req: any,
-    @Body('userId') userIdToRemove: string
+    @Body('userId') userIdToRemove: string,
   ) {
     const userRole = this.extractUserRole(req);
     if (userRole !== 'OWNER' && userRole !== 'ADMIN') {
-      throw new ForbiddenException('Apenas Administradores podem modificar a equipe do Almoxarifado.');
+      throw new ForbiddenException(
+        'Apenas Administradores podem modificar a equipe do Almoxarifado.',
+      );
     }
     return this.resourcesService.removeWarehouseMember(orgId, userIdToRemove);
   }
@@ -86,7 +97,12 @@ export class ResourcesController {
     @Req() req: any,
     @Body(new ZodValidationPipe(createResourceSchema)) data: CreateResourceDto,
   ) {
-    return this.resourcesService.createResource(orgId, this.extractUserId(req), this.extractUserRole(req), data);
+    return this.resourcesService.createResource(
+      orgId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data,
+    );
   }
 
   @Get()
@@ -99,7 +115,8 @@ export class ResourcesController {
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
     @Req() req: any,
-    @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
+    @Body(new ZodValidationPipe(allocateResourceSchema))
+    data: AllocateResourceDto,
   ) {
     return this.resourcesService.requestAllocation({
       orgId,
@@ -119,7 +136,13 @@ export class ResourcesController {
     @Req() req: any,
     @Body(new ZodValidationPipe(approveRequestSchema)) data: ApproveRequestDto,
   ) {
-    return this.resourcesService.approveRequest(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.approvedQuantity);
+    return this.resourcesService.approveRequest(
+      orgId,
+      transactionId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data.approvedQuantity,
+    );
   }
 
   @Post('transactions/:transactionId/reject')
@@ -129,7 +152,13 @@ export class ResourcesController {
     @Req() req: any,
     @Body(new ZodValidationPipe(rejectRequestSchema)) data: RejectRequestDto,
   ) {
-    return this.resourcesService.rejectRequest(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.reason);
+    return this.resourcesService.rejectRequest(
+      orgId,
+      transactionId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data.reason,
+    );
   }
 
   @Post('allocate-direct/:projectId')
@@ -137,15 +166,21 @@ export class ResourcesController {
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
     @Req() req: any,
-    @Body(new ZodValidationPipe(allocateResourceSchema)) data: AllocateResourceDto,
+    @Body(new ZodValidationPipe(allocateResourceSchema))
+    data: AllocateResourceDto,
   ) {
-    return this.resourcesService.allocateDirectly(orgId, this.extractUserId(req), this.extractUserRole(req), {
-      projectId: projectId,
-      resourceId: data.resourceId,
-      quantity: data.quantity,
-      origin: data.origin,
-      attachments: data.attachments,
-    });
+    return this.resourcesService.allocateDirectly(
+      orgId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      {
+        projectId: projectId,
+        resourceId: data.resourceId,
+        quantity: data.quantity,
+        origin: data.origin,
+        attachments: data.attachments,
+      },
+    );
   }
 
   @Post('stock')
@@ -154,7 +189,12 @@ export class ResourcesController {
     @Req() req: any,
     @Body(new ZodValidationPipe(addStockSchema)) data: AddStockDto,
   ) {
-    return this.resourcesService.addStock(orgId, this.extractUserId(req), this.extractUserRole(req), data);
+    return this.resourcesService.addStock(
+      orgId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data,
+    );
   }
 
   @Post('return/:projectId')
@@ -164,7 +204,13 @@ export class ResourcesController {
     @Req() req: any,
     @Body(new ZodValidationPipe(returnResourceSchema)) data: ReturnResourceDto,
   ) {
-    return this.resourcesService.returnFromProject(orgId, projectId, this.extractUserId(req), this.extractUserRole(req), data);
+    return this.resourcesService.returnFromProject(
+      orgId,
+      projectId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data,
+    );
   }
 
   @Post('transactions/:transactionId/cancel')
@@ -172,9 +218,16 @@ export class ResourcesController {
     @Param('orgId') orgId: string,
     @Param('transactionId') transactionId: string,
     @Req() req: any,
-    @Body(new ZodValidationPipe(cancelTransactionSchema)) data: CancelTransactionDto,
+    @Body(new ZodValidationPipe(cancelTransactionSchema))
+    data: CancelTransactionDto,
   ) {
-    return this.resourcesService.cancelTransaction(orgId, transactionId, this.extractUserId(req), this.extractUserRole(req), data.reason);
+    return this.resourcesService.cancelTransaction(
+      orgId,
+      transactionId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data.reason,
+    );
   }
 
   @Get('transactions')
@@ -189,7 +242,13 @@ export class ResourcesController {
     @Req() req: any,
     @Body() data: Partial<CreateResourceDto>,
   ) {
-    return this.resourcesService.updateResource(orgId, resourceId, this.extractUserId(req), this.extractUserRole(req), data);
+    return this.resourcesService.updateResource(
+      orgId,
+      resourceId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+      data,
+    );
   }
 
   @Patch(':resourceId/inactivate')
@@ -198,13 +257,18 @@ export class ResourcesController {
     @Param('resourceId') resourceId: string,
     @Req() req: any,
   ) {
-    return this.resourcesService.inactivateResource(orgId, resourceId, this.extractUserId(req), this.extractUserRole(req));
+    return this.resourcesService.inactivateResource(
+      orgId,
+      resourceId,
+      this.extractUserId(req),
+      this.extractUserRole(req),
+    );
   }
 
   @Get('statement/:projectId')
   async getProjectStatement(
     @Param('orgId') orgId: string,
-    @Param('projectId') projectId: string
+    @Param('projectId') projectId: string,
   ) {
     return this.resourcesService.getProjectStatement(orgId, projectId);
   }

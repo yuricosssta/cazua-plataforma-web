@@ -1,10 +1,21 @@
 //src/storage/storage.service.ts
-import { Injectable, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  Injectable,
+  InternalServerErrorException,
+  ForbiddenException,
+} from '@nestjs/common';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { OrganizationDocument, Organization } from '../../organization/schemas/organization.schema';
+import {
+  OrganizationDocument,
+  Organization,
+} from '../../organization/schemas/organization.schema';
 import { FileAsset, FileAssetDocument } from '../schemas/file-asset.schema';
 
 @Injectable()
@@ -21,8 +32,10 @@ export class StorageService {
   };
 
   constructor(
-    @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
-    @InjectModel(FileAsset.name) private fileAssetModel: Model<FileAssetDocument>,
+    @InjectModel(Organization.name)
+    private orgModel: Model<OrganizationDocument>,
+    @InjectModel(FileAsset.name)
+    private fileAssetModel: Model<FileAssetDocument>,
   ) {
     this.s3Client = new S3Client({
       region: 'auto',
@@ -34,21 +47,34 @@ export class StorageService {
     });
   }
 
-
-  async getPresignedUploadUrl(orgId: string, fileName: string, fileType: string, sizeBytes: number): Promise<{ uploadUrl: string; fileUrl: string }> {
+  async getPresignedUploadUrl(
+    orgId: string,
+    fileName: string,
+    fileType: string,
+    sizeBytes: number,
+  ): Promise<{ uploadUrl: string; fileUrl: string }> {
     // 1. Verifica a cota da empresa
-    const org = await this.orgModel.findById(orgId).select('plan storageUsed').exec();
+    const org = await this.orgModel
+      .findById(orgId)
+      .select('plan storageUsed')
+      .exec();
     if (!org) throw new ForbiddenException('Organização não encontrada.');
 
-    const limit = this.LIMITS[org.plan as keyof typeof this.LIMITS] || this.LIMITS.FREE;
+    const limit =
+      this.LIMITS[org.plan as keyof typeof this.LIMITS] || this.LIMITS.FREE;
 
     if (org.storageUsed + sizeBytes > limit) {
-      throw new ForbiddenException(`LIMITE DE ARMAZENAMENTO EXCEDIDO: Seu plano permite até ${limit / (1024 * 1024)}MB. Faça upgrade para liberar mais espaço.`);
+      throw new ForbiddenException(
+        `LIMITE DE ARMAZENAMENTO EXCEDIDO: Seu plano permite até ${limit / (1024 * 1024)}MB. Faça upgrade para liberar mais espaço.`,
+      );
     }
 
     try {
       const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+      const datePrefix = new Date()
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, '/');
       const uniqueId = Math.random().toString(36).substring(2, 8);
       const fileKey = `${orgId}/${datePrefix}/${uniqueId}-${cleanFileName}`;
 
@@ -58,17 +84,28 @@ export class StorageService {
         ContentType: fileType,
       });
 
-      const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 60 });
+      const uploadUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: 60,
+      });
       const fileUrl = `${this.publicDomain}/${fileKey}`;
 
       return { uploadUrl, fileUrl };
     } catch (error) {
       console.error('Erro ao gerar URL de upload do R2:', error);
-      throw new InternalServerErrorException('Falha ao comunicar com o servidor de arquivos.');
+      throw new InternalServerErrorException(
+        'Falha ao comunicar com o servidor de arquivos.',
+      );
     }
   }
 
-  async confirmUploadAndRegister(orgId: string, userId: string, fileUrl: string, fileName: string, mimeType: string, sizeBytes: number) {
+  async confirmUploadAndRegister(
+    orgId: string,
+    userId: string,
+    fileUrl: string,
+    fileName: string,
+    mimeType: string,
+    sizeBytes: number,
+  ) {
     // 1. Salva o registro do arquivo no MongoDB
     const newAsset = new this.fileAssetModel({
       organizationId: new (Types.ObjectId as any)(String(orgId)),
@@ -76,23 +113,27 @@ export class StorageService {
       fileName,
       fileUrl,
       mimeType,
-      sizeBytes
+      sizeBytes,
     });
     await newAsset.save();
 
     // 2. Aumenta o "Medidor" da Organização
     await this.orgModel.findByIdAndUpdate(orgId, {
-      $inc: { storageUsed: sizeBytes }
+      $inc: { storageUsed: sizeBytes },
     });
 
     return newAsset;
   }
 
-  // LISTAGEM DE ARQUIVOS 
+  // LISTAGEM DE ARQUIVOS
   async getOrganizationAssets(orgId: string) {
     // Busca o consumo atual
-    const org = await this.orgModel.findById(orgId).select('storageUsed').exec();
-    if (!org) throw new InternalServerErrorException('Organização não encontrada.');
+    const org = await this.orgModel
+      .findById(orgId)
+      .select('storageUsed')
+      .exec();
+    if (!org)
+      throw new InternalServerErrorException('Organização não encontrada.');
 
     // Busca todos os arquivos ordenados do mais recente para o mais antigo
     const assets = await this.fileAssetModel
@@ -103,7 +144,7 @@ export class StorageService {
 
     return {
       storageUsed: org.storageUsed || 0,
-      assets
+      assets,
     };
   }
 
@@ -112,11 +153,13 @@ export class StorageService {
     // Busca o arquivo no banco de dados para descobrir a URL e o Tamanho
     const asset = await this.fileAssetModel.findOne({
       _id: new (Types.ObjectId as any)(String(assetId)),
-      organizationId: new (Types.ObjectId as any)(String(orgId))
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
     });
 
     if (!asset) {
-      throw new InternalServerErrorException('Arquivo não encontrado no banco de dados.');
+      throw new InternalServerErrorException(
+        'Arquivo não encontrado no banco de dados.',
+      );
     }
 
     // 2. Extrai a "Key" (O caminho interno) removendo o domínio público da URL
@@ -125,13 +168,17 @@ export class StorageService {
 
     try {
       // Exclui o arquivo fisicamente da Cloudflare R2
-      await (this.s3Client as any).send(new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileKey,
-      }));
+      await (this.s3Client as any).send(
+        new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: fileKey,
+        }),
+      );
     } catch (error) {
       console.error('Erro ao deletar arquivo no R2:', error);
-      throw new InternalServerErrorException('Falha ao excluir o arquivo físico na nuvem.');
+      throw new InternalServerErrorException(
+        'Falha ao excluir o arquivo físico na nuvem.',
+      );
     }
 
     // Exclui o registro do Cartório (MongoDB)
@@ -139,10 +186,9 @@ export class StorageService {
 
     // Devolve os Megabytes para a conta da Empresa (Subtrai o tamanho)
     await this.orgModel.findByIdAndUpdate(orgId, {
-      $inc: { storageUsed: -Math.abs(asset.sizeBytes) } // Math.abs garante que sempre será uma subtração
+      $inc: { storageUsed: -Math.abs(asset.sizeBytes) }, // Math.abs garante que sempre será uma subtração
     });
 
     return { message: 'Arquivo excluído e espaço liberado com sucesso.' };
   }
-
 }

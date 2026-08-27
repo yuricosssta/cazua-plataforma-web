@@ -6,12 +6,16 @@ export type OrganizationMemberDocument = HydratedDocument<OrganizationMember>;
 
 @Schema({
   timestamps: true,
-  collection: 'organization_members'
+  collection: 'organization_members',
 })
 export class OrganizationMember {
-
   // Vínculo com a Organização
-  @Prop({ type: Types.ObjectId, ref: 'Organization', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Organization',
+    required: true,
+    index: true,
+  })
   organizationId: Types.ObjectId;
 
   // Vínculo com o Usuário
@@ -23,7 +27,7 @@ export class OrganizationMember {
     type: String,
     enum: ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'],
     default: 'MEMBER',
-    required: true
+    required: true,
   })
   role: string;
 
@@ -31,7 +35,11 @@ export class OrganizationMember {
   function: string;
 }
 
-export const OrganizationMemberSchema = SchemaFactory.createForClass(OrganizationMember);
+export const OrganizationMemberSchema =
+  SchemaFactory.createForClass(OrganizationMember);
 
 // Impede que o mesmo usuário seja adicionado 2x na mesma empresa.
-OrganizationMemberSchema.index({ organizationId: 1, userId: 1 }, { unique: true });
+OrganizationMemberSchema.index(
+  { organizationId: 1, userId: 1 },
+  { unique: true },
+);

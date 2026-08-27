@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from './post.controller';
 import { PostService } from '../services/post.service';
-import { IUser } from  '../../users/schemas/models/user.interface'
+import { IUser } from '../../users/schemas/models/user.interface';
 
 describe('PostController', () => {
   let postController: PostController;

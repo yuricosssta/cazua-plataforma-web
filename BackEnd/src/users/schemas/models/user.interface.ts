@@ -1,19 +1,19 @@
 // BackEnd/src/users/schemas/models/user.interface.ts
 export enum UserRule {
-  Admin,        // 0
+  Admin, // 0
   Organization, // 1
-  Project       // 2
+  Project, // 2
 }
 
 export interface IUser {
-  _id?: string; 
-  id?: string;  
+  _id?: string;
+  id?: string;
   email: string;
   name: string;
-  password?: string; 
+  password?: string;
   isAdmin: boolean;
   rule: UserRule;
-  avatarUrl?: string; 
+  avatarUrl?: string;
   created_at?: Date;
   modified_at?: Date;
   resetPasswordToken?: string;
@@ -22,4 +22,3 @@ export interface IUser {
   loginAttempts?: number;
   lockUntil?: Date;
 }
-

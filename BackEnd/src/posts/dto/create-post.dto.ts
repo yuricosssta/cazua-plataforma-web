@@ -1,15 +1,14 @@
 // src/posts/dto/create-post.dto.ts
-import { 
-  IsBoolean, 
-  IsMongoId, 
-  IsNotEmpty, 
-  IsOptional, 
-  IsString, 
-  IsUrl 
+import {
+  IsBoolean,
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
 } from 'class-validator';
 
 export class CreatePostDto {
-  
   @IsString({ message: 'O título deve ser uma string.' })
   @IsNotEmpty({ message: 'O título é obrigatório.' })
   title: string;
@@ -34,7 +33,7 @@ export class CreatePostDto {
   @IsOptional()
   @IsString()
   author?: string; // Implementar para o ID do usuário
-  
+
   @IsOptional()
   @IsMongoId({ message: 'O ID da organização fornecido é inválido.' })
   organizationId: string;

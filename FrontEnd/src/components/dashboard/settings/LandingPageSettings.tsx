@@ -11,7 +11,7 @@ import { landingPageService } from "@/lib/services/landingPageService";
 import { Save, Loader2, Globe, PaintBucket, FileText, Eye, AlertCircle, CheckCircle2, ExternalLink, Info } from "lucide-react";
 
 const landingPageFormSchema = z.object({
-  domain: z.string().min(3, "Domínio inválido (ex: construtora.com.br)"),
+  domain: z.string().optional(),
   name: z.string().min(2, "Nome da empresa é obrigatório"),
   heroTitle: z.string().min(5, "Título principal é obrigatório"),
   heroSubtitle: z.string().min(10, "Subtítulo é obrigatório"),
@@ -140,7 +140,7 @@ export function LandingPageSettings() {
 
     try {
       const payload = {
-        domain: data.domain.toLowerCase().trim(),
+        domain: data.domain?.toLowerCase().trim() || '',
         name: data.name,
         heroTitle: data.heroTitle,
         heroSubtitle: data.heroSubtitle,
@@ -172,7 +172,9 @@ export function LandingPageSettings() {
   const SERVER_IP = "76.76.21.21"; // Exemplo padrão Vercel. Altere conforme sua infra.
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form 
+    // onSubmit={handleSubmit(onSubmit)} 
+    className="space-y-8">
       {errorMsg && (
         <div className="flex items-center gap-2 p-3 text-sm bg-destructive/10 text-destructive border border-destructive/20 rounded-md">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -240,7 +242,7 @@ export function LandingPageSettings() {
                 <input
                   {...register("domain")}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring lowercase"
-                  placeholder="ex: construtora.com.br"
+                  placeholder="Opcional: ex: construtora.com.br (deixe em branco para usar subdomínio Cazuá)"
                 />
                 {errors.domain && <span className="text-xs text-destructive">{errors.domain.message}</span>}
               </div>
@@ -371,7 +373,9 @@ export function LandingPageSettings() {
 
       <div className="pt-4 flex justify-end border-t border-border mt-8">
         <button
-          type="submit"
+          // type="submit"
+          type="button"
+          onClick={handleSubmit(onSubmit)}
           disabled={isSaving || !currentOrgId}
           className="inline-flex items-center justify-center bg-primary text-primary-foreground h-9 px-6 rounded-md text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
         >

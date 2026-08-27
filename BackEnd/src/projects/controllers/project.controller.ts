@@ -30,8 +30,8 @@ export class ProjectsController {
   constructor(
     private readonly projectsService: ProjectsService,
     private readonly projectMemberService: ProjectMemberService,
-    private readonly timelineService: TimelineService
-  ) { }
+    private readonly timelineService: TimelineService,
+  ) {}
 
   // Função auxiliar para extrair o ID com segurança
   private extractUserId(req: any): string {
@@ -40,7 +40,11 @@ export class ProjectsController {
 
   // Função auxiliar para extrair e normalizar o Cargo (Role)
   private extractUserRole(req: any): string {
-    const role = req.headers['x-org-role'] || req.membership?.role || req.user?.role || 'MEMBER';
+    const role =
+      req.headers['x-org-role'] ||
+      req.membership?.role ||
+      req.user?.role ||
+      'MEMBER';
     return String(role).toUpperCase();
   }
 
@@ -67,11 +71,17 @@ export class ProjectsController {
 
     // TRAVA DE SEGURANÇA: Apenas Admins e Donos entram aqui
     if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
-      throw new ForbiddenException('Acesso negado: Apenas Administradores podem realizar importações em massa.');
+      throw new ForbiddenException(
+        'Acesso negado: Apenas Administradores podem realizar importações em massa.',
+      );
     }
 
     // Passamos o array validado (data.projects) para o service
-    return this.projectsService.bulkImportProjects(orgId, userId, data.projects);
+    return this.projectsService.bulkImportProjects(
+      orgId,
+      userId,
+      data.projects,
+    );
   }
 
   // LISTAR TODOS PROJETOS DA EMPRESA
@@ -97,7 +107,13 @@ export class ProjectsController {
     const userId = this.extractUserId(req);
     const userRole = this.extractUserRole(req);
 
-    return this.projectsService.emitParecerTecnico(orgId, projectId, userId, data, userRole);
+    return this.projectsService.emitParecerTecnico(
+      orgId,
+      projectId,
+      userId,
+      data,
+      userRole,
+    );
   }
 
   // DETALHES DA OBRA E TIMELINE COMPLETA
@@ -115,10 +131,16 @@ export class ProjectsController {
     @Param('orgId') orgId: string,
     @Param('projectId') projectId: string,
     @Req() req: any,
-    @Body() body: { memberId: string; memberName: string }
+    @Body() body: { memberId: string; memberName: string },
   ) {
     const actionByUserId = this.extractUserId(req);
-    return this.projectMemberService.assignMember(orgId, projectId, body.memberId, actionByUserId, body.memberName);
+    return this.projectMemberService.assignMember(
+      orgId,
+      projectId,
+      body.memberId,
+      actionByUserId,
+      body.memberName,
+    );
   }
 
   // Remover Membro
@@ -128,9 +150,15 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
     @Param('memberId') memberId: string,
     @Req() req: any,
-    @Body() body: { memberName: string }
+    @Body() body: { memberName: string },
   ) {
     const actionByUserId = this.extractUserId(req);
-    return this.projectMemberService.removeMember(orgId, projectId, memberId, actionByUserId, body.memberName);
+    return this.projectMemberService.removeMember(
+      orgId,
+      projectId,
+      memberId,
+      actionByUserId,
+      body.memberName,
+    );
   }
 }

@@ -49,4 +49,11 @@ export class Planning {
 export type PlanningDocument = Planning & Document;
 export const PlanningSchema = SchemaFactory.createForClass(Planning);
 
-PlanningSchema.index({ descricao: 'text', grupo: 'text', tipo: 'text', insumo: 'text', codigoComposicao: 'text', custo: 'text' });
+PlanningSchema.index({
+  descricao: 'text',
+  grupo: 'text',
+  tipo: 'text',
+  insumo: 'text',
+  codigoComposicao: 'text',
+  custo: 'text',
+});

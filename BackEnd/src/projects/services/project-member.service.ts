@@ -10,21 +10,34 @@ import { TimelineEventType } from '../schemas/timeline-event.schema';
 export class ProjectMemberService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
   ) {}
 
   // ALOCAÇÃO DE EQUIPE
-  async assignMember(orgId: string, projectId: string, memberId: string, actionByUserId: string, memberName: string) {
-    const project = await this.projectModel.findOneAndUpdate(
-      {
-        _id: new (Types.ObjectId as any)(String(projectId)),
-        organizationId: new (Types.ObjectId as any)(String(orgId))
-      },
-      { $addToSet: { assignedMembers: new (Types.ObjectId as any)(String(memberId)) } },
-      { new: true }
-    ).exec();
+  async assignMember(
+    orgId: string,
+    projectId: string,
+    memberId: string,
+    actionByUserId: string,
+    memberName: string,
+  ) {
+    const project = await this.projectModel
+      .findOneAndUpdate(
+        {
+          _id: new (Types.ObjectId as any)(String(projectId)),
+          organizationId: new (Types.ObjectId as any)(String(orgId)),
+        },
+        {
+          $addToSet: {
+            assignedMembers: new (Types.ObjectId as any)(String(memberId)),
+          },
+        },
+        { new: true },
+      )
+      .exec();
 
-    if (!project) throw new NotFoundException('Projeto não encontrado nesta organização.');
+    if (!project)
+      throw new NotFoundException('Projeto não encontrado nesta organização.');
 
     this.eventEmitter.emit('timeline.create', {
       orgId: orgId,
@@ -38,17 +51,30 @@ export class ProjectMemberService {
   }
 
   // DESALOCAÇÃO DE EQUIPE
-  async removeMember(orgId: string, projectId: string, memberId: string, actionByUserId: string, memberName: string) {
-    const project = await this.projectModel.findOneAndUpdate(
-      {
-        _id: new (Types.ObjectId as any)(String(projectId)),
-        organizationId: new (Types.ObjectId as any)(String(orgId))
-      },
-      { $pull: { assignedMembers: new (Types.ObjectId as any)(String(memberId)) } },
-      { new: true }
-    ).exec();
+  async removeMember(
+    orgId: string,
+    projectId: string,
+    memberId: string,
+    actionByUserId: string,
+    memberName: string,
+  ) {
+    const project = await this.projectModel
+      .findOneAndUpdate(
+        {
+          _id: new (Types.ObjectId as any)(String(projectId)),
+          organizationId: new (Types.ObjectId as any)(String(orgId)),
+        },
+        {
+          $pull: {
+            assignedMembers: new (Types.ObjectId as any)(String(memberId)),
+          },
+        },
+        { new: true },
+      )
+      .exec();
 
-    if (!project) throw new NotFoundException('Projeto não encontrado nesta organização.');
+    if (!project)
+      throw new NotFoundException('Projeto não encontrado nesta organização.');
 
     this.eventEmitter.emit('timeline.create', {
       orgId: orgId,

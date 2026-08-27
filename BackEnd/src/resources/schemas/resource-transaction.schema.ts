@@ -17,16 +17,20 @@ export class ResourceTransaction {
   resourceId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
-  authorId: Types.ObjectId; 
+  authorId: Types.ObjectId;
 
   @Prop({ type: String, enum: TransactionType, required: true })
   type: TransactionType;
 
-  @Prop({ type: String, enum: TransactionStatus, default: TransactionStatus.APPROVED })
-  status: TransactionStatus; 
+  @Prop({
+    type: String,
+    enum: TransactionStatus,
+    default: TransactionStatus.APPROVED,
+  })
+  status: TransactionStatus;
 
   @Prop({ type: Number, required: true })
-  quantity: number; 
+  quantity: number;
 
   @Prop({ type: Number, required: true })
   unitCostSnapshot: number;
@@ -48,7 +52,7 @@ export class ResourceTransaction {
   approvedBy?: Types.ObjectId; // Quem do almoxarifado aprovou
 
   @Prop()
-  rejectedReason?: string; 
+  rejectedReason?: string;
 
   // --- CAMPOS DE ESTORNO ---
   @Prop({ type: Boolean, default: false })
@@ -61,4 +65,5 @@ export class ResourceTransaction {
   cancelReason?: string;
 }
 
-export const ResourceTransactionSchema = SchemaFactory.createForClass(ResourceTransaction);
+export const ResourceTransactionSchema =
+  SchemaFactory.createForClass(ResourceTransaction);

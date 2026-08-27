@@ -37,6 +37,9 @@ export class LandingPageConfigRepository {
     domain: string,
     organizationId: Types.ObjectId,
   ): Promise<LandingPageConfig | null> {
+    if (!domain) {
+      return null;
+    }
     return this.configModel
       .findOne({
         domain,

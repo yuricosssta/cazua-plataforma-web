@@ -1,5 +1,9 @@
 //src/transcription/transcription.service.ts
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import * as fs from 'fs';
@@ -23,7 +27,10 @@ export class TranscriptionService {
   }
 
   async transcribeFromYoutube(youtubeUrl: string): Promise<{ text: string }> {
-    if (!youtubeUrl.includes('youtube.com') && !youtubeUrl.includes('youtu.be')) {
+    if (
+      !youtubeUrl.includes('youtube.com') &&
+      !youtubeUrl.includes('youtu.be')
+    ) {
       throw new BadRequestException('URL do YouTube inválida.');
     }
 
@@ -31,7 +38,7 @@ export class TranscriptionService {
 
     try {
       await this.downloadAudio(youtubeUrl, audioPath);
-      console.log("Áudio baixado com sucesso:", audioPath);
+      console.log('Áudio baixado com sucesso:', audioPath);
       const transcription = await this.sendToWhisper(audioPath);
       return { text: transcription };
     } catch (error) {
@@ -45,12 +52,17 @@ export class TranscriptionService {
   }
 
   //  Transcreve um arquivo de áudio enviado pelo usuário
-  async transcribeFromFile(file: Express.Multer.File): Promise<{ text: string }> {
+  async transcribeFromFile(
+    file: Express.Multer.File,
+  ): Promise<{ text: string }> {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo foi enviado.');
     }
 
-    const filePath = path.join(this.tempDir, `${Date.now()}-${file.originalname}`);
+    const filePath = path.join(
+      this.tempDir,
+      `${Date.now()}-${file.originalname}`,
+    );
     fs.writeFileSync(filePath, file.buffer);
 
     try {
@@ -58,7 +70,9 @@ export class TranscriptionService {
       return { text: transcription };
     } catch (error) {
       console.error('Erro ao transcrever arquivo enviado:', error);
-      throw new InternalServerErrorException('Falha ao transcrever o áudio enviado.');
+      throw new InternalServerErrorException(
+        'Falha ao transcrever o áudio enviado.',
+      );
     } finally {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -72,9 +86,12 @@ export class TranscriptionService {
 
     const stream = this.ytDlp.execStream([
       url,
-      '-f', 'bestaudio',
-      '-o', '-',
-      '--audio-format', 'mp3'
+      '-f',
+      'bestaudio',
+      '-o',
+      '-',
+      '--audio-format',
+      'mp3',
     ]);
 
     stream.pipe(fs.createWriteStream(outputPath));
@@ -94,11 +111,13 @@ export class TranscriptionService {
   private async sendToWhisper(filePath: string): Promise<string> {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
-      throw new InternalServerErrorException('Chave da API da OpenAI não configurada.');
+      throw new InternalServerErrorException(
+        'Chave da API da OpenAI não configurada.',
+      );
     }
 
     const openai = new OpenAI({ apiKey });
-    
+
     // const formData = new FormData();
     // formData.append('file', fs.createReadStream(filePath), path.basename(filePath));
     // // formData.append('file', fs.createReadStream(filePath));
@@ -124,7 +143,9 @@ export class TranscriptionService {
       return response.text;
     } catch (error) {
       console.error('Erro ao chamar a API de transcrição:', error);
-      throw new InternalServerErrorException('Falha na comunicação com a API de transcrição.');
+      throw new InternalServerErrorException(
+        'Falha na comunicação com a API de transcrição.',
+      );
     }
   }
 }

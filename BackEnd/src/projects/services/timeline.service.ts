@@ -3,12 +3,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../schemas/timeline-event.schema';
+import {
+  TimelineEvent,
+  TimelineEventDocument,
+  TimelineEventType,
+} from '../schemas/timeline-event.schema';
 
 @Injectable()
 export class TimelineService {
   constructor(
-    @InjectModel(TimelineEvent.name) private timelineEventModel: Model<TimelineEventDocument>
+    @InjectModel(TimelineEvent.name)
+    private timelineEventModel: Model<TimelineEventDocument>,
   ) {}
 
   // OUVINTE CENTRAL DA TIMELINE

@@ -19,7 +19,7 @@ export class UsersService {
   constructor(
     private readonly userRepository: UsersRepository,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async findOne(email: string): Promise<IUser | undefined> {
     return this.userRepository.findOneByEmail(email);
@@ -60,7 +60,10 @@ export class UsersService {
   }
 
   async updateUser(userId: string, user: UpdateUser) {
-    const updateUser = await this.userRepository.updateUser(userId, user as Partial<IUser>);
+    const updateUser = await this.userRepository.updateUser(
+      userId,
+      user as Partial<IUser>,
+    );
     if (!updateUser) throw new NotFoundException('Usuário não encontrado');
     return updateUser;
   }
@@ -71,9 +74,15 @@ export class UsersService {
     return { message: `Usuário com id ${userId} deletado com sucesso.` };
   }
 
-  async changeUserPassword(userId: string, currentPass: string, newPass: string) {
+  async changeUserPassword(
+    userId: string,
+    currentPass: string,
+    newPass: string,
+  ) {
     if (!currentPass || !newPass) {
-      throw new BadRequestException('A senha atual e a nova senha são obrigatórias.');
+      throw new BadRequestException(
+        'A senha atual e a nova senha são obrigatórias.',
+      );
     }
 
     const user = await this.userRepository.getUserWithPassword(userId);
@@ -86,28 +95,36 @@ export class UsersService {
 
     const hashedNewPassword = await bcrypt.hash(newPass, 10);
 
-    await this.userRepository.updateUser(userId, { password: hashedNewPassword } as Partial<IUser>);
+    await this.userRepository.updateUser(userId, {
+      password: hashedNewPassword,
+    } as Partial<IUser>);
 
     return { message: 'Senha atualizada com sucesso.' };
   }
 
   async forgotPassword(email: string) {
     const user = await this.userRepository.findOneByEmail(email);
-    const successMessage = { message: 'Se o e-mail existir em nossa base, um link de recuperação será enviado.' };
+    const successMessage = {
+      message:
+        'Se o e-mail existir em nossa base, um link de recuperação será enviado.',
+    };
 
     if (!user) {
       return successMessage;
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenHash = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
 
     const expireDate = new Date();
     expireDate.setHours(expireDate.getHours() + 1);
 
     await this.userRepository.updateUser(String(user._id || user.id), {
       resetPasswordToken: resetTokenHash,
-      resetPasswordExpires: expireDate
+      resetPasswordExpires: expireDate,
     } as Partial<IUser>);
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
@@ -117,13 +134,22 @@ export class UsersService {
   }
 
   async resetPassword(token: string, newPass: string) {
-    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const resetTokenHash = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
     const user = await this.userRepository.findOneByResetToken(resetTokenHash);
 
     // Validação de segurança: verificar existência do usuário e se o token expirou
-    if (!user || (user.resetPasswordExpires && new Date(user.resetPasswordExpires).getTime() < Date.now())) {
-      throw new BadRequestException('Token de recuperação inválido ou expirado. Solicite um novo link.');
+    if (
+      !user ||
+      (user.resetPasswordExpires &&
+        new Date(user.resetPasswordExpires).getTime() < Date.now())
+    ) {
+      throw new BadRequestException(
+        'Token de recuperação inválido ou expirado. Solicite um novo link.',
+      );
     }
 
     const hashedNewPassword = await bcrypt.hash(newPass, 10);
@@ -131,9 +157,12 @@ export class UsersService {
     await this.userRepository.updateUser(String(user._id || user.id), {
       password: hashedNewPassword,
       resetPasswordToken: null,
-      resetPasswordExpires: null
+      resetPasswordExpires: null,
     } as any);
 
-    return { message: 'Sua senha foi redefinida com sucesso! Você já pode fazer o login.' };
+    return {
+      message:
+        'Sua senha foi redefinida com sucesso! Você já pode fazer o login.',
+    };
   }
 }

@@ -6,7 +6,7 @@ import { PostRepository, PaginateOptions } from '../post.repository';
 import { Post } from '../../schemas/post.schema';
 
 export class PostMongooseRepository implements PostRepository {
-  constructor(@InjectModel(Post.name) private postModel: Model<Post>) { }
+  constructor(@InjectModel(Post.name) private postModel: Model<Post>) {}
 
   async getAllPosts(options: PaginateOptions): Promise<IPost[]> {
     const filter: FilterQuery<Post> = {};
@@ -21,7 +21,12 @@ export class PostMongooseRepository implements PostRepository {
 
     if (options.term) {
       const regex = new RegExp(options.term, 'i');
-      filter.$or = [{ title: regex }, { description: regex }, { author: regex }, { content: regex }];
+      filter.$or = [
+        { title: regex },
+        { description: regex },
+        { author: regex },
+        { content: regex },
+      ];
     }
 
     return this.postModel
@@ -32,16 +37,28 @@ export class PostMongooseRepository implements PostRepository {
       .exec();
   }
 
-  async getTotalPostsCount(organizationId?: string, term?: string): Promise<number> {
+  async getTotalPostsCount(
+    organizationId?: string,
+    term?: string,
+  ): Promise<number> {
     const filter: FilterQuery<Post> = {};
 
-    if (organizationId && organizationId !== 'undefined' && Types.ObjectId.isValid(organizationId)) {
+    if (
+      organizationId &&
+      organizationId !== 'undefined' &&
+      Types.ObjectId.isValid(organizationId)
+    ) {
       filter.organizationId = new Types.ObjectId(organizationId);
     }
 
     if (term) {
       const regex = new RegExp(term, 'i');
-      filter.$or = [{ title: regex }, { description: regex }, { author: regex }, { content: regex }];
+      filter.$or = [
+        { title: regex },
+        { description: regex },
+        { author: regex },
+        { content: regex },
+      ];
     }
 
     return this.postModel.countDocuments(filter).exec();
@@ -51,7 +68,12 @@ export class PostMongooseRepository implements PostRepository {
     const regex = new RegExp(term, 'i');
     return this.postModel
       .find({
-        $or: [{ title: regex }, { description: regex }, { author: regex }, { content: regex }],
+        $or: [
+          { title: regex },
+          { description: regex },
+          { author: regex },
+          { content: regex },
+        ],
       })
       .exec();
   }
@@ -69,7 +91,10 @@ export class PostMongooseRepository implements PostRepository {
     return await createPost.save();
   }
 
-  async updatePost(postId: string, post: Partial<IPost>): Promise<IPost | null> {
+  async updatePost(
+    postId: string,
+    post: Partial<IPost>,
+  ): Promise<IPost | null> {
     if (!Types.ObjectId.isValid(postId)) return null;
 
     const updateData = Object.fromEntries(
@@ -80,7 +105,7 @@ export class PostMongooseRepository implements PostRepository {
       .findOneAndUpdate(
         { _id: new Types.ObjectId(postId) },
         { $set: updateData },
-        { new: true }
+        { new: true },
       )
       .exec();
   }

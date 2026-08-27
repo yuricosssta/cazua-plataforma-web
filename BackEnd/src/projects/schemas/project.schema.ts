@@ -16,7 +16,12 @@ export enum ProjectStatus {
 
 @Schema({ timestamps: true })
 export class Project {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Organization', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Organization',
+    required: true,
+    index: true,
+  })
   organizationId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true })
@@ -31,7 +36,11 @@ export class Project {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ type: String, enum: Object.values(ProjectStatus), default: ProjectStatus.DEMAND })
+  @Prop({
+    type: String,
+    enum: Object.values(ProjectStatus),
+    default: ProjectStatus.DEMAND,
+  })
   status: ProjectStatus;
 
   @Prop({ type: Number, default: 0, min: 0, max: 100 })

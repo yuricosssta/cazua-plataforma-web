@@ -6,7 +6,9 @@ import { PlanningSchema, Planning } from './schemas/planning.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Planning.name, schema: PlanningSchema }]),
+    MongooseModule.forFeature([
+      { name: Planning.name, schema: PlanningSchema },
+    ]),
   ],
   controllers: [PlanningController],
   providers: [PlanningService],

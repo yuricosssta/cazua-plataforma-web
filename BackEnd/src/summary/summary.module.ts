@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { SummaryController } from './summary.controller';
-import  SummaryService  from './summary.service';
+import SummaryService from './summary.service';
 import { ConfigModule } from '@nestjs/config';
 import { OrganizationModule } from 'src/organization/organization.module';
 import { AuthModule } from 'src/auth/auth.module';
@@ -10,7 +10,8 @@ import { Reels, ReelsSchema } from './schemas/reel.schema';
 
 @Module({
   imports: [
-  HttpModule, ConfigModule,
+    HttpModule,
+    ConfigModule,
     MongooseModule.forFeature([
       {
         name: Reels.name,
@@ -21,9 +22,6 @@ import { Reels, ReelsSchema } from './schemas/reel.schema';
     OrganizationModule,
   ],
   controllers: [SummaryController],
-  providers: [SummaryService]
+  providers: [SummaryService],
 })
 export class SummaryModule {}
-
-
- 

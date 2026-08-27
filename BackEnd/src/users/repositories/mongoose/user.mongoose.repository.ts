@@ -6,7 +6,7 @@ import { IUser } from '../../schemas/models/user.interface';
 import { User } from '../../schemas/user.schema';
 
 export class UsersMongooseRepository implements UsersRepository {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async getUsersByOrganization(orgId: string): Promise<IUser[]> {
     console.log(`Buscando usuários para a organização com ID: ${orgId}`);
@@ -21,14 +21,22 @@ export class UsersMongooseRepository implements UsersRepository {
 
   async getAllUsers(): Promise<IUser[]> {
     console.log('Buscando todos os usuários do sistema');
-    const users = await this.userModel.find({}).select('-password').lean().exec();
+    const users = await this.userModel
+      .find({})
+      .select('-password')
+      .lean()
+      .exec();
     console.log(`Usuários encontrados: ${users.length}`);
     return users as unknown as IUser[];
   }
 
   async getUser(userId: string): Promise<IUser> {
     console.log(`Buscando usuário com ID: ${userId}`);
-    const user = await this.userModel.findById(userId).select('-password').lean().exec();
+    const user = await this.userModel
+      .findById(userId)
+      .select('-password')
+      .lean()
+      .exec();
     if (!user) {
       console.log(`Usuário com ID ${userId} não encontrado.`);
       return null;
@@ -87,7 +95,9 @@ export class UsersMongooseRepository implements UsersRepository {
       console.log(`Usuário com ID ${userId} não encontrado para atualização.`);
       return null;
     }
-    console.log(`Usuário atualizado: ${updatedUser.name} (${updatedUser.email})`);
+    console.log(
+      `Usuário atualizado: ${updatedUser.name} (${updatedUser.email})`,
+    );
     return updatedUser as unknown as IUser;
   }
 
@@ -104,10 +114,13 @@ export class UsersMongooseRepository implements UsersRepository {
 
   async findOneByResetToken(tokenHash: string) {
     console.log(`Buscando usuário com token de reset criptografado.`);
-    const user = await this.userModel.findOne({
-      resetPasswordToken: tokenHash,
-      resetPasswordExpires: { $gt: new Date() } // Verifica se o token ainda é válido
-    }).lean().exec();
+    const user = await this.userModel
+      .findOne({
+        resetPasswordToken: tokenHash,
+        resetPasswordExpires: { $gt: new Date() }, // Verifica se o token ainda é válido
+      })
+      .lean()
+      .exec();
 
     if (user) {
       console.log(`Usuário encontrado para token de reset: ${user.email}`);
@@ -120,7 +133,10 @@ export class UsersMongooseRepository implements UsersRepository {
 
   async deleteUser(userId: string): Promise<IUser | null> {
     console.log(`Deletando usuário com ID: ${userId}`);
-    const deletedUser = await this.userModel.findByIdAndDelete({ _id: userId }).lean().exec();
+    const deletedUser = await this.userModel
+      .findByIdAndDelete({ _id: userId })
+      .lean()
+      .exec();
     return deletedUser as unknown as IUser;
   }
 }

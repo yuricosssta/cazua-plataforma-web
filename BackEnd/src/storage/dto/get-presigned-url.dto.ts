@@ -8,8 +8,9 @@ export class GetPresignedUrlDto {
 
   @IsString()
   @IsNotEmpty({ message: 'O tipo do arquivo (MIME type) é obrigatório.' })
-  @Matches(/image\/(jpeg|png|webp)|application\/pdf/, { 
-    message: 'Tipo de arquivo não permitido. Apenas imagens e PDFs são aceitos.' 
+  @Matches(/image\/(jpeg|png|webp)|application\/pdf/, {
+    message:
+      'Tipo de arquivo não permitido. Apenas imagens e PDFs são aceitos.',
   })
   fileType: string;
 

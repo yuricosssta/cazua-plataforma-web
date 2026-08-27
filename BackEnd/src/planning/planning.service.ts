@@ -5,16 +5,22 @@ import { Model } from 'mongoose';
 import * as XLSX from 'xlsx';
 import type { Express } from 'express';
 import { Planning, PlanningDocument } from './schemas/planning.schema';
-import { SearchPlanningDto, UploadPlanningDto } from './validations/planning.zod';
+import {
+  SearchPlanningDto,
+  UploadPlanningDto,
+} from './validations/planning.zod';
 
 @Injectable()
 export class PlanningService {
   constructor(
     @InjectModel(Planning.name)
     private readonly planningModel: Model<PlanningDocument>,
-  ) { }
+  ) {}
 
-  async uploadFromExcel(file: Express.Multer.File, metadata: UploadPlanningDto) {
+  async uploadFromExcel(
+    file: Express.Multer.File,
+    metadata: UploadPlanningDto,
+  ) {
     if (!file || !file.buffer) {
       throw new BadRequestException('Arquivo Excel não enviado ou inválido.');
     }
@@ -29,7 +35,9 @@ export class PlanningService {
       .filter((item) => item.codigoComposicao && item.descricao);
 
     if (!items.length) {
-      throw new BadRequestException('Nenhuma entrada válida foi encontrada na planilha.');
+      throw new BadRequestException(
+        'Nenhuma entrada válida foi encontrada na planilha.',
+      );
     }
 
     await this.planningModel.deleteMany(this.buildMetadataFilter(metadata));
@@ -42,10 +50,13 @@ export class PlanningService {
   }
 
   async search(query: SearchPlanningDto) {
-    const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
+    const filters: Record<string, any> = this.buildMetadataFilter(
+      query as UploadPlanningDto,
+    );
 
     if (query.grupo) filters.grupo = query.grupo;
-    if (query.codigoComposicao) filters.codigoComposicao = query.codigoComposicao;
+    if (query.codigoComposicao)
+      filters.codigoComposicao = query.codigoComposicao;
     if (query.tipo) filters.tipo = query.tipo;
     if (query.insumo) filters.insumo = query.insumo;
     if (query.summaryOnly !== undefined) filters.isSummary = query.summaryOnly;
@@ -58,8 +69,8 @@ export class PlanningService {
           { descricao: { $regex: keyword, $options: 'i' } },
           { codigoComposicao: { $regex: keyword, $options: 'i' } },
           { insumo: { $regex: keyword, $options: 'i' } },
-          { grupo: { $regex: keyword, $options: 'i' } }
-        ]
+          { grupo: { $regex: keyword, $options: 'i' } },
+        ],
       }));
     }
 
@@ -84,14 +95,21 @@ export class PlanningService {
     };
   }
 
-  async updateCostsFromExcel(file: Express.Multer.File, metadata: UploadPlanningDto) {
+  async updateCostsFromExcel(
+    file: Express.Multer.File,
+    metadata: UploadPlanningDto,
+  ) {
     if (!file || !file.buffer) {
-      throw new BadRequestException('Arquivo Excel de custos não enviado ou inválido.');
+      throw new BadRequestException(
+        'Arquivo Excel de custos não enviado ou inválido.',
+      );
     }
 
     const rows = this.parseWorkbook(file.buffer);
     if (!rows.length) {
-      throw new BadRequestException('A planilha de custos não contém linhas válidas.');
+      throw new BadRequestException(
+        'A planilha de custos não contém linhas válidas.',
+      );
     }
 
     const baseFilters = this.buildMetadataFilter(metadata);
@@ -100,7 +118,9 @@ export class PlanningService {
     const itemsToUpdate = rows
       .map((row) => {
         const normalized = this.normalizeRow(row);
-        const codigoComposicao = String(normalized.codigocomposicao || normalized.composicao || '').trim();
+        const codigoComposicao = String(
+          normalized.codigocomposicao || normalized.composicao || '',
+        ).trim();
         const custo = String(normalized.custo || '').trim();
 
         return { codigoComposicao, custo };
@@ -108,7 +128,9 @@ export class PlanningService {
       .filter((item) => item.codigoComposicao && item.custo);
 
     if (!itemsToUpdate.length) {
-      throw new BadRequestException('Nenhuma composição válida com custo foi encontrada na planilha.');
+      throw new BadRequestException(
+        'Nenhuma composição válida com custo foi encontrada na planilha.',
+      );
     }
 
     // Montagem das operações de bulk para o MongoDB (Performance)
@@ -116,10 +138,10 @@ export class PlanningService {
       updateMany: {
         filter: {
           ...baseFilters,
-          codigoComposicao: item.codigoComposicao
+          codigoComposicao: item.codigoComposicao,
         },
         update: {
-          $set: { custo: item.custo }
+          $set: { custo: item.custo },
         },
       },
     }));
@@ -133,8 +155,13 @@ export class PlanningService {
     };
   }
 
-  async findCompositionItems(codigoComposicao: string, query: SearchPlanningDto = {}) {
-    const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
+  async findCompositionItems(
+    codigoComposicao: string,
+    query: SearchPlanningDto = {},
+  ) {
+    const filters: Record<string, any> = this.buildMetadataFilter(
+      query as UploadPlanningDto,
+    );
     filters.codigoComposicao = codigoComposicao;
 
     if (query.state) filters.state = query.state;
@@ -143,11 +170,16 @@ export class PlanningService {
     if (query.organizationId) filters.organizationId = query.organizationId;
     if (query.isGlobal !== undefined) filters.isGlobal = query.isGlobal;
 
-    return this.planningModel.find(filters).sort({ isSummary: -1, descricao: 1 }).lean();
+    return this.planningModel
+      .find(filters)
+      .sort({ isSummary: -1, descricao: 1 })
+      .lean();
   }
 
   async grouped(groupBy: string[], query: SearchPlanningDto = {}) {
-    const filters: Record<string, any> = this.buildMetadataFilter(query as UploadPlanningDto);
+    const filters: Record<string, any> = this.buildMetadataFilter(
+      query as UploadPlanningDto,
+    );
 
     if (query.q) {
       const keywords = query.q.trim().split(/\s+/);
@@ -156,13 +188,14 @@ export class PlanningService {
           { descricao: { $regex: keyword, $options: 'i' } },
           { codigoComposicao: { $regex: keyword, $options: 'i' } },
           { insumo: { $regex: keyword, $options: 'i' } },
-          { grupo: { $regex: keyword, $options: 'i' } }
-        ]
+          { grupo: { $regex: keyword, $options: 'i' } },
+        ],
       }));
     }
 
     if (query.grupo) filters.grupo = query.grupo;
-    if (query.codigoComposicao) filters.codigoComposicao = query.codigoComposicao;
+    if (query.codigoComposicao)
+      filters.codigoComposicao = query.codigoComposicao;
     if (query.tipo) filters.tipo = query.tipo;
     if (query.insumo) filters.insumo = query.insumo;
     if (query.summaryOnly !== undefined) filters.isSummary = query.summaryOnly;
@@ -171,10 +204,13 @@ export class PlanningService {
       groupBy = ['state', 'referenceYear', 'referenceMonth', 'grupo'];
     }
 
-    const groupObject = groupBy.reduce((acc, key) => {
-      acc[key] = `$${key}`;
-      return acc;
-    }, {} as Record<string, string>);
+    const groupObject = groupBy.reduce(
+      (acc, key) => {
+        acc[key] = `$${key}`;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
     const pipeline: any[] = [
       { $match: filters },
@@ -188,10 +224,13 @@ export class PlanningService {
         $project: {
           _id: 0,
           count: 1,
-          ...groupBy.reduce((acc, key) => {
-            acc[key] = `$_id.${key}`;
-            return acc;
-          }, {} as Record<string, string>),
+          ...groupBy.reduce(
+            (acc, key) => {
+              acc[key] = `$_id.${key}`;
+              return acc;
+            },
+            {} as Record<string, string>,
+          ),
         },
       },
       { $sort: { state: 1, referenceYear: 1, referenceMonth: 1, grupo: 1 } },
@@ -204,10 +243,13 @@ export class PlanningService {
     const filter: Record<string, any> = {};
 
     if (metadata.isGlobal !== undefined) filter.isGlobal = metadata.isGlobal;
-    if (metadata.organizationId !== undefined) filter.organizationId = metadata.organizationId;
+    if (metadata.organizationId !== undefined)
+      filter.organizationId = metadata.organizationId;
     if (metadata.state) filter.state = metadata.state;
-    if (metadata.referenceMonth !== undefined) filter.referenceMonth = metadata.referenceMonth;
-    if (metadata.referenceYear !== undefined) filter.referenceYear = metadata.referenceYear;
+    if (metadata.referenceMonth !== undefined)
+      filter.referenceMonth = metadata.referenceMonth;
+    if (metadata.referenceYear !== undefined)
+      filter.referenceYear = metadata.referenceYear;
 
     return filter;
   }
@@ -220,9 +262,14 @@ export class PlanningService {
     return XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
   }
 
-  private mapRowToPlanning(row: Record<string, any>, metadata: UploadPlanningDto) {
+  private mapRowToPlanning(
+    row: Record<string, any>,
+    metadata: UploadPlanningDto,
+  ) {
     const normalized = this.normalizeRow(row);
-    const codigoComposicao = String(normalized.composicao || normalized.codigoComposicao || '').trim();
+    const codigoComposicao = String(
+      normalized.composicao || normalized.codigoComposicao || '',
+    ).trim();
     const grupo = String(normalized.grupo || '').trim();
     const tipo = String(normalized.tipo || '').trim();
     const insumo = String(normalized.insumo || '').trim();
@@ -230,8 +277,11 @@ export class PlanningService {
     const unidade = String(normalized.unidade || '').trim();
     const custo = String(normalized.custo || '').trim();
 
-    const rawCoeficiente = String(normalized.coeficiente ?? '').replace(',', '.').trim();
-    const coeficiente = rawCoeficiente.length > 0 ? Number(rawCoeficiente) : null;
+    const rawCoeficiente = String(normalized.coeficiente ?? '')
+      .replace(',', '.')
+      .trim();
+    const coeficiente =
+      rawCoeficiente.length > 0 ? Number(rawCoeficiente) : null;
 
     const isSummary = insumo === '' || insumo === codigoComposicao;
 
@@ -250,15 +300,18 @@ export class PlanningService {
   }
 
   private normalizeRow(row: Record<string, any>) {
-    return Object.keys(row).reduce((acc, key) => {
-      const normalizedKey = key
-        .toString()
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .trim()
-        .toLowerCase();
-      acc[normalizedKey] = row[key];
-      return acc;
-    }, {} as Record<string, any>);
+    return Object.keys(row).reduce(
+      (acc, key) => {
+        const normalizedKey = key
+          .toString()
+          .normalize('NFD')
+          .replace(/\p{Diacritic}/gu, '')
+          .trim()
+          .toLowerCase();
+        acc[normalizedKey] = row[key];
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }
 }

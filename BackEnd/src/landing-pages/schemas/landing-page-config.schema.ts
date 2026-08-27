@@ -21,7 +21,7 @@ export class LandingPageConfig extends Document {
   @Prop({ type: Types.ObjectId, required: true, index: true, unique: true })
   organizationId: Types.ObjectId;
 
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: false, unique: true, index: true, sparse: true })
   domain: string;
 
   @Prop({ required: true })

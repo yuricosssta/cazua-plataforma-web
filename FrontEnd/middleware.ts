@@ -19,7 +19,7 @@ export default async function middleware(req: NextRequest) {
   const wwwDomain = `www.${rootDomain}`;
 
   // 1. Requisição via Cloudflare Worker (subdomínio Cazuá)
-  // O Worker adiciona o header x-cazua-tenant-slug com o slug da organização
+  // O Worker adiciona o header x-cazua-tenant-slug com o slug da organização 
   if (tenantSlug) {
     return NextResponse.rewrite(
       new URL(`/sites/${hostname}${url.pathname}`, req.url)

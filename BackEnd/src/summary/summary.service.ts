@@ -1,8 +1,17 @@
 //src/summary/summary.service.ts
-import { Injectable, InternalServerErrorException, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import OpenAI from "openai";
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
-import { summaryInstructions, ReelAltaireInstructions } from './instructions/summary.instructions';
+import {
+  summaryInstructions,
+  ReelAltaireInstructions,
+} from './instructions/summary.instructions';
 import { IReels } from '../summary/schemas/models/reel.interface';
 import { CreateReelDto } from './validations/summary.zod';
 
@@ -15,7 +24,9 @@ export default class SummaryService {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
 
     if (!apiKey) {
-      throw new InternalServerErrorException('OPENAI_API_KEY não está configurada no .env');
+      throw new InternalServerErrorException(
+        'OPENAI_API_KEY não está configurada no .env',
+      );
     }
 
     // this.client = new OpenAI({ apiKey });
@@ -30,7 +41,7 @@ export default class SummaryService {
 
     try {
       const response = await this.client.responses.create({
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
         input: text,
         // reasoning: { effort: "low" },
         instructions: padraoResposta,
@@ -39,7 +50,10 @@ export default class SummaryService {
       console.log(response.output_text);
       return response.output_text;
     } catch (error) {
-      this.logger.error(`Erro ao chamar a agente: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao chamar a agente: ${error.message}`,
+        error.stack,
+      );
 
       if (error.status === 429) {
         throw new HttpException(
@@ -60,14 +74,17 @@ export default class SummaryService {
 
     try {
       const response = await this.client.responses.create({
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
         input: padraoResposta,
         // instructions: padraoResposta,
       });
 
       return response.output_text;
     } catch (error) {
-      this.logger.error(`Erro ao chamar a agente: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro ao chamar a agente: ${error.message}`,
+        error.stack,
+      );
 
       if (error.status === 429) {
         throw new HttpException(
@@ -81,5 +98,4 @@ export default class SummaryService {
       );
     }
   }
-
 }
