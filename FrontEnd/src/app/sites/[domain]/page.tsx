@@ -7,12 +7,18 @@ import { tenantLandingPageSchema } from '@/validations/tenant.zod';
 import { LeadCaptureForm } from '@/components/landing/LeadCaptureForm';
 import { getNestApiUrl } from '@/lib/api/serverUtils';
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'grupocazua.com.br';
+
 // Busca real no BackEnd (RSC): endpoint público retorna a config ativa por domínio
 async function getTenantConfig(domain: string) {
-  const response = await fetch(
-    `${getNestApiUrl()}/public/landing-pages/${encodeURIComponent(domain)}`,
-    { cache: 'no-store' }
-  );
+  const isCazuaSubdomain = domain.endsWith(`.${ROOT_DOMAIN}`) && domain !== `www.${ROOT_DOMAIN}`;
+  const slug = isCazuaSubdomain ? domain.replace(`.${ROOT_DOMAIN}`, '') : null;
+
+  const endpoint = slug
+    ? `/public/landing-pages/by-slug/${encodeURIComponent(slug)}`
+    : `/public/landing-pages/${encodeURIComponent(domain)}`;
+
+  const response = await fetch(`${getNestApiUrl()}${endpoint}`, { cache: 'no-store' });
 
   if (!response.ok) {
     return null;

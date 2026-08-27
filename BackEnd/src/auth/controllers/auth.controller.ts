@@ -1,5 +1,15 @@
 // src/auth/auth.controller.ts
-import { Body, Controller, Post, HttpCode, HttpStatus, Request, UseGuards, Get, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  Request,
+  UseGuards,
+  Get,
+  UsePipes,
+} from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { SignInDto, signInSchema } from '../dto/sign-in.dto';
@@ -8,7 +18,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)

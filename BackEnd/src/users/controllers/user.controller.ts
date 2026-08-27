@@ -28,7 +28,7 @@ import { AuthGuard } from '../../auth/guards/auth.guard';
 @UseInterceptors(LoggingInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService) { }
+  constructor(private readonly userService: UsersService) {}
 
   @UseGuards(AuthGuard)
   @Get()
@@ -80,9 +80,13 @@ export class UsersController {
   @Post('change-password')
   async changePassword(
     @GetUser('sub') userId: string,
-    @Body() body: any // Em um cenário ideal, você criaria um Zod schema para isso: changePasswordSchema
+    @Body() body: any, // Em um cenário ideal, você criaria um Zod schema para isso: changePasswordSchema
   ) {
-    return this.userService.changeUserPassword(userId, body.currentPassword, body.newPassword);
+    return this.userService.changeUserPassword(
+      userId,
+      body.currentPassword,
+      body.newPassword,
+    );
   }
 
   @Post('forgot-password')
@@ -94,10 +98,10 @@ export class UsersController {
   @Post('reset-password')
   async resetPassword(
     @Body('token') token: string,
-    @Body('newPassword') newPassword: string
+    @Body('newPassword') newPassword: string,
   ) {
-    if (!token || !newPassword) throw new BadRequestException('Token e nova senha são obrigatórios.');
+    if (!token || !newPassword)
+      throw new BadRequestException('Token e nova senha são obrigatórios.');
     return this.userService.resetPassword(token, newPassword);
   }
-
 }

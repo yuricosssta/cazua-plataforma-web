@@ -43,24 +43,25 @@ export class LandingPageConfigService {
   // Mutação Privada: Rota consumida pelo Dashboard do Cazuá (PATCH /landing-pages/me)
   async upsertConfig(orgIdString: string, data: UpsertLandingPageDTO) {
     const organizationId = new Types.ObjectId(orgIdString);
-    const domain = data.domain.trim().toLowerCase();
+    const domain = data.domain?.trim().toLowerCase();
 
-    // Impede que a organização atual assuma um domínio já registrado por terceiros
-    // (política: domínio globalmente único, mesmo se a landing estiver inativa)
-    const conflict = await this.repository.findConflictingDomain(
-      domain,
-      organizationId,
-    );
-    if (conflict) {
-      throw new ConflictException(
-        'Este domínio já está em uso por outra organização.',
+    // Se domain foi fornecido, valida conflito
+    if (domain) {
+      const conflict = await this.repository.findConflictingDomain(
+        domain,
+        organizationId,
       );
+      if (conflict) {
+        throw new ConflictException(
+          'Este domínio já está em uso por outra organização.',
+        );
+      }
     }
 
     // Type assertion bypassa a incompatibilidade shallow do Partial<T> com objetos aninhados do Zod
     return this.repository.upsert(organizationId, {
       ...data,
-      domain,
+      domain: domain || null,
     } as unknown as Partial<LandingPageConfig>);
   }
 

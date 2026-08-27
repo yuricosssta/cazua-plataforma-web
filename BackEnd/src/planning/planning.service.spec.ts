@@ -12,7 +12,7 @@ describe('PlanningService', () => {
     find: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
-    limit: jest.fn(). mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     lean: jest.fn().mockResolvedValue([]),
   };
 
@@ -83,7 +83,10 @@ describe('PlanningService', () => {
         referenceYear: 2025,
       };
 
-      const result = await service.uploadFromExcel({ buffer } as Express.Multer.File, metadata);
+      const result = await service.uploadFromExcel(
+        { buffer } as Express.Multer.File,
+        metadata,
+      );
 
       expect(mockModel.deleteMany).toHaveBeenCalledWith(metadata);
       expect(mockModel.insertMany).toHaveBeenCalledTimes(1);
@@ -163,7 +166,10 @@ describe('PlanningService', () => {
         referenceYear: 2025,
         codigoComposicao: '104658',
       });
-      expect(compositionQuery.sort).toHaveBeenCalledWith({ isSummary: -1, descricao: 1 });
+      expect(compositionQuery.sort).toHaveBeenCalledWith({
+        isSummary: -1,
+        descricao: 1,
+      });
       expect(result).toEqual(expectedItems);
     });
   });

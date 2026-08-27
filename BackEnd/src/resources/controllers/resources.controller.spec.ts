@@ -29,7 +29,10 @@ describe('ResourcesController', () => {
     getProjectStatement: jest.fn(),
   };
 
-  const mockRequest = (userId: string = 'user123', role: string = 'MEMBER') => ({
+  const mockRequest = (
+    userId: string = 'user123',
+    role: string = 'MEMBER',
+  ) => ({
     user: { sub: userId },
     headers: { 'x-org-role': role },
   });
@@ -66,7 +69,11 @@ describe('ResourcesController', () => {
     it('deve chamar sanitizeDecimals com parâmetros corretos', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       await controller.sanitizeDecimals('org1', req);
-      expect(service.sanitizeDecimals).toHaveBeenCalledWith('org1', 'admin123', 'ADMIN');
+      expect(service.sanitizeDecimals).toHaveBeenCalledWith(
+        'org1',
+        'admin123',
+        'ADMIN',
+      );
     });
   });
 
@@ -79,34 +86,52 @@ describe('ResourcesController', () => {
     it('deve permitir OWNER alocar membro no almoxarifado', async () => {
       const req = mockRequest('owner123', 'OWNER');
       await controller.assignWarehouseMember('org1', req, 'user456');
-      expect(service.assignWarehouseMember).toHaveBeenCalledWith('org1', 'user456');
+      expect(service.assignWarehouseMember).toHaveBeenCalledWith(
+        'org1',
+        'user456',
+      );
     });
 
     it('deve bloquear MEMBER de alocar membro no almoxarifado', async () => {
       const req = mockRequest('member123', 'MEMBER');
-      await expect(controller.assignWarehouseMember('org1', req, 'user456'))
-        .rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.assignWarehouseMember('org1', req, 'user456'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('deve permitir ADMIN remover membro do almoxarifado', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       await controller.removeWarehouseMember('org1', req, 'user456');
-      expect(service.removeWarehouseMember).toHaveBeenCalledWith('org1', 'user456');
+      expect(service.removeWarehouseMember).toHaveBeenCalledWith(
+        'org1',
+        'user456',
+      );
     });
 
     it('deve bloquear MEMBER de remover membro do almoxarifado', async () => {
       const req = mockRequest('member123', 'MEMBER');
-      await expect(controller.removeWarehouseMember('org1', req, 'user456'))
-        .rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.removeWarehouseMember('org1', req, 'user456'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('Operações do Catálogo e Estoque', () => {
     it('deve criar um recurso', async () => {
       const req = mockRequest('user123', 'ADMIN');
-      const dto = { name: 'Cimento', type: 'MATERIAL', unit: 'sc', standardCost: 35 } as any;
+      const dto = {
+        name: 'Cimento',
+        type: 'MATERIAL',
+        unit: 'sc',
+        standardCost: 35,
+      } as any;
       await controller.createResource('org1', req, dto);
-      expect(service.createResource).toHaveBeenCalledWith('org1', 'user123', 'ADMIN', dto);
+      expect(service.createResource).toHaveBeenCalledWith(
+        'org1',
+        'user123',
+        'ADMIN',
+        dto,
+      );
     });
 
     it('deve listar recursos', async () => {
@@ -133,48 +158,86 @@ describe('ResourcesController', () => {
       const req = mockRequest('admin123', 'ADMIN');
       const dto = { approvedQuantity: 10 } as any;
       await controller.approveRequest('org1', 'trans1', req, dto);
-      expect(service.approveRequest).toHaveBeenCalledWith('org1', 'trans1', 'admin123', 'ADMIN', 10);
+      expect(service.approveRequest).toHaveBeenCalledWith(
+        'org1',
+        'trans1',
+        'admin123',
+        'ADMIN',
+        10,
+      );
     });
 
     it('deve rejeitar requisição (RM)', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       const dto = { reason: 'Estoque insuficiente' } as any;
       await controller.rejectRequest('org1', 'trans1', req, dto);
-      expect(service.rejectRequest).toHaveBeenCalledWith('org1', 'trans1', 'admin123', 'ADMIN', 'Estoque insuficiente');
+      expect(service.rejectRequest).toHaveBeenCalledWith(
+        'org1',
+        'trans1',
+        'admin123',
+        'ADMIN',
+        'Estoque insuficiente',
+      );
     });
 
     it('deve realizar alocação direta', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       const dto = { resourceId: 'res1', quantity: 5 } as any;
       await controller.allocateDirectly('org1', 'proj1', req, dto);
-      expect(service.allocateDirectly).toHaveBeenCalledWith('org1', 'admin123', 'ADMIN', {
-        projectId: 'proj1',
-        resourceId: 'res1',
-        quantity: 5,
-        origin: undefined,
-        attachments: undefined,
-      });
+      expect(service.allocateDirectly).toHaveBeenCalledWith(
+        'org1',
+        'admin123',
+        'ADMIN',
+        {
+          projectId: 'proj1',
+          resourceId: 'res1',
+          quantity: 5,
+          origin: undefined,
+          attachments: undefined,
+        },
+      );
     });
 
     it('deve adicionar estoque', async () => {
       const req = mockRequest('admin123', 'ADMIN');
-      const dto = { resourceId: 'res1', quantity: 100, unitCostSnapshot: 35 } as any;
+      const dto = {
+        resourceId: 'res1',
+        quantity: 100,
+        unitCostSnapshot: 35,
+      } as any;
       await controller.addStock('org1', req, dto);
-      expect(service.addStock).toHaveBeenCalledWith('org1', 'admin123', 'ADMIN', dto);
+      expect(service.addStock).toHaveBeenCalledWith(
+        'org1',
+        'admin123',
+        'ADMIN',
+        dto,
+      );
     });
 
     it('deve retornar recurso do projeto', async () => {
       const req = mockRequest('user123', 'MEMBER');
       const dto = { resourceId: 'res1', quantity: 2 } as any;
       await controller.returnFromProject('org1', 'proj1', req, dto);
-      expect(service.returnFromProject).toHaveBeenCalledWith('org1', 'proj1', 'user123', 'MEMBER', dto);
+      expect(service.returnFromProject).toHaveBeenCalledWith(
+        'org1',
+        'proj1',
+        'user123',
+        'MEMBER',
+        dto,
+      );
     });
 
     it('deve cancelar transação', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       const dto = { reason: 'Lançamento indevido' } as any;
       await controller.cancelTransaction('org1', 'trans1', req, dto);
-      expect(service.cancelTransaction).toHaveBeenCalledWith('org1', 'trans1', 'admin123', 'ADMIN', 'Lançamento indevido');
+      expect(service.cancelTransaction).toHaveBeenCalledWith(
+        'org1',
+        'trans1',
+        'admin123',
+        'ADMIN',
+        'Lançamento indevido',
+      );
     });
 
     it('deve listar transações', async () => {
@@ -186,13 +249,24 @@ describe('ResourcesController', () => {
       const req = mockRequest('admin123', 'ADMIN');
       const dto = { standardCost: 40 };
       await controller.updateResource('org1', 'res1', req, dto);
-      expect(service.updateResource).toHaveBeenCalledWith('org1', 'res1', 'admin123', 'ADMIN', dto);
+      expect(service.updateResource).toHaveBeenCalledWith(
+        'org1',
+        'res1',
+        'admin123',
+        'ADMIN',
+        dto,
+      );
     });
 
     it('deve inativar recurso', async () => {
       const req = mockRequest('admin123', 'ADMIN');
       await controller.inactivateResource('org1', 'res1', req);
-      expect(service.inactivateResource).toHaveBeenCalledWith('org1', 'res1', 'admin123', 'ADMIN');
+      expect(service.inactivateResource).toHaveBeenCalledWith(
+        'org1',
+        'res1',
+        'admin123',
+        'ADMIN',
+      );
     });
 
     it('deve obter extrato do projeto', async () => {

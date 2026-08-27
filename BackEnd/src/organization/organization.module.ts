@@ -17,9 +17,6 @@ import { UsersModule } from '../users/user.module';
   ],
   controllers: [OrganizationController],
   providers: [OrganizationService],
-  exports: [
-    OrganizationService,
-    MongooseModule,
-  ],
+  exports: [OrganizationService, MongooseModule],
 })
-export class OrganizationModule { }
+export class OrganizationModule {}

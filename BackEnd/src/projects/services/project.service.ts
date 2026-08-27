@@ -1,36 +1,65 @@
 //src/projects/services/project.service.ts
-import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, HttpException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  ForbiddenException,
+  HttpException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter'; // <-- NOVO IMPORT
-import { Project, ProjectDocument, ProjectStatus } from '../schemas/project.schema';
-import { TimelineEvent, TimelineEventDocument, TimelineEventType } from '../schemas/timeline-event.schema';
-import { BulkImportDto, CreateProjectDto, EmitParecerDto } from '../validations/project.zod';
+import {
+  Project,
+  ProjectDocument,
+  ProjectStatus,
+} from '../schemas/project.schema';
+import {
+  TimelineEvent,
+  TimelineEventDocument,
+  TimelineEventType,
+} from '../schemas/timeline-event.schema';
+import {
+  BulkImportDto,
+  CreateProjectDto,
+  EmitParecerDto,
+} from '../validations/project.zod';
 import { Counter, CounterDocument } from '../schemas/counter.schema';
-import { Organization, OrganizationDocument } from '../../organization/schemas/organization.schema';
+import {
+  Organization,
+  OrganizationDocument,
+} from '../../organization/schemas/organization.schema';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
-    @InjectModel(TimelineEvent.name) private timelineEventModel: Model<TimelineEventDocument>,
+    @InjectModel(TimelineEvent.name)
+    private timelineEventModel: Model<TimelineEventDocument>,
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
-    @InjectModel(Organization.name) private orgModel: Model<OrganizationDocument>,
-    private eventEmitter: EventEmitter2 
-  ) { }
+    @InjectModel(Organization.name)
+    private orgModel: Model<OrganizationDocument>,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
-  private async validatePlanLimitAndGetPrefix(orgId: string, incomingItemsCount: number = 1) {
+  private async validatePlanLimitAndGetPrefix(
+    orgId: string,
+    incomingItemsCount: number = 1,
+  ) {
     const org = await this.orgModel.findById(orgId).exec();
     if (!org) throw new NotFoundException('Organização não encontrada.');
 
     const plan = (org as any).plan || 'FREE';
     if (plan === 'FREE') {
       const currentCount = await this.projectModel.countDocuments({
-        organizationId: new (Types.ObjectId as any)(String(orgId))
+        organizationId: new (Types.ObjectId as any)(String(orgId)),
       });
 
       if (currentCount + incomingItemsCount > 2) {
-        throw new ForbiddenException(`LIMITE_FREE_EXCEDIDO: Sua construtora atingiu o limite. O plano Gratuito permite 2 demandas. Evolua para o Plano PRO.`);
+        throw new ForbiddenException(
+          `LIMITE_FREE_EXCEDIDO: Sua construtora atingiu o limite. O plano Gratuito permite 2 demandas. Evolua para o Plano PRO.`,
+        );
       }
     }
 
@@ -38,7 +67,10 @@ export class ProjectsService {
     if (org.acronym) {
       prefixoOrg = org.acronym;
     } else if (org.name) {
-      prefixoOrg = org.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+      prefixoOrg = org.name
+        .replace(/[^a-zA-Z]/g, '')
+        .substring(0, 4)
+        .toUpperCase();
     }
 
     return { org, plan, prefixoOrg };
@@ -58,10 +90,12 @@ export class ProjectsService {
       .lean()
       .exec();
 
-    const allowedIds = oldestProjects.map(p => String(p._id));
+    const allowedIds = oldestProjects.map((p) => String(p._id));
 
     if (!allowedIds.includes(String(projectId))) {
-      throw new ForbiddenException('SMART_LOCK: Esta demanda está congelada em modo Somente Leitura. Faça o upgrade para o plano PRO para voltar a operá-la.');
+      throw new ForbiddenException(
+        'SMART_LOCK: Esta demanda está congelada em modo Somente Leitura. Faça o upgrade para o plano PRO para voltar a operá-la.',
+      );
     }
   }
 
@@ -83,7 +117,7 @@ export class ProjectsService {
       const counter = await this.counterModel.findByIdAndUpdate(
         counterId,
         { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       );
 
       const sequencia = String(counter.seq).padStart(4, '0');
@@ -100,7 +134,7 @@ export class ProjectsService {
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         attachments: data.attachments || [],
-        assignedMembers: [new (Types.ObjectId as any)(String(userId))] // O CRIADOR ENTRA NA EQUIPE AUTOMATICAMENTE
+        assignedMembers: [new (Types.ObjectId as any)(String(userId))], // O CRIADOR ENTRA NA EQUIPE AUTOMATICAMENTE
       });
 
       const savedProject = await newProject.save();
@@ -116,9 +150,9 @@ export class ProjectsService {
         metadata: {
           newStatus: savedProject.status,
           isInitialDemand: true,
-          labelOverride: "Descrição Inicial", // TAG PARA O FRONT-END
-          attachments: data.attachments || []
-        }
+          labelOverride: 'Descrição Inicial', // TAG PARA O FRONT-END
+          attachments: data.attachments || [],
+        },
       });
 
       const savedEvent = await firstEvent.save();
@@ -130,10 +164,11 @@ export class ProjectsService {
     } catch (error) {
       console.error('Erro ao criar demanda:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Falha estrutural ao registrar a demanda.');
+      throw new InternalServerErrorException(
+        'Falha estrutural ao registrar a demanda.',
+      );
     }
   }
-
 
   // IMPORTAÇÃO EM MASSA (BULK)
   async bulkImportProjects(orgId: string, userId: string, projectsData: any[]) {
@@ -146,18 +181,21 @@ export class ProjectsService {
       const month = String(new Date().getMonth() + 1).padStart(2, '0');
 
       // Validação de negócio (Plano Free vs Pro)
-      const { prefixoOrg } = await this.validatePlanLimitAndGetPrefix(orgId, projectsData.length);
+      const { prefixoOrg } = await this.validatePlanLimitAndGetPrefix(
+        orgId,
+        projectsData.length,
+      );
 
       const counterId = `DEMAND_${orgId}_${year}${month}`;
 
       const counter = await this.counterModel.findByIdAndUpdate(
         counterId,
         { $inc: { seq: projectsData.length } },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       );
 
       // Descobre de qual número devemos começar a contar
-      let startSequence = (counter.seq - projectsData.length) + 1;
+      let startSequence = counter.seq - projectsData.length + 1;
 
       // MONTAR O LOTE PARA INSERÇÃO
       const bulkProjectsToInsert = [];
@@ -200,7 +238,9 @@ export class ProjectsService {
           location: data.location || 'Não informada',
           status: data.status || 'DEMAND',
 
-          priorityScore: isNaN(Number(data.priority)) ? 1 : Number(data.priority),
+          priorityScore: isNaN(Number(data.priority))
+            ? 1
+            : Number(data.priority),
           startDate: parseSafeDate(data.startDate),
           endDate: parseSafeDate(data.endDate),
 
@@ -218,8 +258,8 @@ export class ProjectsService {
           referenceCode: referenceCode,
           metadata: {
             newStatus: projectDoc.status,
-            isBulkImport: true
-          }
+            isBulkImport: true,
+          },
         };
 
         // Linka o último evento ao projeto
@@ -235,39 +275,55 @@ export class ProjectsService {
 
       return {
         message: 'Importação concluída com sucesso',
-        count: bulkProjectsToInsert.length
+        count: bulkProjectsToInsert.length,
       };
-
     } catch (error) {
       console.error('ERRO REAL NO BULK IMPORT:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Falha catastrófica ao importar a planilha.');
+      throw new InternalServerErrorException(
+        'Falha catastrófica ao importar a planilha.',
+      );
     }
   }
 
   // EMISSÃO DO PARECER TÉCNICO
-  async emitParecerTecnico(orgId: string, projectId: string, userId: string, data: any, userRole?: string) {
+  async emitParecerTecnico(
+    orgId: string,
+    projectId: string,
+    userId: string,
+    data: any,
+    userRole?: string,
+  ) {
     const project = await this.projectModel.findOne({
       _id: new (Types.ObjectId as any)(String(projectId)),
-      organizationId: new (Types.ObjectId as any)(String(orgId))
+      organizationId: new (Types.ObjectId as any)(String(orgId)),
     });
 
-    if (!project) throw new NotFoundException('Demanda/Projeto não encontrada.');
+    if (!project)
+      throw new NotFoundException('Demanda/Projeto não encontrada.');
 
-    const referenceCode = project.referenceCode || String(project._id).substring(0, 8).toUpperCase();
-    const isAssigned = project.assignedMembers?.some(memberId => memberId.toString() === userId.toString()) || false;
+    const referenceCode =
+      project.referenceCode ||
+      String(project._id).substring(0, 8).toUpperCase();
+    const isAssigned =
+      project.assignedMembers?.some(
+        (memberId) => memberId.toString() === userId.toString(),
+      ) || false;
     const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
-    const isCreator = project.createdBy && project.createdBy.toString() === userId.toString();
+    const isCreator =
+      project.createdBy && project.createdBy.toString() === userId.toString();
 
     if (!isAssigned && !isAdmin && !isCreator) {
-      throw new ForbiddenException('Acesso negado: Você não tem permissão para emitir pareceres neste projeto.');
+      throw new ForbiddenException(
+        'Acesso negado: Você não tem permissão para emitir pareceres neste projeto.',
+      );
     }
 
     const counterId = `PRC_${projectId}`;
     const counter = await this.counterModel.findByIdAndUpdate(
       counterId,
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
     const sequenciaParecer = String(counter.seq).padStart(4, '0');
@@ -286,14 +342,17 @@ export class ProjectsService {
       if (data.location) project.location = data.location;
 
       const metadata: any = {
-        statusChanged: statusChanged ? project.status : null
+        statusChanged: statusChanged ? project.status : null,
       };
 
       if (data.attachments && data.attachments.length > 0) {
         metadata.attachments = data.attachments;
       }
 
-      if (data.priorityDetails && Object.keys(data.priorityDetails).length > 0) {
+      if (
+        data.priorityDetails &&
+        Object.keys(data.priorityDetails).length > 0
+      ) {
         const score = this.calculatePriorityScore(data.priorityDetails);
         project.priorityScore = score;
         project.priorityDetails = data.priorityDetails;
@@ -309,7 +368,7 @@ export class ProjectsService {
         type: TimelineEventType.COMMENT,
         description: data.parecerText,
         parecerCode: parecerCode,
-        metadata: metadata
+        metadata: metadata,
       });
 
       const savedEvent = await parecerEvent.save();
@@ -321,7 +380,9 @@ export class ProjectsService {
     } catch (error) {
       console.error('Erro ao emitir parecer:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Falha ao registrar o parecer técnico.');
+      throw new InternalServerErrorException(
+        'Falha ao registrar o parecer técnico.',
+      );
     }
   }
 
@@ -336,7 +397,7 @@ export class ProjectsService {
       .populate({
         path: 'lastEventId',
         select: 'description date authorId type metadata createdAt',
-        populate: { path: 'authorId', select: 'name' }
+        populate: { path: 'authorId', select: 'name' },
       })
       .sort({ priorityScore: -1, createdAt: -1 })
       .lean()
@@ -344,7 +405,7 @@ export class ProjectsService {
 
     // Se for PRO ou Enterprise, nada é Read-Only
     if (plan !== 'FREE') {
-      return projects.map(p => ({ ...p, isReadOnly: false }));
+      return projects.map((p) => ({ ...p, isReadOnly: false }));
     }
 
     // Se for FREE, descobre quais são as 2 mais velhas (Aquelas que têm passe livre)
@@ -356,21 +417,27 @@ export class ProjectsService {
       .lean()
       .exec();
 
-    const allowedIds = oldestProjects.map(p => String(p._id));
+    const allowedIds = oldestProjects.map((p) => String(p._id));
 
     // Mapeia injetando a tag de travamento
-    return projects.map(p => ({
+    return projects.map((p) => ({
       ...p,
-      isReadOnly: !allowedIds.includes(String(p._id))
+      isReadOnly: !allowedIds.includes(String(p._id)),
     }));
   }
 
   // VISÃO DE DETALHE (Traz a Obra e a Timeline completa)
-  async findOneWithTimeline(orgId: string, projectId: string): Promise<{ project: any; timeline: any[] }> {
-    const project = await this.projectModel.findOne({
-      _id: new (Types.ObjectId as any)(String(projectId)),
-      organizationId: new (Types.ObjectId as any)(String(orgId))
-    }).lean().exec();
+  async findOneWithTimeline(
+    orgId: string,
+    projectId: string,
+  ): Promise<{ project: any; timeline: any[] }> {
+    const project = await this.projectModel
+      .findOne({
+        _id: new (Types.ObjectId as any)(String(projectId)),
+        organizationId: new (Types.ObjectId as any)(String(orgId)),
+      })
+      .lean()
+      .exec();
 
     if (!project) throw new NotFoundException('Projeto não encontrado.');
 
@@ -384,17 +451,18 @@ export class ProjectsService {
       }
     }
 
-    const timeline = await this.timelineEventModel.find({
-      projectId: new (Types.ObjectId as any)(String(projectId)),
-      organizationId: new (Types.ObjectId as any)(String(orgId))
-    })
+    const timeline = await this.timelineEventModel
+      .find({
+        projectId: new (Types.ObjectId as any)(String(projectId)),
+        organizationId: new (Types.ObjectId as any)(String(orgId)),
+      })
       .populate('authorId', 'name')
       .sort({ createdAt: -1 })
       .exec();
 
     return {
       project: { ...project, isReadOnly },
-      timeline
+      timeline,
     };
   }
 }

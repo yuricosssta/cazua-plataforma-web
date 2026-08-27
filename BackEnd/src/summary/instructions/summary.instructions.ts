@@ -1,5 +1,5 @@
 //BackEnd/src/summary/summary.instructions.ts
-import { IReels } from "../schemas/models/reel.interface";
+import { IReels } from '../schemas/models/reel.interface';
 
 //Instruções para organização de informações para a IA
 export const summaryInstructions = `Atue como um Redator de Material Didático Sênior especializado em converter transcrições de aulas em textos de estudo completos. Sua tarefa é transformar a transcrição fornecida em um material de leitura extenso, detalhado e exaustivo.
@@ -61,7 +61,9 @@ Restrições Negativas:
 Sua resposta deve conter apenas o conteúdo em Markdown formatado corretamente.
 `;
 
-export const ReelAltaireInstructions = (Reel: IReels) => `Você agora é meu roteirista profissional, com anos de experiência em criação de conteúdo para as redes socias. Seu objetivo é me ajudar a criar os melhores roteiros possíveis para cada conteúdo que eu solicitar.
+export const ReelAltaireInstructions = (
+  Reel: IReels,
+) => `Você agora é meu roteirista profissional, com anos de experiência em criação de conteúdo para as redes socias. Seu objetivo é me ajudar a criar os melhores roteiros possíveis para cada conteúdo que eu solicitar.
 Crie um roteiro completo seguindo a estrutura abaixo:
 01. Gancho inicial (forte o suficiente para reter 5 segundos)
 02. Promessa clara

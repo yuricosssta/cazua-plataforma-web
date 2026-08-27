@@ -1,20 +1,39 @@
 // src/posts/controllers/post.controller.ts
 import {
-  Body, Controller, DefaultValuePipe, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query, Req, UnauthorizedException, UseGuards, UseInterceptors,
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { PostService } from '../services/post.service';
 import { LoggingInterceptor } from '../../shared/interceptors/logging.interceptor';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { TenantGuard } from '../../organization/guards/tenant.guard';
 import { ZodValidationPipe } from '../../shared/pipe/zod-validation.pipe';
-import { createPostSchema, CreatePostDto, updatePostSchema, UpdatePostDto } from '../validations/post.zod';
+import {
+  createPostSchema,
+  CreatePostDto,
+  updatePostSchema,
+  UpdatePostDto,
+} from '../validations/post.zod';
 import { IPost } from '../schemas/models/post.interface';
 
 @UseInterceptors(LoggingInterceptor)
 @UseGuards(AuthGuard, TenantGuard)
 @Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) { }
+  constructor(private readonly postService: PostService) {}
 
   @Get()
   async getAllPosts(
@@ -41,7 +60,7 @@ export class PostController {
   @Post()
   async createPost(
     @Body(new ZodValidationPipe(createPostSchema)) createPostDto: CreatePostDto,
-    @Req() req: any
+    @Req() req: any,
   ) {
     return this.postService.createPost({
       ...createPostDto,
@@ -56,12 +75,14 @@ export class PostController {
   async updatePost(
     @Param('postId') postId: string,
     @Body(new ZodValidationPipe(updatePostSchema)) updatePostDto: UpdatePostDto,
-    @Req() req: any
+    @Req() req: any,
   ) {
     if (updatePostDto.author !== 'ADMIN') {
       const post = await this.postService.getPost(postId);
       if (post.author !== updatePostDto.author) {
-        throw new UnauthorizedException('Você não tem permissão para editar esta postagem.');
+        throw new UnauthorizedException(
+          'Você não tem permissão para editar esta postagem.',
+        );
       }
     }
     return this.postService.updatePost(postId, {
@@ -76,11 +97,15 @@ export class PostController {
     const post = await this.postService.getPost(postId);
 
     if (post.organizationId?.toString() !== req.organizationId?.toString()) {
-      throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+      throw new UnauthorizedException(
+        'Você não tem permissão para excluir esta postagem.',
+      );
     }
 
     if (req.user?.role !== 'ADMIN' && post.author !== req.user.name) {
-      throw new UnauthorizedException('Você não tem permissão para excluir esta postagem.');
+      throw new UnauthorizedException(
+        'Você não tem permissão para excluir esta postagem.',
+      );
     }
 
     return this.postService.deletePost(postId);

@@ -1,6 +1,17 @@
 // src/organization/controllers/organization.controller.ts
 
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { OrganizationService } from '../services/organization.service';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { AuthGuard } from '../../auth/guards/auth.guard';
@@ -10,7 +21,10 @@ import { IUser } from 'src/users/schemas/models/user.interface';
 @Controller('organizations')
 @UseGuards(AuthGuard)
 export class OrganizationController {
-  constructor(private readonly orgService: OrganizationService, private readonly configService: ConfigService) { }
+  constructor(
+    private readonly orgService: OrganizationService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post()
   create(@Body() createDto: CreateOrganizationDto, @Req() req: any) {
@@ -42,7 +56,7 @@ export class OrganizationController {
     @Param('orgId') orgId: string,
     @Param('userId') userId: string,
     @Body('role') role: string,
-    @Req() req: any
+    @Req() req: any,
   ) {
     const adminId = req.user.sub || req.user.id;
     return this.orgService.updateMemberRole(orgId, adminId, userId, role);
@@ -53,7 +67,7 @@ export class OrganizationController {
   async removeMember(
     @Param('orgId') orgId: string,
     @Param('userId') userId: string,
-    @Req() req: any
+    @Req() req: any,
   ) {
     const adminId = req.user.sub || req.user.id;
     return this.orgService.removeMemberFromOrganization(orgId, adminId, userId);
@@ -66,7 +80,9 @@ export class OrganizationController {
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
 
     if (userEmail !== superAdminEmail) {
-      throw new ForbiddenException('Acesso negado: Área restrita ao Administrador.');
+      throw new ForbiddenException(
+        'Acesso negado: Área restrita ao Administrador.',
+      );
     }
 
     return this.orgService.findAllForSuperAdmin();
@@ -76,13 +92,15 @@ export class OrganizationController {
   async updateOrgPlan(
     @Param('id') orgId: string,
     @Body('plan') plan: string,
-    @Req() req: any
+    @Req() req: any,
   ) {
     const userEmail = req.user?.email;
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
 
     if (userEmail !== superAdminEmail) {
-      throw new ForbiddenException('Acesso negado: Área restrita ao Master Admin.');
+      throw new ForbiddenException(
+        'Acesso negado: Área restrita ao Master Admin.',
+      );
     }
 
     return this.orgService.updatePlan(orgId, plan);
@@ -92,7 +110,7 @@ export class OrganizationController {
   async updateOrgSettings(
     @Param('orgId') orgId: string,
     @Body('settings') settings: any,
-    @Req() req: any
+    @Req() req: any,
   ) {
     const adminId = req.user.sub || req.user.id;
     return this.orgService.updateSettings(orgId, adminId, settings);
@@ -103,5 +121,4 @@ export class OrganizationController {
   getBySlug(@Param('slug') slug: string) {
     return this.orgService.findOneBySlug(slug);
   }
-
 }

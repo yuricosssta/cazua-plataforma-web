@@ -14,9 +14,14 @@ export interface PaginatedPostsResult {
 
 @Injectable()
 export class PostService {
-  constructor(private readonly postRepository: PostRepository) { }
+  constructor(private readonly postRepository: PostRepository) {}
 
-  async getAllPosts(page: number, limit: number, organizationId?: string, term?: string): Promise<PaginatedPostsResult> {
+  async getAllPosts(
+    page: number,
+    limit: number,
+    organizationId?: string,
+    term?: string,
+  ): Promise<PaginatedPostsResult> {
     const skip = (page - 1) * limit;
 
     const [posts, total] = await Promise.all([
@@ -48,7 +53,7 @@ export class PostService {
 
   async createPost(post: IPost) {
     const newPost = await this.postRepository.createPost({
-      ...post
+      ...post,
     });
     return newPost;
   }

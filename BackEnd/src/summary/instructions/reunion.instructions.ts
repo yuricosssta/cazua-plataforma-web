@@ -1,5 +1,5 @@
 //BackEnd/src/summary/summary.instructions.ts
-import { IReels } from "../schemas/models/reel.interface";
+import { IReels } from '../schemas/models/reel.interface';
 
 //Instruções para organização de informações para a IA
 export const reunionInstructions = `Com base na transcrição da reunião abaixo, atue como um secretário executivo e redija uma Ata de Reunião formal em texto corrido (parágrafo único).

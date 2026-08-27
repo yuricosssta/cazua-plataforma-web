@@ -27,7 +27,7 @@ export class Resource {
 
   // Controle de Soft Delete / Arquivamento
   @Prop({ type: Boolean, default: true })
-  isActive: boolean; 
+  isActive: boolean;
 }
 
 export const ResourceSchema = SchemaFactory.createForClass(Resource);

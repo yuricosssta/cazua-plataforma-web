@@ -1,5 +1,11 @@
 //src/transcription/transcription.controller.ts
-import { Controller, Post, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TranscriptionService } from './transcription.service';
 // import type { File as MulterFile } from 'multer';
@@ -7,7 +13,7 @@ import type { Express } from 'express';
 
 @Controller('transcription')
 export class TranscriptionController {
-  constructor(private readonly transcriptionService: TranscriptionService) { }
+  constructor(private readonly transcriptionService: TranscriptionService) {}
 
   // Transcrição via URL do YouTube
   @Post()
@@ -22,4 +28,3 @@ export class TranscriptionController {
     return this.transcriptionService.transcribeFromFile(file);
   }
 }
-

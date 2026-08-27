@@ -17,10 +17,9 @@ class OrganizationSettings {
 
 @Schema({
   timestamps: true, // Cria automaticamente createdAt e updatedAt
-  collection: 'organizations'
+  collection: 'organizations',
 })
 export class Organization {
-
   // O nome de exibição (ex: "Construtora Silva & Filhos")
   @Prop({ required: true, trim: true })
   name: string;
@@ -35,7 +34,13 @@ export class Organization {
   plan: string;
 
   // O identificador único na URL (ex: "construtora-silva")
-  @Prop({ required: true, unique: true, index: true, lowercase: true, trim: true })
+  @Prop({
+    required: true,
+    unique: true,
+    index: true,
+    lowercase: true,
+    trim: true,
+  })
   slug: string;
 
   @Prop({ type: Number, default: 0 })
@@ -49,7 +54,7 @@ export class Organization {
   @Prop({
     type: String,
     enum: ['active', 'inactive', 'suspended'],
-    default: 'active'
+    default: 'active',
   })
   status: string;
 
