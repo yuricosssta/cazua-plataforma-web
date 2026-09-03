@@ -9,11 +9,10 @@ import { AppDispatch, RootState } from '@/lib/redux/store';
 import { loginUser, selectIsAuthenticated } from '@/lib/redux/slices/authSlice';
 import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
 import Spinner from '@/components/Spinner';
-import { HardHat, Activity, Wallet } from 'lucide-react';
 import LogoBloco from '@/components/LogoBloco';
 import { ComercialLogin } from '@/components/landing/ComercialLogin';
 import { tenantLandingPageSchema, TenantLandingPageDTO } from '@/validations/tenant.zod';
-import { getNestApiUrl } from '@/lib/api/serverUtils';
+import { getClientApiUrl } from '@/lib/api/clientUtils';
 import { notFound } from 'next/navigation';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'grupocazua.com.br';
@@ -29,7 +28,7 @@ async function getTenantConfig(domain: string): Promise<TenantLandingPageDTO | n
     endpoint = `/public/landing-pages/${encodeURIComponent(domain)}`;
   }
 
-  const response = await fetch(`${getNestApiUrl()}${endpoint}`, { cache: 'no-store' });
+  const response = await fetch(`${getClientApiUrl()}${endpoint}`, { cache: 'no-store' });
 
   if (!response.ok) {
     return null;
