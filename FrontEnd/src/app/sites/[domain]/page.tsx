@@ -1,111 +1,226 @@
 //src/app/sites/[domain]/page.tsx
-"use server"
+"use client";
 
-import { notFound } from 'next/navigation';
+import { useState, FormEvent, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { tenantLandingPageSchema } from '@/validations/tenant.zod';
-// import { LeadCaptureForm } from '@/components/landing/LeadCaptureForm';
-import { MdxRenderer } from '@/components/mdx-renderer';
+import { AppDispatch, RootState } from '@/lib/redux/store';
+import { loginUser, selectIsAuthenticated } from '@/lib/redux/slices/authSlice';
+import { fetchMyOrganizations } from '@/lib/redux/slices/organizationSlice';
+import Spinner from '@/components/Spinner';
+import { HardHat, Activity, Wallet } from 'lucide-react';
+import LogoBloco from '@/components/LogoBloco';
+import { ComercialLogin } from '@/components/landing/ComercialLogin';
+import { tenantLandingPageSchema, TenantLandingPageDTO } from '@/validations/tenant.zod';
 import { getNestApiUrl } from '@/lib/api/serverUtils';
+import { notFound } from 'next/navigation';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'grupocazua.com.br';
 
-// Busca real no BackEnd (RSC): endpoint público retorna a config ativa por domínio
-async function getTenantConfig(domain: string) {
+async function getTenantConfig(domain: string): Promise<TenantLandingPageDTO | null> {
   const isCazuaSubdomain = domain.endsWith(`.${ROOT_DOMAIN}`) && domain !== `www.${ROOT_DOMAIN}`;
   const slug = isCazuaSubdomain ? domain.replace(`.${ROOT_DOMAIN}`, '') : null;
 
   let endpoint: string;
   if (slug) {
     endpoint = `/public/landing-pages/by-slug/${encodeURIComponent(slug)}`;
-    console.log('[getTenantConfig] Using slug endpoint:', endpoint);
   } else {
     endpoint = `/public/landing-pages/${encodeURIComponent(domain)}`;
-    console.log('[getTenantConfig] Using domain endpoint:', endpoint);
   }
-
-  console.log('[getTenantConfig] isCazuaSubdomain:', isCazuaSubdomain, 'slug:', slug);
 
   const response = await fetch(`${getNestApiUrl()}${endpoint}`, { cache: 'no-store' });
 
-  console.log('[getTenantConfig] Backend response status:', response.status);
   if (!response.ok) {
-    console.error('[getTenantConfig] Backend fetch failed:', response.status, response.statusText);
     return null;
   }
 
   return response.json();
 }
 
-export default async function TenantLandingPage({
+export default function TenantLoginPage({
   params,
 }: {
   params: Promise<{ domain: string }>;
 }) {
-  const { domain } = await params;
-  console.log('[TenantLandingPage] Received domain param:', domain);
+  const [tenant, setTenant] = useState<TenantLandingPageDTO | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const rawData = await getTenantConfig(domain);
-  console.log('[TenantLandingPage] Raw data from backend:', rawData);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
-  const parseResult = tenantLandingPageSchema.safeParse(rawData);
-  console.log('[TenantLandingPage] Zod parse result:', parseResult.success ? 'Success' : parseResult.error);
+  const { status, error: authError } = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  if (!parseResult.success || !parseResult.data.isActive) {
-    console.log('[TenantLandingPage] Not found or inactive, showing 404.');
+  useEffect(() => {
+    async function loadTenantConfig() {
+      const { domain } = await params;
+      const rawData = await getTenantConfig(domain);
+
+      const parseResult = tenantLandingPageSchema.safeParse(rawData);
+
+      if (!parseResult.success || !parseResult.data.isActive) {
+        setError('Página não encontrada ou inativa');
+        setIsLoading(false);
+        return;
+      }
+
+      setTenant(parseResult.data);
+      setIsLoading(false);
+    }
+    loadTenantConfig();
+  }, [params]);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    dispatch(loginUser({ email, password }));
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchMyOrganizations())
+        .unwrap()
+        .then(() => router.push('/dashboard'))
+        .catch((err) => {
+          console.error("Erro ao carregar organizações pós-login:", err);
+          router.push('/dashboard');
+        });
+    }
+  }, [isAuthenticated, dispatch, router]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen lg:grid lg:grid-cols-2 bg-background">
+        <div className="flex flex-col p-6 sm:p-12 lg:p-24 min-h-[100dvh] lg:min-h-screen">
+          <div className="flex-1 flex flex-col justify-center mx-auto w-full sm:w-[380px] space-y-8">
+            <div className="flex items-center justify-center">
+              <Spinner />
+            </div>
+          </div>
+        </div>
+        <ComercialLogin />
+      </div>
+    );
+  }
+
+  if (error || !tenant) {
     notFound();
   }
 
-  const tenant = parseResult.data;
-  const loginUrl = `https://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'cazua.com.br'}/login?tenant=${tenant.domain}`;
+  const primaryHSL = tenant.theme.primaryHSL;
+  const backgroundHSL = tenant.theme.backgroundHSL;
+  const foregroundHSL = tenant.theme.foregroundHSL;
+  const logoUrl = tenant.organizationLogoUrl || tenant.logoUrl;
 
-  // Dicionário MDX: Injeta o organizationId no formulário contra adulteração
-  // const mdxComponents = {
-  //   // LeadCaptureForm: (props: any) => <LeadCaptureForm organizationId={tenant.organizationId} {...props} />,
-  //   h2: (props: any) => <h2 className="text-3xl font-bold mt-8 mb-4" {...props} />,
-  //   p: (props: any) => <p className="text-muted-foreground mb-6" {...props} />,
-  // };
+  const inlineStyles = {
+    '--primary': primaryHSL,
+    ...(backgroundHSL && { '--background': backgroundHSL }),
+    ...(foregroundHSL && { '--foreground': foregroundHSL }),
+  } as React.CSSProperties;
 
   return (
-    <main
-      className="min-h-screen bg-background text-foreground"
-      style={{
-        '--primary': tenant.theme.primaryHSL,
-        ...(tenant.theme.backgroundHSL && { '--background': tenant.theme.backgroundHSL }),
-        ...(tenant.theme.foregroundHSL && { '--foreground': tenant.theme.foregroundHSL }),
-      } as React.CSSProperties}
+    <div
+      className="w-full min-h-screen lg:grid lg:grid-cols-2 bg-background"
+      style={inlineStyles}
     >
-      <header className="border-b border-border p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
-        <div className="font-bold text-xl">
-          {tenant.logoUrl ? (
-            <img src={tenant.logoUrl} alt={`Logo ${tenant.name}`} className="h-8" />
-          ) : (
-            tenant.name
-          )}
+      {/* LADO ESQUERDO: O Formulário Focado */}
+      <div className="flex flex-col p-6 sm:p-12 lg:p-24 min-h-[100dvh] lg:min-h-screen">
+        
+{/* Logo Mobile */}
+        <div className="flex-none lg:hidden mb-8">
+           <div className="flex items-center justify-center">
+             {logoUrl ? (
+               <img src={logoUrl} alt={`Logo ${tenant.name}`} className="h-10" />
+             ) : (
+               <LogoBloco />
+             )}
+           </div>
+         </div>
+
+         {/* Container Centralizado */}
+        <div className="flex-1 flex flex-col justify-center mx-auto w-full sm:w-[380px] space-y-8 pb-12 lg:pb-0">
+          
+          <div className="flex flex-col space-y-2 text-left">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Acessar {tenant.name}
+            </h1>
+            <p className="text-sm text-muted-foreground font-medium">
+              Insira suas credenciais corporativas para gerenciar suas obras e demandas.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
+                E-mail corporativo
+              </label>
+              <input
+                type="email"
+                placeholder="nome@construtora.com.br"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
+                  Senha
+                </label>
+                <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline" tabIndex={-1}>
+                  Esqueceu a senha?
+                </Link>
+              </div>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center w-full h-11 rounded-md bg-primary px-8 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 mt-2"
+              disabled={status === 'loading'}
+            >
+              {status === 'loading' ? (
+                <span className="flex items-center gap-2">
+                  <Spinner /> Autenticando...
+                </span>
+              ) : (
+                'Entrar no Painel'
+              )}
+            </button>
+
+            {(authError || error) && (
+              <div className="p-3 mt-4 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                {authError || error}
+              </div>
+            )}
+          </form>
+
+          {/* Rodapé do Formulário */}
+          <p className="text-center text-sm text-muted-foreground font-medium">
+            Sua empresa ainda não utiliza o Cazuá?{" "}
+            <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
+              Criar conta gratuita.
+            </Link>
+          </p>
+
         </div>
-        <nav>
-          <Link
-            href={loginUrl}
-            className="inline-flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium transition-colors hover:opacity-90"
-          >
-            Portal do Cliente
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </nav>
-      </header>
+      </div>
 
-      <section className="flex flex-col items-center justify-center text-center py-20 px-4 max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6">{tenant.heroTitle}</h1>
-        <p className="text-lg mb-8 opacity-80">{tenant.heroSubtitle}</p>
-      </section>
-
-      {/* Container de Conteúdo MDX Customizável */}
-      {/* {tenant.contentMDX && (
-        <section className="max-w-3xl mx-auto px-4 pb-24 prose prose-neutral dark:prose-invert">
-          <MdxRenderer contentMDX={tenant.contentMDX} components={mdxComponents} />
-        </section>
-      )} */}
-    </main>
+      {/* LADO DIREITO: Comercial Login */}
+      <ComercialLogin />
+      
+    </div>
   );
 }
