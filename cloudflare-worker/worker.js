@@ -12,6 +12,17 @@ export default {
     const appDomain = env.APP_DOMAIN || `www.${rootDomain}`;
     const vercelOrigin = env.VERCEL_ORIGIN || 'vanguardatech.vercel.app';
 
+    // Subdomínios reservados que NÃO devem ser roteados para o Vercel (passam direto)
+    // Ex: arquivos.grupocazua.com.br -> Cloudflare R2
+    const RESERVED_SUBDOMAINS = [
+      'arquivos',
+      'api',
+      'cdn',
+      'assets',
+      'static',
+      'media',
+    ];
+
     // Paths que passam direto para Vercel ORIGIN (sem headers de tenant)
     const PASSTHROUGH_PATHS = [
       '/_next/',
@@ -37,6 +48,14 @@ export default {
     // Ex: www.construtora-alpha.grupocazua.com.br -> construtora-alpha.grupocazua.com.br
     if (hostname.startsWith('www.')) {
       hostname = hostname.replace(/^www\./, '');
+    }
+
+    // Extrai o subdomínio (parte antes do rootDomain)
+    const subdomain = hostname.replace(`.${rootDomain}`, '');
+
+    // Bypass para subdomínios reservados (ex: arquivos.grupocazua.com.br -> R2)
+    if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+      return fetch(request);
     }
 
     // Subdomínio de tenant: construtora-alpha.grupocazua.com.br
