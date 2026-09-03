@@ -27,7 +27,7 @@ export class PublicLandingPageController {
 
     // DTO público: expõe somente os campos necessários ao site, sem campos internos
     return {
-      tenantId: config.organizationId.toString(),
+      organizationId: config.organizationId.toString(),
       domain: config.domain,
       name: config.name,
       logoUrl: config.logoUrl,
@@ -45,7 +45,7 @@ export class PublicLandingPageController {
 
     // DTO público idêntico ao getByDomain
     return {
-      tenantId: config.organizationId.toString(),
+      organizationId: config.organizationId.toString(),
       domain: config.domain,
       name: config.name,
       logoUrl: config.logoUrl,

@@ -1,10 +1,12 @@
 //src/app/sites/[domain]/page.tsx
+"use server"
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { MDXRemote } from 'next-mdx-remote/rsc';
 import { tenantLandingPageSchema } from '@/validations/tenant.zod';
-import { LeadCaptureForm } from '@/components/landing/LeadCaptureForm';
+// import { LeadCaptureForm } from '@/components/landing/LeadCaptureForm';
+import { MdxRenderer } from '@/components/mdx-renderer';
 import { getNestApiUrl } from '@/lib/api/serverUtils';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'grupocazua.com.br';
@@ -59,11 +61,11 @@ export default async function TenantLandingPage({
   const loginUrl = `https://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'cazua.com.br'}/login?tenant=${tenant.domain}`;
 
   // Dicionário MDX: Injeta o organizationId no formulário contra adulteração
-  const mdxComponents = {
-    LeadCaptureForm: (props: any) => <LeadCaptureForm organizationId={tenant.organizationId} {...props} />,
-    h2: (props: any) => <h2 className="text-3xl font-bold mt-8 mb-4" {...props} />,
-    p: (props: any) => <p className="text-muted-foreground mb-6" {...props} />,
-  };
+  // const mdxComponents = {
+  //   // LeadCaptureForm: (props: any) => <LeadCaptureForm organizationId={tenant.organizationId} {...props} />,
+  //   h2: (props: any) => <h2 className="text-3xl font-bold mt-8 mb-4" {...props} />,
+  //   p: (props: any) => <p className="text-muted-foreground mb-6" {...props} />,
+  // };
 
   return (
     <main
@@ -99,11 +101,11 @@ export default async function TenantLandingPage({
       </section>
 
       {/* Container de Conteúdo MDX Customizável */}
-      {tenant.contentMDX && (
+      {/* {tenant.contentMDX && (
         <section className="max-w-3xl mx-auto px-4 pb-24 prose prose-neutral dark:prose-invert">
-          <MDXRemote source={tenant.contentMDX} components={mdxComponents} />
+          <MdxRenderer contentMDX={tenant.contentMDX} components={mdxComponents} />
         </section>
-      )}
+      )} */}
     </main>
   );
 }
