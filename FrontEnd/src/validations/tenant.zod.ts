@@ -12,6 +12,7 @@ export const tenantLandingPageSchema = z.object({
   domain: z.string().nullable().optional(),
   name: z.string(),
   logoUrl: z.string().url().optional(),
+  organizationLogoUrl: z.string().url().optional(),
   heroTitle: z.string(),
   heroSubtitle: z.string(),
   theme: tenantThemeSchema,
