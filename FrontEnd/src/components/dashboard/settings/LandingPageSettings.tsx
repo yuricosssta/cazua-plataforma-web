@@ -18,7 +18,7 @@ export function LandingPageSettings() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const loginUrl = orgSlug ? `https://${orgSlug}.${rootDomain}/login` : '';
+  const loginUrl = orgSlug ? `https://${orgSlug}.${rootDomain}` : '';
 
   useEffect(() => {
     async function fetchConfig() {
