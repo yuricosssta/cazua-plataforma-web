@@ -288,6 +288,10 @@ export class OrganizationService {
     return org;
   }
 
+  async findById(id: Types.ObjectId) {
+    return this.orgModel.findById(id).exec();
+  }
+
   // VALIDAÇÃO: Verifica se a organização existe (usada por módulos que recebem orgId externo)
   async existsById(id: Types.ObjectId): Promise<boolean> {
     const count = await this.orgModel.countDocuments({ _id: id }).exec();

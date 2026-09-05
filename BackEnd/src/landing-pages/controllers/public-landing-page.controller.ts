@@ -7,10 +7,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { Types } from 'mongoose';
 import { LandingPageConfigService } from '../services/landing-page-config.service';
 import { OrganizationService } from '../../organization/services/organization.service';
 
-// Rota pública: renderiza a landing page multi-tenant sem autenticação
+// Rota pública: retorna dados de personalização para a página de login do tenant
 @UseGuards(ThrottlerGuard)
 @Controller('public/landing-pages')
 export class PublicLandingPageController {
@@ -29,24 +30,11 @@ export class PublicLandingPageController {
       );
     }
 
-    const org = await this.organizationService.findOneBySlug(
-      config.domain || '',
+    const org = await this.organizationService.findById(
+      new Types.ObjectId(config.organizationId),
     );
-    const organizationLogoUrl = org?.settings?.logoUrl ?? config.logoUrl;
 
-    // DTO público: expõe somente os campos necessários ao site, sem campos internos
-    return {
-      organizationId: config.organizationId.toString(),
-      domain: config.domain,
-      name: config.name,
-      logoUrl: config.logoUrl,
-      organizationLogoUrl,
-      heroTitle: config.heroTitle,
-      heroSubtitle: config.heroSubtitle,
-      contentMDX: config.contentMDX,
-      theme: config.theme,
-      isActive: config.isActive,
-    };
+    return this.buildPublicDTO(config, org);
   }
 
   @Get('by-slug/:slug')
@@ -54,20 +42,19 @@ export class PublicLandingPageController {
     const config = await this.service.getConfigBySlug(slug);
 
     const org = await this.organizationService.findOneBySlug(slug);
-    const organizationLogoUrl = org?.settings?.logoUrl ?? config.logoUrl;
 
-    // DTO público idêntico ao getByDomain
+    return this.buildPublicDTO(config, org);
+  }
+
+  private buildPublicDTO(config: any, org: any) {
     return {
       organizationId: config.organizationId.toString(),
-      domain: config.domain,
-      name: config.name,
-      logoUrl: config.logoUrl,
-      organizationLogoUrl,
-      heroTitle: config.heroTitle,
-      heroSubtitle: config.heroSubtitle,
-      contentMDX: config.contentMDX,
-      theme: config.theme,
       isActive: config.isActive,
+      name: org?.name ?? config.name,
+      organizationSettings: {
+        logoUrl: org?.settings?.logoUrl ?? null,
+        primaryColorHex: org?.settings?.primaryColorHex ?? '#000000',
+      },
     };
   }
 }

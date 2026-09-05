@@ -13,6 +13,9 @@ class OrganizationSettings {
 
   @Prop({ type: String, required: false })
   footerUrl?: string;
+
+  @Prop({ type: String, required: false })
+  primaryColorHex?: string;
 }
 
 @Schema({

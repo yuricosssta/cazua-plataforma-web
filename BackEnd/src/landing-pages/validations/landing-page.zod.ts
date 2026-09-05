@@ -13,16 +13,18 @@ export const upsertLandingPageSchema = z.object({
     .min(3)
     .optional()
     .or(z.literal('')),
-  name: z.string().min(2),
+  name: z.string().min(2).optional(),
   logoUrl: z.string().url().optional(),
-  heroTitle: z.string().min(5),
-  heroSubtitle: z.string().min(10),
+  heroTitle: z.string().min(5).optional(),
+  heroSubtitle: z.string().min(10).optional(),
   contentMDX: z.string().optional(),
-  theme: z.object({
-    primaryHSL: z.string().min(1),
-    backgroundHSL: z.string().optional(),
-    foregroundHSL: z.string().optional(),
-  }),
+  theme: z
+    .object({
+      primaryHSL: z.string().min(1),
+      backgroundHSL: z.string().optional(),
+      foregroundHSL: z.string().optional(),
+    })
+    .optional(),
   isActive: z.boolean(),
 });
 
