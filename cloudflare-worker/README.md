@@ -42,18 +42,66 @@ pnpm install
 Configure no dashboard Cloudflare ou via CLI:
 
 ```bash
-# No dashboard: Workers > cazua-tenant-router > Settings > Variables
+# No dashboard: Workers > cazua-tenant-router > Settings > Variables (Encrypted)
 # Ou via CLI:
-pnpm run secret:root  # Digite: grupocazua.com.br
-pnpm run secret:app   # Digite: www.grupocazua.com.br
+pnpm run secret:root      # Digite: grupocazua.com.br
+pnpm run secret:app       # Digite: www.grupocazua.com.br
+pnpm run secret:vercel    # Digite: vanguardatech.vercel.app
+pnpm run secret:purge     # Token Bearer para /__purge (ex: openssl rand -hex 32)
+pnpm run secret:cf_token  # API Token do Cloudflare com permissão Zone.Cache Purge:Edit
 ```
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `ROOT_DOMAIN` | Domínio raiz do Cazuá | `grupocazua.com.br` |
-| `APP_DOMAIN` | Domínio do app Next.js na Vercel | `www.grupocazua.com.br` |
+| Variável | Tipo | Descrição | Exemplo |
+|----------|------|-----------|---------|
+| `ROOT_DOMAIN` | Secret | Domínio raiz do Cazuá | `grupocazua.com.br` |
+| `APP_DOMAIN` | Secret | Domínio do app Next.js na Vercel | `www.grupocazua.com.br` |
+| `VERCEL_ORIGIN` | Secret | Host nativo Vercel (sem proxy) | `vanguardatech.vercel.app` |
+| `PURGE_TOKEN` | Secret | Token Bearer para autorizar `/__purge` | `openssl rand -hex 32` |
+| `CF_API_TOKEN` | Secret | API Token com permissão `Zone.Cache Purge:Edit` | - |
+| `CF_ZONE_ID` | Var (não-sensível) | ID da zona no Cloudflare | `2d7f309d05280aac75a42614147625a0` |
 
-> Use **secrets** (não vars) para evitar exposição no painel.
+> `CF_ZONE_ID` está no `wrangler.toml` como var. Os demais são **secrets** (encrypted) para evitar exposição no painel.
+
+## Cache Management
+
+O Worker expõe uma rota admin para purgar o cache do Cloudflare via API.
+
+### Setup
+1. Cloudflare Dashboard → My Profile → API Tokens → Create Token
+2. Template: **Custom Token** → Permissions: `Zone → Cache Purge:Edit`
+3. Zone Resources: `Include → Specific zone → grupocazua.com.br`
+4. Copie o token e rode `pnpm run secret:cf_token`
+5. Gere um token admin forte: `openssl rand -hex 32` e rode `pnpm run secret:purge`
+
+### Uso
+```bash
+# Purgar um subdomínio específico (purgar `/` e `/login`)
+curl -X POST "https://cazua-tenant-router.<conta>.workers.dev/__purge" \
+  -H "X-Admin-Token: $PURGE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"hostname": "construtora.grupocazua.com.br"}'
+
+# Purgar uma URL exata
+curl -X POST "https://cazua-tenant-router.<conta>.workers.dev/__purge" \
+  -H "X-Admin-Token: $PURGE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://construtora.grupocazua.com.br/login"}'
+
+# Purgar múltiplas URLs de uma vez
+curl -X POST "https://cazua-tenant-router.<conta>.workers.dev/__purge" \
+  -H "X-Admin-Token: $PURGE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"files": ["https://a.grupocazua.com.br/", "https://b.grupocazua.com.br/"]}'
+```
+
+Resposta:
+```json
+{
+  "ok": true,
+  "status": 200,
+  "result": { "success": true, "errors": [], "messages": [] }
+}
+```
 
 ## Deploy
 
