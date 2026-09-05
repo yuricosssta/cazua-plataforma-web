@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       { hostname: 'static.todamateria.com.br' },
     ],
   },
+  env: {
+    NEXT_PUBLIC_ROOT_DOMAIN: 'grupocazua.com.br',
+  },
 };
 
 export default nextConfig;
