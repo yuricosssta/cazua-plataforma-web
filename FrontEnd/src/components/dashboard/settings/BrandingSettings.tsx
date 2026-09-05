@@ -2,12 +2,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { UploadCloud, Loader2, CheckCircle } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle, PaintBucket } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import axiosInstance from "@/app/api/axiosInstance";
 import { updateCurrentOrgSettings } from "@/lib/redux/slices/organizationSlice";
-import { uploadFileToR2 } from "@/lib/services/storageService"; // IMPORT NOVO
+import { uploadFileToR2 } from "@/lib/services/storageService";
 
 export function BrandingSettings() {
   const dispatch = useDispatch();
@@ -25,6 +25,10 @@ export function BrandingSettings() {
     footerUrl: orgSettings.footerUrl || "",
   });
 
+  const [primaryColorHex, setPrimaryColorHex] = useState(
+    orgSettings.primaryColorHex || "#000000"
+  );
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, fieldName: 'logoUrl' | 'headerUrl' | 'footerUrl') => {
     const file = event.target.files?.[0];
     if (!file || !orgId) return;
@@ -33,7 +37,6 @@ export function BrandingSettings() {
       setIsLoading(prev => ({ ...prev, [fieldName]: true }));
       setSuccessMsg("");
 
-      // CHAMA O SERVIÇO CENTRALIZADO
       const fileUrl = await uploadFileToR2(file);
 
       const updatedSettings = {
@@ -51,10 +54,32 @@ export function BrandingSettings() {
       setSuccessMsg("Imagem atualizada com sucesso no servidor!");
 
     } catch (error: any) {
-      // Exibe o alerta do bloqueio de 500MB direto na tela
       alert(error.message || "Falha ao fazer upload da imagem.");
     } finally {
       setIsLoading(prev => ({ ...prev, [fieldName]: false }));
+    }
+  };
+
+  const handlePrimaryColorChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newColor = e.target.value;
+    setPrimaryColorHex(newColor);
+
+    if (!orgId) return;
+
+    try {
+      setIsLoading(prev => ({ ...prev, primaryColor: true }));
+
+      await axiosInstance.patch(`/organizations/${orgId}/settings`, {
+        settings: { primaryColorHex: newColor }
+      });
+
+      dispatch(updateCurrentOrgSettings({ primaryColorHex: newColor }));
+      setSuccessMsg("Cor primária atualizada!");
+
+    } catch (error: any) {
+      alert(error.message || "Falha ao salvar a cor primária.");
+    } finally {
+      setIsLoading(prev => ({ ...prev, primaryColor: false }));
     }
   };
 
@@ -120,6 +145,26 @@ export function BrandingSettings() {
         
         <div className="md:col-span-2">
           {renderUploadBox("Rodapé do Relatório (Footer)", "Imagem panorâmica que ocupará a base da folha A4. Recomendado: 2480 x 250 pixels.", "footerUrl", "aspect-[8/1] max-h-24")}
+        </div>
+      </div>
+
+      {/* Seção de Cor Primária */}
+      <div className="border-t border-border pt-6 mt-2">
+        <h3 className="text-sm font-bold border-b border-border pb-2 flex items-center gap-2 mb-4">
+          <PaintBucket className="w-4 h-4" /> Cor Primária do Portal de Login
+        </h3>
+        <div className="flex items-center gap-4 p-4 border border-border rounded-md bg-card shadow-sm">
+          <input
+            type="color"
+            value={primaryColorHex}
+            onChange={(e) => setPrimaryColorHex(e.target.value)}
+            onBlur={handlePrimaryColorChange}
+            className="h-10 w-16 p-1 rounded-md border border-input bg-transparent cursor-pointer"
+          />
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-foreground">{primaryColorHex}</span>
+            <span className="text-xs text-muted-foreground">Aplicada a botões, links e acentos na página de login personalizada da sua empresa.</span>
+          </div>
         </div>
       </div>
     </div>

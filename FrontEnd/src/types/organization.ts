@@ -8,6 +8,7 @@ export interface IOrgSettings {
   logoUrl?: string;
   headerUrl?: string;
   footerUrl?: string;
+  primaryColorHex?: string;
 }
 
 export interface IOrganization {

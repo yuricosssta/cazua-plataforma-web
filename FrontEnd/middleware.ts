@@ -27,9 +27,13 @@ export default async function middleware(req: NextRequest) {
   // O Worker sobrescreve o header 'host' para www.grupocazua.com.br, então usamos tenantSlug + rootDomain
   if (tenantSlug) {
     const cazuadomain = `${tenantSlug}.${rootDomain}`;
-    console.log('[Middleware] Rewriting for Cazuá Subdomain to:', `/sites/${cazuadomain}${url.pathname}`);
+    // Normaliza /login (ou /login/*) para raiz — a página personalizada vive na raiz do subdomínio
+    const normalizedPath = url.pathname === '/login' || url.pathname.startsWith('/login/')
+      ? '/'
+      : url.pathname;
+    console.log('[Middleware] Rewriting for Cazuá Subdomain to:', `/sites/${cazuadomain}${normalizedPath}`);
     return NextResponse.rewrite(
-      new URL(`/sites/${cazuadomain}${url.pathname}`, req.url)
+      new URL(`/sites/${cazuadomain}${normalizedPath}`, req.url)
     );
   }
 
@@ -42,6 +46,10 @@ export default async function middleware(req: NextRequest) {
   }
 
   // 3. Domínio customizado do tenant (ex: construtora.com.br)
-  return NextResponse.rewrite(new URL(`/sites/${hostname}${url.pathname}`, req.url));
+  // Normaliza /login (ou /login/*) para raiz — a página personalizada vive na raiz do subdomínio
+  const customDomainPath = url.pathname === '/login' || url.pathname.startsWith('/login/')
+    ? '/'
+    : url.pathname;
+  return NextResponse.rewrite(new URL(`/sites/${hostname}${customDomainPath}`, req.url));
     
 }
