@@ -1,4 +1,5 @@
 //src/app/sites/[domain]/page.tsx
+// build: 2026-09-07T11:05:00Z - force fresh deploy
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
