@@ -1,4 +1,5 @@
 //src/app/sites/[domain]/page.tsx
+// build: 2026-09-07T11:20:00Z - fix notFound + force fresh deploy
 "use client";
 
 import { useState, FormEvent, useEffect } from 'react';
@@ -60,6 +61,7 @@ export default function TenantLoginPage({
 }) {
   const [tenant, setTenant] = useState<TenantLandingPageDTO | null>(null);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -75,7 +77,8 @@ export default function TenantLoginPage({
       const slug = extractSlug(domain);
 
       if (!slug) {
-        notFound();
+        setIsNotFound(true);
+        setIsConfigLoading(false);
         return;
       }
 
@@ -83,7 +86,8 @@ export default function TenantLoginPage({
       const parseResult = tenantLandingPageSchema.safeParse(rawData);
 
       if (!parseResult.success || !parseResult.data.isActive) {
-        notFound();
+        setIsNotFound(true);
+        setIsConfigLoading(false);
         return;
       }
 
@@ -113,6 +117,10 @@ export default function TenantLoginPage({
         <Spinner />
       </div>
     );
+  }
+
+  if (isNotFound) {
+    notFound();
   }
 
   if (!tenant) return null;
