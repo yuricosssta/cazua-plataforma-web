@@ -44,7 +44,7 @@ export default async function middleware(req: NextRequest) {
 
   // 2. Domínio principal da aplicação (app.grupocazua.com.br ou www.grupocazua.com.br)
   const isMainDomain = cleanHost === rootDomain || cleanHost === appDomain || cleanHost === wwwDomain;
-  const isLocalHost = cleanHost.includes('localhost');
+  const isLocalHost = cleanHost === 'localhost';
 
   if (isMainDomain || isLocalHost) {
     return NextResponse.next();
