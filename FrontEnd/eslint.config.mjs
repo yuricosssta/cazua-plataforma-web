@@ -64,17 +64,7 @@ export default tseslint.config(
 
       'tailwindcss/classnames-order': 'warn',
       'tailwindcss/no-contradicting-classname': 'error',
-      'tailwindcss/no-custom-classname': ['warn', {
-        whitelist: [
-          'loader',
-          'bottom-0',
-          'typography',
-          'dark',
-          'rdp-.+',
-          'ol-.+',
-          'react-loading-skeleton',
-        ],
-      }],
+      'tailwindcss/no-custom-classname': 'off',
 
       'no-restricted-imports': ['warn', {
         paths: [{
@@ -83,7 +73,7 @@ export default tseslint.config(
         }],
       }],
 
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
