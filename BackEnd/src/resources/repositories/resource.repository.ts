@@ -42,7 +42,15 @@ export class ResourceRepository {
     const updated = await this.model
       .findByIdAndUpdate(
         id,
-        { $inc: { currentStock: quantityChange } },
+        [
+          {
+            $set: {
+              currentStock: {
+                $round: [{ $add: ['$currentStock', quantityChange] }, 2],
+              },
+            },
+          },
+        ],
         { new: true },
       )
       .exec();
