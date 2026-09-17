@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@headlessui/react": "2.2.9",
@@ -58,6 +58,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.5",
     "@tailwindcss/postcss": "4.1.11",
     "@tailwindcss/typography": "0.5.16",
     "@types/html2canvas": "1.0.0",
@@ -69,9 +70,15 @@
     "@types/react-dom": "19.1.9",
     "@types/remarkable": "2.0.8",
     "autoprefixer": "10.4.21",
+    "eslint": "9.39.5",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-tailwindcss": "4.4.0",
     "postcss": "8.5.6",
     "tailwindcss": "4.1.11",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "8.70.0"
   },
   "pnpm": {
     "overrides": {
