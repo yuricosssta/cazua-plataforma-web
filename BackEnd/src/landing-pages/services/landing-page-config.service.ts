@@ -15,14 +15,16 @@ export class LandingPageConfigService {
   constructor(
     private readonly repository: LandingPageConfigRepository,
     private readonly organizationService: OrganizationService,
-  ) { }
+  ) {}
 
   // Acesso Público: Rota consumida pelo Front-end Next.js (via Custom Domain)
   async getPublicConfigByDomain(domain: string) {
     const config = await this.repository.findByDomain(domain);
 
     if (!config || !config.isActive) {
-      throw new NotFoundException(`Configuração não encontrada ou inativa para o domínio: ${domain}`);
+      throw new NotFoundException(
+        `Configuração não encontrada ou inativa para o domínio: ${domain}`,
+      );
     }
 
     // Correção: Instancia o ObjectId para satisfazer a assinatura de OrganizationService.findById
@@ -37,7 +39,9 @@ export class LandingPageConfigService {
     const org = await this.organizationService.findOneBySlug(slug);
 
     if (!org) {
-      throw new NotFoundException(`Organização não encontrada para o slug: ${slug}`);
+      throw new NotFoundException(
+        `Organização não encontrada para o slug: ${slug}`,
+      );
     }
 
     // Correção: Garante a extração e conversão do _id em ObjectId
@@ -45,7 +49,9 @@ export class LandingPageConfigService {
     const config = await this.repository.findByOrganizationId(orgId);
 
     if (!config || !config.isActive) {
-      throw new NotFoundException(`Configuração não encontrada ou inativa para o slug: ${slug}`);
+      throw new NotFoundException(
+        `Configuração não encontrada ou inativa para o slug: ${slug}`,
+      );
     }
 
     return { config, org };
@@ -57,7 +63,9 @@ export class LandingPageConfigService {
     const config = await this.repository.findByOrganizationId(organizationId);
 
     if (!config) {
-      throw new NotFoundException('Configuração de Landing Page não encontrada para esta organização.');
+      throw new NotFoundException(
+        'Configuração de Landing Page não encontrada para esta organização.',
+      );
     }
     return config;
   }
@@ -68,9 +76,14 @@ export class LandingPageConfigService {
     const domain = data.domain?.trim().toLowerCase();
 
     if (domain) {
-      const conflict = await this.repository.findConflictingDomain(domain, organizationId);
+      const conflict = await this.repository.findConflictingDomain(
+        domain,
+        organizationId,
+      );
       if (conflict) {
-        throw new ConflictException('Este domínio já está em uso por outra organização.');
+        throw new ConflictException(
+          'Este domínio já está em uso por outra organização.',
+        );
       }
     }
 

@@ -1,10 +1,5 @@
 // src/landing-pages/controllers/public-landing-page.controller.ts
-import {
-  Controller,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LandingPageConfigService } from '../services/landing-page-config.service';
 
