@@ -6,7 +6,7 @@ import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as M
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 import { UpgradeModal } from "./UpgradeModal";
 
 // Importações do OpenLayers
@@ -152,17 +152,17 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         ...(formData.endDate && { endDate: formData.endDate }),
       };
 
-      await axiosInstance.post(
-        `/organizations/${orgId}/projects`,
-        payload
-      );
+      await fetchBff(`/api/organizations/${orgId}/projects`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
 
       setFormData({ title: "", description: "", location: "", startDate: "", endDate: "", attachments: "" });
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error(error);
-      const errorMsg = error.response?.data?.message || error.message || "Erro interno ao registrar a demanda.";
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || "Erro interno ao registrar a demanda.";
       if (errorMsg.includes("LIMITE_FREE_EXCEDIDO") || errorMsg.includes("limite")) {
         setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
         setIsUpgradeModalOpen(true);

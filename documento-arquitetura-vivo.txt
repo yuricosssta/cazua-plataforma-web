@@ -1,3 +1,36 @@
+=== SPRINT 28 - 21/09/2026 ===
+### Resumo Técnico de Fechamento: Migração BFF — Substituição de axiosInstance por Route Handlers (Fase 1)
+
+**1. Decisões de Arquitetura (BFF, Migração de Rede)**
+
+* **Padrão BFF (Backend-For-Frontend):** Implementação de 7 novos Route Handlers proxy no Next.js (`src/app/api/...`) para substituir chamadas diretas de Client Components ao NestJS. Os endpoints criados foram:
+  - `users/forgot-password` (POST, público)
+  - `users/reset-password` (POST, público)
+  - `storage/assets` (GET)
+  - `storage/assets/[assetId]` (DELETE)
+  - `organizations/[orgId]/projects` (GET, POST)
+  - `organizations/[orgId]/projects/bulk-import` (POST)
+  - `organizations/[orgId]/settings` (PATCH)
+* **Helper Client-Side (`fetchBff`):** Criado em `src/lib/api/fetchBff.ts` — wrapper do `fetch` nativo que joga erros no formato compatível com axios (`error.response.data.message`), permitindo que os blocos `catch` existentes nos componentes continuem funcionando sem alterações.
+* **Expurgo de `axiosInstance` em Componentes:** Refatoração de 7 componentes/páginas que chamavam `axiosInstance` diretamente:
+  - `DashboardMetrics.tsx`, `CreateProjectModal.tsx`, `BrandingSettings.tsx`, `StorageManagement.tsx`, `DataManagement.tsx`, `forgot-password/page.tsx`, `reset-password/page.tsx`
+  - Todos migrados para `fetchBff` com chamadas relativas (`/api/...`).
+
+**2. Definições de Infraestrutura (Rotas, UI)**
+
+* **Herança de Autenticação:** As novas BFF routes reutilizam as funções `getBffAuthHeader` e `getBffOrgHeaders` de `serverUtils.ts`, garantindo propagação transparente de JWT e contexto multi-tenant (`x-org-id`, `x-org-role`) sem intervenção do Client Component.
+* **Nova Estrutura na Árvore `app/api/`:**
+  ```
+  organizations/[orgId]/projects/route.ts
+  organizations/[orgId]/projects/bulk-import/route.ts
+  organizations/[orgId]/settings/route.ts
+  storage/assets/route.ts
+  storage/assets/[assetId]/route.ts
+  users/forgot-password/route.ts
+  users/reset-password/route.ts
+  ```
+* **Próxima Fase (2):** Refatorar `src/lib/services/*` e Redux slices (`authSlice.ts`, `userSlice.ts`) que ainda dependem de `axiosInstance` para completar a migração.
+
 === SPRINT 26 - 17/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)
@@ -15,6 +48,24 @@ Rotas de API Mapeadas e Seguras: Consolidação dos endpoints privados GET /land
 Mitigação de Runtime Exceptions: Implementação de checagem estática Types.ObjectId.isValid() diretamente na barreira do TenantGuard, bloqueando payloads com IDs malformados antes de consumirem processamento nas camadas de Controller e Service.
 
 Preparação para Fase 2: O ecossistema NestJS está isolado, validado e preparado para receber as requisições de proxy do Route Handler (BFF) do Next.js na próxima iteração, mantendo o tráfego do front-end seguro.
+
+=== SPRINT 27 - 18/09/2026 ===
+### Resumo Técnico de Fechamento: Correção de Precisão Decimal no Estoque (Módulo Resources)
+
+**1. Decisões de Arquitetura (Repository Pattern, Precision)**
+
+* **Escrita com Arredondamento Atômico (Repository):** Correção do `ResourceRepository.updateStock()` para utilizar *aggregation pipeline* no `findByIdAndUpdate` (MongoDB 4.2+). A operação `$inc` legada foi substituída por `$add` + `$round` em um único estágio `$set`, garantindo que **todo incremento/decremento de `currentStock` seja persistido com exatamente 2 casas decimais**. Isso elimina erros de ponto flutuante (ex: `0.1 + 0.2 = 0.30000000000000004`) na **camada de escrita**, fonte de verdade.
+* **Defesa em Profundidade (Service + Zod + Pipeline):** A correção complementa as mitigações existentes:
+  - `Precision.round` no `ResourcesService` para custos (`totalCost`);
+  - `transform` no `resource.zod.ts` para sanitizar entrada;
+  - `$round` na pipeline de agregação (`getProjectCostStatement`) para leitura.
+* **Sem Migração Automática:** O método existente `sanitizeDecimalPrecision` (disponível via `POST /resources/sanitize-decimals`, restrito a `OWNER`/`ADMIN`) permanece como ferramenta *opt-in* para corrigir passivo histórico. Novos cálculos não geram mais dízimas binárias.
+
+**2. Definições de Infraestrutura**
+
+* **Arquivo Alterado:** `BackEnd/src/resources/repositories/resource.repository.ts` (método `updateStock`, linhas 41-63).
+* **Impacto Transversal:** Todas as operações de estoque passam por este método (`approveRequest`, `allocateDirectly`, `addStock`, `returnFromProject`, `cancelTransaction`), garantindo consistência em alocações, entradas, devoluções e estornos.
+* **Compatibilidade:** Mantém assinatura pública idêntica; não requer mudanças em Controllers, Services ou Front-end.
 
 === SPRINT 25 - 17/08/2026 ===
 ### Resumo Técnico de Fechamento

@@ -5,7 +5,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { KeyRound, ArrowRight, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 function ResetPasswordContent() { // isolado
   const searchParams = useSearchParams();
@@ -27,9 +27,9 @@ function ResetPasswordContent() { // isolado
 
     setIsLoading(true);
     try {
-      await axiosInstance.post("/users/reset-password", {
-        token,
-        newPassword: passwords.new
+      await fetchBff("/api/users/reset-password", {
+        method: 'POST',
+        body: JSON.stringify({ token, newPassword: passwords.new }),
       });
       setIsSuccess(true);
 
@@ -38,7 +38,7 @@ function ResetPasswordContent() { // isolado
       }, 3000);
       
     } catch (error: any) {
-      setErrorMsg(error.response?.data?.message || "Erro ao redefinir senha. O link pode ter expirado.");
+      setErrorMsg(error.response?.data?.error || error.response?.data?.message || "Erro ao redefinir senha. O link pode ter expirado.");
     } finally {
       setIsLoading(false);
     }

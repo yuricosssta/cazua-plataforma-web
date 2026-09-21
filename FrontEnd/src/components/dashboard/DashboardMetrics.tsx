@@ -3,8 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-// import axios from "axios";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 import Link from "next/link";
 import { Plus, HardHat, FileText, CheckCircle, AlertCircle, Activity, Loader2 } from "lucide-react";
 import { RootState } from "@/lib/redux/store";
@@ -39,8 +38,8 @@ export function DashboardMetrics() {
     try {
       console.log("Buscando projetos para as métricas...");
       setIsLoading(true);
-      const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
-      setProjects(response.data);
+      const data = await fetchBff<any[]>(`/api/organizations/${orgId}/projects`);
+      setProjects(data);
     } catch (error) {
       console.error("Erro ao buscar projetos para as métricas:", error);
     } finally {

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 // Limites fixos em Bytes
 const LIMITS = {
@@ -58,9 +58,9 @@ export function StorageManagement() {
         try {
             setIsLoading(true);
             // Esta rota ainda vamos criar no NestJS no próximo passo!
-            const response = await axiosInstance.get(`/storage/assets`);
-            setAssets(response.data.assets);
-            setStorageUsed(response.data.storageUsed);
+            const data = await fetchBff(`/api/storage/assets`);
+            setAssets(data.assets);
+            setStorageUsed(data.storageUsed);
         } catch (error) {
             console.error("Erro ao buscar dados de armazenamento:", error);
         } finally {
@@ -118,9 +118,7 @@ export function StorageManagement() {
 
         try {
             setIsDeleting(asset._id);
-            await axiosInstance.delete(`/storage/assets/${asset._id}`, {
-                headers: { 'x-org-role': orgRole }
-            });
+            await fetchBff(`/api/storage/assets/${asset._id}`, { method: 'DELETE' });
 
             // Atualiza a tela instantaneamente
             setAssets(prev => prev.filter(item => item._id !== asset._id));

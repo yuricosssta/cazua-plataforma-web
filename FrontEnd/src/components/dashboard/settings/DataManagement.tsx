@@ -9,7 +9,7 @@ import {
   Download, Upload, FileSpreadsheet, CheckCircle2,
   Trash2, AlertTriangle, Save, Loader2, X
 } from "lucide-react";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 import Papa from 'papaparse';
 import { UpgradeModal } from "../UpgradeModal";
 
@@ -145,8 +145,9 @@ export function DataManagement() {
     try {
       setIsSubmitting(true);
 
-      await axiosInstance.post(`/organizations/${orgId}/projects/bulk-import`, {
-        projects: draftRows
+      await fetchBff(`/api/organizations/${orgId}/projects/bulk-import`, {
+        method: 'POST',
+        body: JSON.stringify({ projects: draftRows }),
       });
 
       alert("Demandas importadas com sucesso! Vá para a tela de Projetos para conferir.");
@@ -156,7 +157,7 @@ export function DataManagement() {
       localStorage.removeItem("cazua_import_draft");
     } catch (error: any) {
       console.error(error);
-      const errorMsg = error.response?.data?.message || "Erro ao salvar no banco de dados.";
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || "Erro ao salvar no banco de dados.";
 
       if (errorMsg.includes("LIMITE_FREE_EXCEDIDO")) {
         setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
