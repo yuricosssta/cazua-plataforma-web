@@ -2,6 +2,27 @@
 import { fetchBff, getAuthHeaders } from '@/lib/api/fetchBff';
 const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// Helper to get org headers from Redux store (async import to avoid circular deps)
+async function getOrgHeaders(): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const { store } = await import('@/lib/redux/store');
+    const state = store.getState();
+    const currentOrg = state.organizations?.currentOrganization;
+    if (currentOrg && currentOrg.organizationId) {
+      const orgId = typeof currentOrg.organizationId === 'string'
+        ? currentOrg.organizationId
+        : currentOrg.organizationId._id || currentOrg.organizationId.id;
+      if (!orgId) return {};
+      return {
+        'x-org-id': orgId,
+        'x-org-role': currentOrg.role,
+      };
+    }
+  } catch {}
+  return {};
+}
+
 // --- INTERFACES DE DTOs ---
 export interface UploadPlanningPayload {
   isGlobal: boolean;
@@ -86,9 +107,10 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
+    const orgHeaders = await getOrgHeaders();
     const response = await fetch(`${NEST_API_URL}/planning/upload`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), ...orgHeaders },
       body: formData,
     });
 
@@ -118,9 +140,10 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
+    const orgHeaders = await getOrgHeaders();
     const response = await fetch(`${NEST_API_URL}/planning/upload-costs`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), ...orgHeaders },
       body: formData,
     });
 
@@ -155,7 +178,10 @@ const planningService = {
     if (query.page) params.append('page', String(query.page));
     if (query.limit) params.append('limit', String(query.limit));
 
-    return fetchBff(`/api/planning/search?${params.toString()}`);
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff(`/api/planning/search?${params.toString()}`, {
+      headers: orgHeaders,
+    });
   },
 
   /**
@@ -172,7 +198,10 @@ const planningService = {
     if (query.grupo) params.append('grupo', query.grupo);
     if (query.groupBy) params.append('groupBy', query.groupBy);
 
-    return fetchBff(`/api/planning/grouped?${params.toString()}`);
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff(`/api/planning/grouped?${params.toString()}`, {
+      headers: orgHeaders,
+    });
   },
 
   /**
@@ -191,7 +220,10 @@ const planningService = {
     if (query?.referenceYear) params.append('referenceYear', String(query.referenceYear));
 
     const qs = params.toString();
-    return fetchBff(`/api/planning/composition/${encodeURIComponent(codigoComposicao)}/items${qs ? `?${qs}` : ''}`)
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff(`/api/planning/composition/${encodeURIComponent(codigoComposicao)}/items${qs ? `?${qs}` : ''}`, {
+      headers: orgHeaders,
+    })
     .then((rawData: CompositionItem[]) => {
       const dataArray = Array.isArray(rawData) ? rawData : [];
       const summary = dataArray.find((item: any) => item.isSummary) || dataArray[0] || {} as CompositionItem;

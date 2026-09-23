@@ -1,11 +1,10 @@
 //src/lib/services/storageService.ts
 import axios from "axios";
 import imageCompression from 'browser-image-compression';
-import { getAuthHeaders } from '@/lib/api/fetchBff';
 
 const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export async function uploadFileToR2(file: File): Promise<string> {
+export async function uploadFileToR2(file: File, orgId: string, orgRole: string): Promise<string> {
   try {
     let fileToUpload = file;
 
@@ -22,10 +21,16 @@ export async function uploadFileToR2(file: File): Promise<string> {
       console.log(`Imagem comprimida! Novo tamanho: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
     }
 
+    const orgHeaders = {
+      'Content-Type': 'application/json',
+      'x-org-id': orgId,
+      'x-org-role': orgRole,
+    };
+
     // Pede a URL assinada (chamada direta ao NestJS)
     const authResponse = await fetch(`${NEST_API_URL}/storage/presigned-url`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: orgHeaders,
       body: JSON.stringify({
         fileName: fileToUpload.name,
         fileType: fileToUpload.type,
@@ -48,7 +53,7 @@ export async function uploadFileToR2(file: File): Promise<string> {
     // Avisa a portaria que o arquivo subiu (chamada direta ao NestJS)
     const confirmResponse = await fetch(`${NEST_API_URL}/storage/confirm-upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: orgHeaders,
       body: JSON.stringify({
         fileUrl: fileUrl,
         fileName: fileToUpload.name,

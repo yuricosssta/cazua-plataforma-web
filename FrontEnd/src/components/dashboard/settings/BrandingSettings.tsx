@@ -37,7 +37,7 @@ export function BrandingSettings() {
       setIsLoading(prev => ({ ...prev, [fieldName]: true }));
       setSuccessMsg("");
 
-      const fileUrl = await uploadFileToR2(file);
+      const fileUrl = await uploadFileToR2(file, orgId, currentMembership?.role || 'MEMBER');
 
       const updatedSettings = {
         ...images,

@@ -1,3 +1,37 @@
+=== SPRINT 31 - 23/09/2026 ===
+### Resumo Técnico de Fechamento: Correção de Headers Multi-tenant em Services (BFF + NestJS)
+
+**1. Problema Identificado**
+
+Erros 400 (Bad Request) e 500 (Internal Server Error) no console do navegador ao emitir pareceres com anexos:
+- `POST http://localhost:3001/storage/presigned-url 400` → "Contexto da organização (x-org-id) é obrigatório no cabeçalho"
+- `POST http://localhost:3000/api/organizations/.../parecer 500` → Falha silenciosa por header `x-org-id` ausente na chamada BFF
+
+**Causa Raiz:** Services chamando endpoints protegidos (NestJS direto ou BFF) sem propagar headers obrigatórios de multi-tenancy (`x-org-id`, `x-org-role`). O `AuthGuard` + `TenantGuard` do NestJS exigem esses headers em todas as rotas privadas.
+
+**2. Correções Aplicadas**
+
+| Service | Arquivo | Mudança |
+|---|---|---|
+| **storageService** | `src/lib/services/storageService.ts` | Função `uploadFileToR2(file, orgId, orgRole)` agora recebe parâmetros explícitos; headers `x-org-id` + `x-org-role` injetados nas 2 chamadas `fetch` diretas ao NestJS (`/storage/presigned-url`, `/storage/confirm-upload`) |
+| **projectService** | `src/lib/services/projectService.ts` | `emitParecer`: adicionado `'x-org-id': orgId` no header da chamada `fetchBff` (já recebia `orgId` e `orgRole` como params) |
+| **resourceService** | `src/lib/services/resourceService.ts` | 18 funções: adicionado `'x-org-id': orgId` em todas chamadas `fetchBff` (já recebiam `orgId` como param) |
+| **organizationService** | `src/lib/services/organizationService.ts` | 5 funções: adicionado `'x-org-id': orgId` em todas chamadas `fetchBff` |
+| **planningService** | `src/lib/services/planningService.ts` | Adicionado helper `getOrgHeaders()` (async import do Redux store, padrão `postService.ts`) que injeta `x-org-id` + `x-org-role` nas chamadas BFF e diretas ao NestJS (`/planning/upload`, `/planning/upload-costs`) |
+| **BrandingSettings** | `src/components/dashboard/settings/BrandingSettings.tsx` | Chamada a `uploadFileToR2` atualizada para passar `orgId` e `orgRole` |
+
+**3. Padrão Adotado**
+
+- **Services com assinatura explícita** (`storageService`, `projectService`, `resourceService`, `organizationService`): recebem `orgId`/`orgRole` como parâmetros → testáveis, desacoplados do Redux, reutilizáveis fora de React
+- **Services chamados de Redux thunks** (`planningService`): usam helper async que lê `currentOrganization` do store → mantém assinatura compatível, segue padrão `postService.ts`
+
+**4. Verificações**
+
+- ✅ `npx tsc --noEmit` — TypeScript passa sem erros
+- ✅ `pnpm run lint` — Sem novos erros (apenas warnings pre-existentes de Tailwind/React)
+
+---
+
 === SPRINT 30 - 23/09/2026 ===
 ### Resumo Técnico de Fechamento: Correções de Auth no BFF + Centralização do fetchBff
 

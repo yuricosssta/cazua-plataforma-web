@@ -106,13 +106,15 @@ export interface CancelTransactionData {
 export const resourceService = {
   // --- EQUIPE DO ALMOXARIFADO ---
   getWarehouseTeam: async (orgId: string): Promise<string[]> => {
-    return fetchBff(`/api/organizations/${orgId}/resources/team`);
+    return fetchBff(`/api/organizations/${orgId}/resources/team`, {
+      headers: { 'x-org-id': orgId },
+    });
   },
 
   assignWarehouseMember: async (orgId: string, userId: string, orgRole: string): Promise<any> => {
     return fetchBff(`/api/organizations/${orgId}/resources/team/assign`, {
       method: 'POST',
-      headers: { 'x-org-role': orgRole },
+      headers: { 'x-org-id': orgId, 'x-org-role': orgRole },
       body: JSON.stringify({ userId, _orgRole: orgRole }),
     });
   },
@@ -120,14 +122,14 @@ export const resourceService = {
   removeWarehouseMember: async (orgId: string, userId: string, orgRole: string): Promise<any> => {
     return fetchBff(`/api/organizations/${orgId}/resources/team/remove`, {
       method: 'POST',
-      headers: { 'x-org-role': orgRole },
+      headers: { 'x-org-id': orgId, 'x-org-role': orgRole },
       body: JSON.stringify({ userId, _orgRole: orgRole }),
     });
   },
 
   // --- CATÁLOGO ---
   createResource: async (orgId: string, data: CreateResourceData, orgRole?: string): Promise<Resource> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources`, {
       method: 'POST',
@@ -137,11 +139,13 @@ export const resourceService = {
   },
 
   listResources: async (orgId: string): Promise<Resource[]> => {
-    return fetchBff(`/api/organizations/${orgId}/resources`);
+    return fetchBff(`/api/organizations/${orgId}/resources`, {
+      headers: { 'x-org-id': orgId },
+    });
   },
 
   updateResource: async (orgId: string, resourceId: string, data: Partial<CreateResourceData>, orgRole?: string): Promise<Resource> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/${resourceId}`, {
       method: 'PATCH',
@@ -151,7 +155,7 @@ export const resourceService = {
   },
 
   inactivateResource: async (orgId: string, resourceId: string, orgRole?: string): Promise<Resource> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/${resourceId}/inactivate`, {
       method: 'PATCH',
@@ -164,13 +168,14 @@ export const resourceService = {
   requestAllocation: async (orgId: string, projectId: string, data: AllocateResourceData): Promise<ResourceTransaction> => {
     return fetchBff(`/api/organizations/${orgId}/resources/request/${projectId}`, {
       method: 'POST',
+      headers: { 'x-org-id': orgId },
       body: JSON.stringify(data),
     });
   },
 
   // --- GESTÃO DO ALMOXARIFADO (Aprovar/Rejeitar RM) ---
   approveRequest: async (orgId: string, transactionId: string, data: ApproveRequestData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/transactions/${transactionId}/approve`, {
       method: 'POST',
@@ -180,7 +185,7 @@ export const resourceService = {
   },
 
   rejectRequest: async (orgId: string, transactionId: string, data: RejectRequestData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/transactions/${transactionId}/reject`, {
       method: 'POST',
@@ -191,7 +196,7 @@ export const resourceService = {
 
   // --- SAÍDA DIRETA (Almoxarifado -> Obra) ---
   allocateDirectly: async (orgId: string, projectId: string, data: AllocateResourceData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/allocate-direct/${projectId}`, {
       method: 'POST',
@@ -202,7 +207,7 @@ export const resourceService = {
 
   // --- ENTRADAS E DEVOLUÇÕES DE ESTOQUE ---
   addStock: async (orgId: string, data: AddStockData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/stock`, {
       method: 'POST',
@@ -212,7 +217,7 @@ export const resourceService = {
   },
 
   returnFromProject: async (orgId: string, projectId: string, data: AllocateResourceData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/return/${projectId}`, {
       method: 'POST',
@@ -223,7 +228,7 @@ export const resourceService = {
 
   // --- AUDITORIA (Estorno) ---
   cancelTransaction: async (orgId: string, transactionId: string, data: CancelTransactionData, orgRole?: string): Promise<ResourceTransaction> => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'x-org-id': orgId };
     if (orgRole) headers['x-org-role'] = orgRole;
     return fetchBff(`/api/organizations/${orgId}/resources/transactions/${transactionId}/cancel`, {
       method: 'POST',
@@ -234,10 +239,14 @@ export const resourceService = {
 
   // --- LIVRO RAZÃO & FINANCEIRO ---
   listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
-    return fetchBff(`/api/organizations/${orgId}/resources/transactions`);
+    return fetchBff(`/api/organizations/${orgId}/resources/transactions`, {
+      headers: { 'x-org-id': orgId },
+    });
   },
 
   getProjectStatement: async (orgId: string, projectId: string): Promise<ProjectStatement> => {
-    return fetchBff(`/api/organizations/${orgId}/resources/statement/${projectId}`);
+    return fetchBff(`/api/organizations/${orgId}/resources/statement/${projectId}`, {
+      headers: { 'x-org-id': orgId },
+    });
   },
 };

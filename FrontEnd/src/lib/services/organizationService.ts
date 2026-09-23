@@ -13,12 +13,15 @@ export const apiCreateOrganization = async (name: string, acronym: string) => {
 };
 
 export const apiGetOrgMembers = async (orgId: string) => {
-  return fetchBff(`/api/organizations/${orgId}/members`);
+  return fetchBff(`/api/organizations/${orgId}/members`, {
+    headers: { 'x-org-id': orgId },
+  });
 };
 
 export const apiCreateOrgMember = async (orgId: string, memberData: any) => {
   return fetchBff(`/api/organizations/${orgId}/members`, {
     method: 'POST',
+    headers: { 'x-org-id': orgId },
     body: JSON.stringify(memberData),
   });
 };
@@ -26,6 +29,7 @@ export const apiCreateOrgMember = async (orgId: string, memberData: any) => {
 export const apiUpdateOrgMemberRole = async (orgId: string, memberId: string, role: string) => {
   return fetchBff(`/api/organizations/${orgId}/members/${memberId}/role`, {
     method: 'PATCH',
+    headers: { 'x-org-id': orgId },
     body: JSON.stringify({ role }),
   });
 };
@@ -33,5 +37,6 @@ export const apiUpdateOrgMemberRole = async (orgId: string, memberId: string, ro
 export const apiRemoveOrgMember = async (orgId: string, memberId: string) => {
   return fetchBff(`/api/organizations/${orgId}/members/${memberId}`, {
     method: 'DELETE',
+    headers: { 'x-org-id': orgId },
   });
 };

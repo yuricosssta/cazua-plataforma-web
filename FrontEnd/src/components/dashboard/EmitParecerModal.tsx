@@ -176,7 +176,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       const newAttachmentUrls: string[] = [];
 
       for (const file of files) {
-        const fileUrl = await uploadFileToR2(file);
+        const fileUrl = await uploadFileToR2(file, orgId, orgRole);
         newAttachmentUrls.push(fileUrl);
       }
 
