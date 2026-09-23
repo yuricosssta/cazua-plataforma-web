@@ -22,19 +22,12 @@ const initialState: OrganizationState = {
 
 export const fetchMyOrganizations = createAsyncThunk(
   'organizations/fetchMyOrgs',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState;
-      const token = state.auth.token;
-
-      if (!token) {
-        return rejectWithValue('Usuário não autenticado');
-      }
-
-      const data = await apiFetchMyOrganizations(token);
+      const data = await apiFetchMyOrganizations();
       return data;
     } catch (err: any) {
-      return rejectWithValue(err);
+      return rejectWithValue(err.response?.data?.message || err.message || 'Erro ao carregar organizações');
     }
   }
 );

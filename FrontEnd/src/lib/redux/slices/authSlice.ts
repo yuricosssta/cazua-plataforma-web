@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import { jwtDecode } from 'jwt-decode';
+import { fetchBff } from '@/lib/api/fetchBff';
 
 interface UserPayload {
   sub: string;
@@ -68,17 +69,8 @@ export const loginUser = createAsyncThunk<AuthResponse, { email: string; passwor
 
 export const renewToken = createAsyncThunk<AuthResponse>(
   'auth/renewToken',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch('/api/auth/refresh', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) {
-        return rejectWithValue(data.error || data.message || 'Erro ao renovar token');
-      }
-      return data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Erro ao renovar token');
-    }
+  async () => {
+    return fetchBff('/api/auth/refresh', { method: 'POST' });
   }
 );
 

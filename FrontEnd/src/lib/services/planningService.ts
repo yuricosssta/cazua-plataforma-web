@@ -1,16 +1,6 @@
 // src/lib/services/planningService.ts
-const BASE_URL = '/api';
+import { fetchBff, getAuthHeaders } from '@/lib/api/fetchBff';
 const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function handleResponse(res: Response) {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error: any = new Error(data.message || data.error || `Erro ${res.status}`);
-    error.response = { data, status: res.status };
-    throw error;
-  }
-  return data;
-}
 
 // --- INTERFACES DE DTOs ---
 export interface UploadPlanningPayload {
@@ -96,15 +86,18 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
-    const token = getTokenFromLocalStorage();
-
     const response = await fetch(`${NEST_API_URL}/planning/upload`, {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: getAuthHeaders(),
       body: formData,
     });
 
-    return handleResponse(response);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Falha ao fazer upload');
+    }
+
+    return response.json();
   },
 
   /**
@@ -125,15 +118,18 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
-    const token = getTokenFromLocalStorage();
-
     const response = await fetch(`${NEST_API_URL}/planning/upload-costs`, {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: getAuthHeaders(),
       body: formData,
     });
 
-    return handleResponse(response);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Falha ao atualizar custos');
+    }
+
+    return response.json();
   },
 
   /**
@@ -159,8 +155,7 @@ const planningService = {
     if (query.page) params.append('page', String(query.page));
     if (query.limit) params.append('limit', String(query.limit));
 
-    const res = await fetch(`${BASE_URL}/planning/search?${params.toString()}`);
-    return handleResponse(res);
+    return fetchBff(`/api/planning/search?${params.toString()}`);
   },
 
   /**
@@ -177,8 +172,7 @@ const planningService = {
     if (query.grupo) params.append('grupo', query.grupo);
     if (query.groupBy) params.append('groupBy', query.groupBy);
 
-    const res = await fetch(`${BASE_URL}/planning/grouped?${params.toString()}`);
-    return handleResponse(res);
+    return fetchBff(`/api/planning/grouped?${params.toString()}`);
   },
 
   /**
@@ -197,24 +191,14 @@ const planningService = {
     if (query?.referenceYear) params.append('referenceYear', String(query.referenceYear));
 
     const qs = params.toString();
-    const res = await fetch(`${BASE_URL}/planning/composition/${encodeURIComponent(codigoComposicao)}/items${qs ? `?${qs}` : ''}`);
-    const rawData = await handleResponse(res) as CompositionItem[];
-    const dataArray = Array.isArray(rawData) ? rawData : [];
-
-    const summary = dataArray.find((item: any) => item.isSummary) || dataArray[0] || {} as CompositionItem;
-    const items = dataArray.filter((item: any) => item._id !== summary._id);
-
-    return { summary, items };
+    return fetchBff(`/api/planning/composition/${encodeURIComponent(codigoComposicao)}/items${qs ? `?${qs}` : ''}`)
+    .then((rawData: CompositionItem[]) => {
+      const dataArray = Array.isArray(rawData) ? rawData : [];
+      const summary = dataArray.find((item: any) => item.isSummary) || dataArray[0] || {} as CompositionItem;
+      const items = dataArray.filter((item: any) => item._id !== summary._id);
+      return { summary, items } as CompositionDetail;
+    });
   },
 };
-
-function getTokenFromLocalStorage(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem('token');
-  } catch {
-    return null;
-  }
-}
 
 export default planningService;

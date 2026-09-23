@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ShieldAlert, Zap, Loader2, Search, Building2, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 interface OwnerMembership {
   _id: string;
@@ -38,10 +39,7 @@ export default function MasterAdminPage() {
   const fetchAllOrgs = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/organizations/admin/all');
-      const data = await response.json();
-      if (!response.ok) throw { response: { data: { message: data.error || 'Acesso negado' } } };
-      setOrgs(data);
+      setOrgs(await fetchBff<AdminOrg[]>('/api/organizations/admin/all'));
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.message || "Acesso negado ou erro ao buscar dados.");
@@ -58,15 +56,10 @@ export default function MasterAdminPage() {
     if (!confirm(`Tem certeza que deseja alterar o plano desta empresa para ${newPlan}?`)) return;
 
     try {
-      const response = await fetch(`/api/organizations/admin/${orgId}/plan`, {
+      await fetchBff(`/api/organizations/admin/${orgId}/plan`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: newPlan }),
       });
-      if (!response.ok) {
-        const errData = await response.json();
-        throw { response: { data: { message: errData.error || 'Erro ao atualizar plano' } } };
-      }
       fetchAllOrgs(); // Recarrega a lista para atualizar a tela
     } catch (error: any) {
       alert(error.response?.data?.message || "Erro ao atualizar plano.");

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Edit2, MessageSquare, AlertCircle, FileText, Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 interface TimelineEvent {
   _id: string;
@@ -65,10 +66,7 @@ export function ActivityLog() {
       if (!orgId) return;
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/organizations/${orgId}/projects/timeline`);
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Erro ao carregar timeline');
-        setEvents(data);
+        setEvents(await fetchBff(`/api/organizations/${orgId}/projects/timeline`));
       } catch (error) {
         console.error("Erro ao carregar log de atividades:", error);
       } finally {

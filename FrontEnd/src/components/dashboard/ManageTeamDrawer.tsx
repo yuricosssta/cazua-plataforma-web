@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
 import { IUser } from "@/types/user";
 import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 
 interface ManageTeamDrawerProps {
@@ -27,9 +28,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
             if (!isOpen || !orgId) return;
             try {
                 setIsLoadingMembers(true);
-                const response = await fetch(`/api/organizations/${orgId}/members`);
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Erro ao buscar membros');
+                const data = await fetchBff<IUser[]>(`/api/organizations/${orgId}/members`);
                 setOrgMembers(data);
             } catch (error) {
                 console.error("Erro ao buscar equipe da empresa:", error);

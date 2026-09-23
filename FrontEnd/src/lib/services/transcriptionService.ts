@@ -1,20 +1,6 @@
-const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { getAuthHeaders } from '@/lib/api/fetchBff';
 
-function getAuthHeaders(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  const store = (window as any).__NEXT_REDUX_STORE__;
-  if (!store) return {};
-  const state = store.getState();
-  const token = state.auth?.token;
-  const currentOrg = state.organizations?.currentOrganization;
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (currentOrg?.organizationId?._id) {
-    headers['x-org-id'] = currentOrg.organizationId._id;
-    headers['x-org-role'] = currentOrg.role;
-  }
-  return headers;
-}
+const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Interface para a resposta da API
 interface TranscriptionResponse {

@@ -1,3 +1,32 @@
+=== SPRINT 30 - 23/09/2026 ===
+### Resumo Técnico de Fechamento: Correções de Auth no BFF + Centralização do fetchBff
+
+**1. Decisões de Arquitetura (BFF, Migração de Rede, Segurança)**
+
+* **Problema Identificado:** Após a Fase 2 da migração BFF, as rotas BFF protegidas (ex: `/api/organizations/my-orgs`) retornavam 401. Causa: `getBffAuthHeader()` no server-side lê o token do cookie `access_token` (inexistente — app usa `localStorage`) ou do header `Authorization` da request entrante. Os services/componentes migram para `fetch('/api/...')` sem injetar header, resultando em `authorization === undefined` no BFF.
+* **Solução (Strangler Fig Pattern):** Centralizado wrapper `fetchBff` em `src/lib/api/fetchBff.ts` com:
+  - `getAuthHeaders()` — lê token do `localStorage` e retorna `{ 'Authorization': 'Bearer <token>' }`
+  - `fetchBff(url, options)` — injeta header de auth + `Content-Type: application/json` (exceto FormData), trata erro no formato axios (`error.response.data.message`), retorna JSON parseado
+  - Isso permite que o BFF receba o header `Authorization` e o propague ao NestJS, mantendo compatibilidade com o padrão legado
+  - Quando migrar para cookie `httpOnly` (futuro), basta remover a leitura do `localStorage` em `getAuthHeaders()` — **zero alteração** em services/components/BFF routes
+* **Serialização Redux:** Corrigido `rejectWithValue(err)` que armazenava `Error` object (não-serializável) no estado. Todos os thunks agora extraem string: `rejectWithValue(err.response?.data?.message || err.message || 'Erro')`.
+
+**2. Refatorações Aplicadas**
+
+| Camada | Arquivos | Mudança |
+|---|---|---|
+| **Wrapper** | `src/lib/api/fetchBff.ts` | Novo `getAuthHeaders()` + `fetchBff()` com auth automático + erro axios-compatível |
+| **Services (7)** | `organizationService`, `projectService`, `userService`, `resourceService`, `planningService` (search/grouped/composition), `storageService`, `transcriptionService` | Todos usam `fetchBff` ou `getAuthHeaders()` centralizado |
+| **Components (4)** | `ManageTeamDrawer`, `ManageWarehouseTeamDrawer`, `ActivityLog`, `master-admin/page` | Migrados de `fetch()` raw para `fetchBff()` |
+| **Redux Slices (2)** | `organizationSlice.ts` (`fetchMyOrganizations`), `authSlice.ts` (`renewToken`) | Corrigido `rejectWithValue` + uso de `fetchBff` |
+| **Imports** | 12 arquivos | Corrigido `@/app/api/fetchBff` → `@/lib/api/fetchBff` (caminho real) |
+
+**3. Definições de Infraestrutura**
+
+* **Total de rotas BFF:** 50 arquivos `route.ts` mapeando ~70 endpoints NestJS (mantido da Fase 2)
+* **Uploads mantidos diretos ao NestJS:** `planning/upload`, `planning/upload-costs`, `transcription/upload`, `storage/presigned-url`, `storage/confirm-upload` (multipart/FormData ou upload R2)
+* **Remanescente Fase 3:** `axiosInstance.ts` + dependência `axios` no `package.json` para `summaryService.ts` (hack `baseURL: ''`), `postService.ts` (BFF via `localClient` axios)
+
 === SPRINT 28 - 21/09/2026 ===
 ### Resumo Técnico de Fechamento: Migração BFF — Substituição de axiosInstance por Route Handlers (Fase 1)
 
