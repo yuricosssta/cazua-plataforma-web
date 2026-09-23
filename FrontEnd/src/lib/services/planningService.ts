@@ -1,5 +1,16 @@
 // src/lib/services/planningService.ts
-import axiosInstance from '../../app/api/axiosInstance';
+const BASE_URL = '/api';
+const NEST_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    error.response = { data, status: res.status };
+    throw error;
+  }
+  return data;
+}
 
 // --- INTERFACES DE DTOs ---
 export interface UploadPlanningPayload {
@@ -37,7 +48,7 @@ export interface CompositionItem {
   referenceYear: number;
   grupo: string;
   codigoComposicao: string;
-  tipo: string; // 'COMPOSICAO' | 'INSUMO' | ''
+  tipo: string;
   insumo: string;
   descricao: string;
   unidade: string;
@@ -68,7 +79,7 @@ export interface UploadResponse {
 // --- SERVIÇO ---
 const planningService = {
   /**
-   * Upload de arquivo Excel com metadados
+   * Upload de arquivo Excel com metadados (chamada direta ao NestJS)
    */
   async uploadFromExcel(
     file: File,
@@ -85,14 +96,19 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
-    const response = await axiosInstance.post('/planning/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const token = getTokenFromLocalStorage();
+
+    const response = await fetch(`${NEST_API_URL}/planning/upload`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData,
     });
-    return response.data;
+
+    return handleResponse(response);
   },
 
   /**
-   * Upload de arquivo Excel para atualização massiva de custos
+   * Upload de arquivo Excel para atualização massiva de custos (chamada direta ao NestJS)
    */
   async uploadCostsFromExcel(
     file: File,
@@ -109,10 +125,15 @@ const planningService = {
     formData.append('referenceYear', String(metadata.referenceYear));
     formData.append('grupo', metadata.grupo);
 
-    const response = await axiosInstance.post('/planning/upload-costs', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const token = getTokenFromLocalStorage();
+
+    const response = await fetch(`${NEST_API_URL}/planning/upload-costs`, {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData,
     });
-    return response.data;
+
+    return handleResponse(response);
   },
 
   /**
@@ -138,9 +159,8 @@ const planningService = {
     if (query.page) params.append('page', String(query.page));
     if (query.limit) params.append('limit', String(query.limit));
 
-    const response = await axiosInstance.get(`/planning/search?${params.toString()}`);
-
-    return response.data !== undefined ? response.data : response;
+    const res = await fetch(`${BASE_URL}/planning/search?${params.toString()}`);
+    return handleResponse(res);
   },
 
   /**
@@ -157,8 +177,8 @@ const planningService = {
     if (query.grupo) params.append('grupo', query.grupo);
     if (query.groupBy) params.append('groupBy', query.groupBy);
 
-    const response = await axiosInstance.get(`/planning/grouped?${params.toString()}`);
-    return response.data;
+    const res = await fetch(`${BASE_URL}/planning/grouped?${params.toString()}`);
+    return handleResponse(res);
   },
 
   /**
@@ -176,22 +196,25 @@ const planningService = {
     if (query?.referenceMonth) params.append('referenceMonth', String(query.referenceMonth));
     if (query?.referenceYear) params.append('referenceYear', String(query.referenceYear));
 
-    const response = await axiosInstance.get(
-      `/planning/composition/${encodeURIComponent(codigoComposicao)}/items?${params.toString()}`
-    );
-
-    const rawData = response.data !== undefined ? response.data : response;
+    const qs = params.toString();
+    const res = await fetch(`${BASE_URL}/planning/composition/${encodeURIComponent(codigoComposicao)}/items${qs ? `?${qs}` : ''}`);
+    const rawData = await handleResponse(res) as CompositionItem[];
     const dataArray = Array.isArray(rawData) ? rawData : [];
 
     const summary = dataArray.find((item: any) => item.isSummary) || dataArray[0] || {} as CompositionItem;
-
     const items = dataArray.filter((item: any) => item._id !== summary._id);
 
-    return {
-      summary,
-      items
-    };
+    return { summary, items };
   },
 };
+
+function getTokenFromLocalStorage(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('token');
+  } catch {
+    return null;
+  }
+}
 
 export default planningService;

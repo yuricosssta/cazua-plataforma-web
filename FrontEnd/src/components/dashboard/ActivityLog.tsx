@@ -4,8 +4,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit2, MessageSquare, AlertCircle, FileText, Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
-import axios from "axios";
-import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 
 interface TimelineEvent {
@@ -57,7 +55,6 @@ export function ActivityLog() {
   const [isLoading, setIsLoading] = useState(true);
 
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
 
   const orgId = typeof currentOrg?.organizationId === "object"
     ? (currentOrg.organizationId as any)._id
@@ -65,15 +62,13 @@ export function ActivityLog() {
 
   useEffect(() => {
     const fetchTimeline = async () => {
-      if (!orgId || !token) return;
+      if (!orgId) return;
       try {
         setIsLoading(true);
-        // Bate na rota nova que criamos no passo 1
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/projects/timeline`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setEvents(response.data);
+        const response = await fetch(`/api/organizations/${orgId}/projects/timeline`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Erro ao carregar timeline');
+        setEvents(data);
       } catch (error) {
         console.error("Erro ao carregar log de atividades:", error);
       } finally {
@@ -82,7 +77,7 @@ export function ActivityLog() {
     };
 
     fetchTimeline();
-  }, [orgId, token]);
+  }, [orgId]);
 
   return (
     <div className="flex flex-col w-full h-full">

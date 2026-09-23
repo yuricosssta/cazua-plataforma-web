@@ -31,6 +31,38 @@
   ```
 * **Próxima Fase (2):** Refatorar `src/lib/services/*` e Redux slices (`authSlice.ts`, `userSlice.ts`) que ainda dependem de `axiosInstance` para completar a migração.
 
+=== SPRINT 29 - 23/09/2026 ===
+### Resumo Técnico de Fechamento: Migração BFF — Fase 2 (Completa)
+
+**1. Decisões de Arquitetura (BFF, Migração de Rede)**
+
+* **Expansão Massiva de BFF Routes:** Criação de 36 novos Route Handlers proxy, totalizando 50 rotas BFF ativas (era 14). Os novos grupos foram:
+  - **Auth:** `auth/login`, `auth/refresh`
+  - **Users:** `users`, `users/profile`, `users/change-password`, `users/signup`, `users/[userId]`
+  - **Organizations:** `organizations`, `organizations/my-orgs`
+  - **Organization Members:** `organizations/[orgId]/members` (GET, POST), `members/[memberId]/role` (PATCH), `members/[memberId]` (DELETE)
+  - **Projects:** `projects/[projectId]` (GET), `projects/[projectId]/members` (POST), `projects/[projectId]/members/[memberId]` (DELETE), `projects/[projectId]/parecer` (POST), `projects/timeline` (GET)
+  - **Resources (maior bloco, 16 rotas):** `resources` (GET, POST), `resources/team` (GET), `team/assign` (POST), `team/remove` (POST), `resources/[resourceId]` (PATCH), `resources/[resourceId]/inactivate` (PATCH), `resources/stock` (POST), `resources/request/[projectId]` (POST), `resources/allocate-direct/[projectId]` (POST), `resources/return/[projectId]` (POST), `resources/transactions` (GET), `transactions/[transactionId]/approve` (POST), `reject` (POST), `cancel` (POST), `resources/statement/[projectId]` (GET)
+  - **Planning (GET only):** `planning/search`, `planning/grouped`, `planning/composition/[codigo]/items`
+  - **Master Admin:** `organizations/admin/all` (GET), `organizations/admin/[orgId]/plan` (PATCH)
+* **Expurgo de `axiosInstance` em Services:** 8 services refatorados para usar `fetch` nativo (`/api/...`), eliminando dependência de `axiosInstance`:
+  - `projectService.ts`, `userService.ts`, `organizationService.ts`, `resourceService.ts`, `planningService.ts`, `storageService.ts`, `transcriptionService.ts`, `summaryService.ts`
+  - Endpoints de upload (multipart/form-data: planning upload, transcription, storage presigned-url) mantêm chamada direta ao NestJS por não se beneficiarem do proxy JSON.
+* **Expurgo de `axiosInstance` em Redux Slices:**
+  - `authSlice.ts`: `loginUser` e `renewToken` migrados para `fetch('/api/auth/login')` e `fetch('/api/auth/refresh')`
+  - `userSlice.ts`: `fetchUserProfile` e `fetchUsers` migrados para `fetch('/api/users/profile')` e `fetch('/api/users')`
+* **Expurgo de Chamadas Diretas ao NestJS em 7 Componentes/Páginas:**
+  - `ManageTeamDrawer.tsx`, `ManageWarehouseTeamDrawer.tsx`, `ActivityLog.tsx`, `signup/page.tsx`, `master-admin/page.tsx`, `CreateOrganizationModal.tsx`, `OrganizationPeople.tsx`, `ProjectsList.tsx`
+  - Todos migrados para `fetch('/api/...')`, eliminando imports de `axios`, `axiosInstance` e `process.env.NEXT_PUBLIC_API_BASE_URL`
+
+**2. Definições de Infraestrutura**
+
+* **Padrão de Rota BFF:** Todas as novas rotas seguem o padrão: `getNestApiUrl()` para URL base, `getBffAuthHeader()` para token (lê cookie `access_token` com fallback para header `Authorization`), `getBffOrgHeaders()` para contexto multi-tenant (`x-org-id`, `x-org-role`), tratamento de erro com `NextResponse.json` e status code adequado.
+* **Rotas Públicas Sem Auth Headers:** `auth/login`, `users/signup` não propagam headers de autenticação/org, apenas `Content-Type`.
+* **Tratamento de `orgRole` em Resources:** Alguns endpoints de resources recebem `x-org-role` dinamicamente via campo `_orgRole` no body (removido antes do forward), replicando o comportamento anterior dos interceptors do axios.
+* **Total de rotas BFF:** 50 arquivos `route.ts` mapeando ~70 endpoints HTTP do NestJS.
+* **Remanescente:** `axiosInstance.ts` e dependência `axios` no `package.json` mantidos para `summaryService.ts` (hack `baseURL: ''`), `storageService.ts` (upload direto ao R2) e `postService.ts` (já usa BFF via `localClient` com axios). Pendente para Fase 3.
+
 === SPRINT 26 - 17/08/2026 ===
 Resumo Técnico de Fechamento
 1. Decisões de Arquitetura (BFF, Redux, EDA, Repositories)

@@ -18,7 +18,6 @@ interface CreateOrganizationModalProps {
 
 export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = false }: CreateOrganizationModalProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const token = useSelector((state: RootState) => state.auth.token);
 
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState("");
@@ -36,7 +35,6 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return alert("Usuário não autenticado.");
 
     if (acronym.length < 2) {
       return alert("A sigla precisa ter pelo menos 2 letras.");
@@ -44,7 +42,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
 
     try {
       setIsSubmitting(true);
-      await apiCreateOrganization(token, name, acronym);
+      await apiCreateOrganization(name, acronym);
       dispatch(fetchMyOrganizations());
       setName("");
       setAcronym("");

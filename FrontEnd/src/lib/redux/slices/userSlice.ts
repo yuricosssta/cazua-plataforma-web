@@ -1,6 +1,5 @@
 //src/lib/redux/slices/userSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axiosInstance from '@/app/api/axiosInstance';
 import { IUser } from '../../../types/user';
 import { logout, sessionExpired } from './authSlice'; 
 
@@ -21,16 +20,24 @@ const initialState: UserState = {
 export const fetchUserProfile = createAsyncThunk<IUser>(
   'user/fetchProfile',
   async () => {
-    const response = await axiosInstance.get('/users/profile');
-    return response.data;
+    const response = await fetch('/api/users/profile');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Falha ao buscar perfil');
+    }
+    return data;
   }
 );
 
 export const fetchUsers = createAsyncThunk<IUser[]>(
   'user/fetchUsers',
   async () => {
-    const response = await axiosInstance.get('/users');
-    return response.data;
+    const response = await fetch('/api/users');
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Falha ao buscar usuários');
+    }
+    return data;
   }
 );
 

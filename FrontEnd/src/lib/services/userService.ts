@@ -1,20 +1,30 @@
 // src/lib/services/userService.ts
-import axiosInstance from '../../app/api/axiosInstance';
+const BASE_URL = '/api';
+
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    error.response = { data, status: res.status };
+    throw error;
+  }
+  return data;
+}
 
 export const apiUpdateProfile = async (userId: string, name: string) => {
-  try {
-    const response = await axiosInstance.put(`/users/${userId}`, { name });
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || { message: 'Erro ao atualizar perfil' };
-  }
+  const res = await fetch(`${BASE_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  return handleResponse(res);
 };
 
 export const apiChangePassword = async (passwords: any) => {
-  try {
-    const response = await axiosInstance.post(`/users/change-password`, passwords);
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || { message: 'Erro ao alterar a senha' };
-  }
+  const res = await fetch(`${BASE_URL}/users/change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(passwords),
+  });
+  return handleResponse(res);
 };

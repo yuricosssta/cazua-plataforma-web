@@ -1,61 +1,54 @@
 // src/lib/services/projectService.ts
-import axiosInstance from '../../app/api/axiosInstance';
+const BASE_URL = '/api';
+
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    error.response = { data, status: res.status };
+    throw error;
+  }
+  return data;
+}
 
 // LISTAGEM DE PROJETOS / DEMANDAS
 export const listProjects = async (orgId: string) => {
-  try {
-    const response = await axiosInstance.get(`/organizations/${orgId}/projects`);
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || 'Erro ao listar os projetos';
-  }
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/projects`);
+  return handleResponse(res);
 };
 
 // ALOCAÇÃO DE EQUIPE
 export const apiAssignMember = async (orgId: string, projectId: string, memberId: string, memberName: string) => {
-  try {
-    const response = await axiosInstance.post(`/organizations/${orgId}/projects/${projectId}/members`, {
-      memberId,
-      memberName
-    });
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || 'Erro ao adicionar membro';
-  }
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/projects/${projectId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberId, memberName }),
+  });
+  return handleResponse(res);
 };
 
 // REMOÇÃO DE EQUIPE (E SAIR DA OBRA)
 export const apiRemoveMember = async (orgId: string, projectId: string, memberId: string, memberName: string) => {
-  try {
-    const response = await axiosInstance.delete(`/organizations/${orgId}/projects/${projectId}/members/${memberId}`, {
-      data: { memberName }
-    });
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || 'Erro ao remover membro';
-  }
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/projects/${projectId}/members/${memberId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberName }),
+  });
+  return handleResponse(res);
 };
 
 // BUSCA DETALHES DE UM PROJETO ESPECÍFICO
 export const getProjectDetails = async (orgId: string, projectId: string) => {
-  try {
-    const response = await axiosInstance.get(`/organizations/${orgId}/projects/${projectId}`);
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || 'Erro ao buscar detalhes do projeto';
-  }
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/projects/${projectId}`);
+  return handleResponse(res);
 };
 
 // EMITIR PARECER TÉCNICO
 export const emitParecer = async (orgId: string, projectId: string, payload: any, orgRole: string) => {
-  try {
-    const response = await axiosInstance.post(
-      `/organizations/${orgId}/projects/${projectId}/parecer`,
-      payload,
-      { headers: { 'x-org-role': orgRole } }
-    );
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || new Error('Erro ao emitir parecer');
-  }
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/projects/${projectId}/parecer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-org-role': orgRole },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
 };

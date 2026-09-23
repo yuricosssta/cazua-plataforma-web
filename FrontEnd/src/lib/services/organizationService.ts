@@ -1,49 +1,56 @@
 //src/lib/services/organizationService.ts
-import axios from 'axios';
-import axiosInstance from '../../app/api/axiosInstance';
+const BASE_URL = '/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-export const apiFetchMyOrganizations = async (token: string) => {
-  try {
-    const response = await axios.get(`${API_URL}/organizations/my-orgs`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
-  } catch (err: any) {
-    throw err.response?.data || 'Erro ao conectar com o servidor';
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error: any = new Error(data.message || data.error || `Erro ${res.status}`);
+    error.response = { data, status: res.status };
+    throw error;
   }
+  return data;
+}
+
+export const apiFetchMyOrganizations = async (_token: string) => {
+  const res = await fetch(`${BASE_URL}/organizations/my-orgs`);
+  return handleResponse(res);
 };
 
-export const apiCreateOrganization = async (token: string, name: string, acronym: string) => {
-  try {
-    const response = await axios.post(
-      `${API_URL}/organizations`,
-      { name, acronym },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return response.data;
-  } catch (error: any) {
-    throw error.response?.data || 'Erro ao criar organização';
-  }
+export const apiCreateOrganization = async (name: string, acronym: string) => {
+  const res = await fetch(`${BASE_URL}/organizations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, acronym }),
+  });
+  return handleResponse(res);
 };
 
 export const apiGetOrgMembers = async (orgId: string) => {
-  const response = await axiosInstance.get(`/organizations/${orgId}/members`);
-  return response.data;
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/members`);
+  return handleResponse(res);
 };
 
 export const apiCreateOrgMember = async (orgId: string, memberData: any) => {
-  const response = await axiosInstance.post(`/organizations/${orgId}/members`, memberData);
-  return response.data;
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(memberData),
+  });
+  return handleResponse(res);
 };
 
 export const apiUpdateOrgMemberRole = async (orgId: string, memberId: string, role: string) => {
-  const response = await axiosInstance.patch(`/organizations/${orgId}/members/${memberId}/role`, { role });
-  return response.data;
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/members/${memberId}/role`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  return handleResponse(res);
 };
 
 export const apiRemoveOrgMember = async (orgId: string, memberId: string) => {
-  const response = await axiosInstance.delete(`/organizations/${orgId}/members/${memberId}`);
-  return response.data;
+  const res = await fetch(`${BASE_URL}/organizations/${orgId}/members/${memberId}`, {
+    method: 'DELETE',
+  });
+  return handleResponse(res);
 };
