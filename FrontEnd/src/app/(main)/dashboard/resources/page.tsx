@@ -188,18 +188,21 @@ export default function ResourcesPage() {
                         isOpen={isCreateModalOpen}
                         onClose={() => setIsCreateModalOpen(false)}
                         orgId={orgId}
+                        orgRole={orgRole}
                         onSuccess={triggerRefresh}
                     />
                     <AddStockModal
                         isOpen={isAddStockModalOpen}
                         onClose={() => setIsAddStockModalOpen(false)}
                         orgId={orgId}
+                        orgRole={orgRole}
                         onSuccess={triggerRefresh}
                     />
                     <AllocateDirectlyModal
                         isOpen={isAllocateModalOpen}
                         onClose={() => setIsAllocateModalOpen(false)}
                         orgId={orgId}
+                        orgRole={orgRole}
                         onSuccess={triggerRefresh}
                     />
                 </>

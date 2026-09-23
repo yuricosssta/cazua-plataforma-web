@@ -9,10 +9,11 @@ interface CreateResourceModalProps {
   isOpen: boolean;
   onClose: () => void;
   orgId: string;
+  orgRole: string;
   onSuccess: () => void;
 }
 
-export function CreateResourceModal({ isOpen, onClose, orgId, onSuccess }: CreateResourceModalProps) {
+export function CreateResourceModal({ isOpen, onClose, orgId, orgRole, onSuccess }: CreateResourceModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +47,7 @@ export function CreateResourceModal({ isOpen, onClose, orgId, onSuccess }: Creat
         // Se for capital, força a unidade para R$ e o custo padrão para 1
         unit: isCapital ? "R$" : formData.unit,
         standardCost: isCapital ? 1 : Number(formData.standardCost),
-      });
+      }, orgRole);
       
       // Reseta o formulário após sucesso para evitar lixo de memória na próxima abertura
       setFormData({ name: "", type: ResourceType.MATERIAL, unit: "", standardCost: 0 });

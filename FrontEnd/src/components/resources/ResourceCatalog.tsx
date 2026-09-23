@@ -28,6 +28,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
   const orgId = typeof currentOrg?.organizationId === "object"
     ? (currentOrg.organizationId as any)._id
     : currentOrg?.organizationId;
+  const orgRole = currentOrg?.role || 'MEMBER';
 
   useEffect(() => {
     async function fetchResources() {
@@ -62,7 +63,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     if (!confirm) return;
 
     try {
-      await resourceService.inactivateResource(orgId, resource._id);
+      await resourceService.inactivateResource(orgId, resource._id, orgRole);
       triggerLocalRefresh();
     } catch (err: any) {
       alert(err.response?.data?.message || err.message || "Erro ao inativar recurso.");
@@ -204,6 +205,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
           isOpen={!!editingResource}
           onClose={() => setEditingResource(null)}
           orgId={orgId}
+          orgRole={orgRole}
           resource={editingResource}
           onSuccess={triggerLocalRefresh}
         />
