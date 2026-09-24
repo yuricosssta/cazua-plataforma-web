@@ -1,3 +1,54 @@
+=== SPRINT 32 - 24/09/2026 ===
+### Resumo Técnico de Fechamento: Padronização de Services — Eliminação do axiosInstance e Unificação de Headers Multi-tenant
+
+**1. Problema Identificado**
+
+Após a migração BFF (SPRINT 29-30), services migrados do `axiosInstance` (com interceptor automático que injetava `x-org-id` + `x-org-role` lendo Redux store) para `fetchBff` (que **só injeta `Authorization`**) pararam de enviar headers de tenant. Resultado: 403/401 em operações de almoxarifado, storage e planejamento.
+
+**Causa Raiz:** O `axiosInstance` tinha interceptor global que lia `state.organizations.currentOrganization` e injetava `x-org-id` + `x-org-role`. O `fetchBff` não faz isso — apenas `Authorization`. Services migrados (`resourceService`, `projectService`, `organizationService`, `storageService`) perderam o header automático.
+
+**2. Correções Aplicadas**
+
+| Service | Antes | Depois | Padrão |
+|---|---|---|---|
+| `resourceService` | `fetchBff` sem org headers | Parâmetros explícitos `orgId`/`orgRole` em 18 funções | **Parâmetros explícitos** |
+| `projectService` | `fetchBff` sem org headers | Parâmetros explícitos `orgId`/`orgRole` | **Parâmetros explícitos** |
+| `organizationService` | `fetchBff` sem org headers | Parâmetros explícitos `orgId` | **Parâmetros explícitos** |
+| `storageService` | `fetch` direto sem auth | Parâmetros explícitos `orgId`/`orgRole` + `getAuthHeaders()` | **Parâmetros explícitos** |
+| `postService` | `axiosInstance` + interceptor Redux | `fetchBff` + helper async `getOrgHeaders()` (lê Redux store) | **Helper async Redux** |
+| `summaryService` | `axiosInstance` + `baseURL: ''` | `fetch` direto NestJS + helper async `getOrgHeaders()` | **Helper async Redux** |
+| `planningService` | `fetchBff` sem org headers | Helper async `getOrgHeaders()` (já existia) | **Helper async Redux** |
+
+**3. Arquivos Removidos**
+
+- `FrontEnd/src/app/api/axiosInstance.ts` — não referenciado após migração
+
+**4. Padrão Unificado (Decisão Arquitetural)**
+
+| Contexto de uso | Padrão | Justificativa |
+|---|---|---|
+| **Services chamados de Components** | **Parâmetros explícitos** (`orgId`, `orgRole`) | Desacoplado do Redux, testável, funciona em SSR/Server Components, reutilizável fora de React |
+| **Services chamados de Redux Thunks** | **Helper async Redux** (`getOrgHeaders()`) | Thunks rodam no cliente com store hidratado; mantém assinatura limpa sem propagação manual |
+
+**Regra de Ouro:** Headers de domínio (`x-org-id`, `x-org-role`) são **contrato de negócio**, não infraestrutura. Nunca dependa de interceptor global para injetá-los. `Authorization` é infraestrutura → pode ser centralizado.
+
+**5. Propagação nos Components (Almoxarifado)**
+
+Components que chamam `resourceService` receberam `orgRole` via props e repassam nas chamadas:
+- `PendingRequests.tsx` → `approveRequest`/`rejectRequest`
+- `AllocateDirectlyModal.tsx` → `allocateDirectly`
+- `AddStockModal.tsx` → `addStock`
+- `CreateResourceModal.tsx` → `createResource`
+- `EditResourceModal.tsx` / `ResourceCatalog.tsx` → `updateResource`/`inactivateResource`
+
+**6. Verificações**
+
+- ✅ `npx tsc --noEmit` — TypeScript passa sem erros
+- ✅ `pnpm run lint` — Sem novos erros (apenas warnings pre-existentes)
+- ✅ `axios` mantido apenas em `storageService.ts` (upload direto R2 — uso correto)
+
+---
+
 === SPRINT 31 - 23/09/2026 ===
 ### Resumo Técnico de Fechamento: Correção de Headers Multi-tenant em Services (BFF + NestJS)
 
