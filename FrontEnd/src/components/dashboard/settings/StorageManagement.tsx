@@ -58,7 +58,12 @@ export function StorageManagement() {
         try {
             setIsLoading(true);
             // Esta rota ainda vamos criar no NestJS no próximo passo!
-            const data = await fetchBff(`/api/storage/assets`);
+            const data = await fetchBff(`/api/storage/assets`, {
+                headers: {
+                    'x-org-id': orgId,
+                    'x-org-role': orgRole,
+                },
+            });
             setAssets(data.assets);
             setStorageUsed(data.storageUsed);
         } catch (error) {
@@ -118,7 +123,13 @@ export function StorageManagement() {
 
         try {
             setIsDeleting(asset._id);
-            await fetchBff(`/api/storage/assets/${asset._id}`, { method: 'DELETE' });
+            await fetchBff(`/api/storage/assets/${asset._id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-org-id': orgId,
+                    'x-org-role': orgRole,
+                },
+            });
 
             // Atualiza a tela instantaneamente
             setAssets(prev => prev.filter(item => item._id !== asset._id));

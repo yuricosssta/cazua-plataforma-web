@@ -1,3 +1,29 @@
+=== SPRINT 33 - 24/09/2026 ===
+### Resumo Técnico de Fechamento: Correção de Headers Multi-tenant no StorageManagement (Componente)
+
+**1. Problema Identificado**
+
+O componente `StorageManagement.tsx` chamava `fetchBff('/api/storage/assets')` e `fetchBff('/api/storage/assets/:id', { method: 'DELETE' })` sem propagar os headers obrigatórios de multi-tenancy (`x-org-id`, `x-org-role`). O BFF (`/api/storage/assets/route.ts`) espera receber esses headers da requisição entrante e repassá-los ao NestJS. Ausência causava 400 "Contexto da organização (x-org-id) é obrigatório" e arquivos não apareciam.
+
+**2. Correção Aplicada**
+
+| Componente | Chamada | Antes | Depois |
+|---|---|---|---|
+| `StorageManagement.tsx` | `fetchStorageData()` (GET assets) | `fetchBff('/api/storage/assets')` | `fetchBff('/api/storage/assets', { headers: { 'x-org-id': orgId, 'x-org-role': orgRole }})` |
+| `StorageManagement.tsx` | `handleDelete()` (DELETE asset) | `fetchBff('/api/storage/assets/:id', { method: 'DELETE' })` | `fetchBff('/api/storage/assets/:id', { method: 'DELETE', headers: { 'x-org-id': orgId, 'x-org-role': orgRole }})` |
+
+**3. Padrão Seguido**
+
+- **Parâmetros explícitos** — Segue a decisão arquitetural da SPRINT 32: "Services chamados de Components → Parâmetros explícitos (orgId, orgRole)". O componente já tinha `orgId` e `orgRole` do Redux (`selectCurrentOrg`); basta repassar nos headers da chamada `fetchBff`.
+- Desacoplado do Redux, testável, funciona em SSR/Server Components.
+
+**4. Verificações**
+
+- ✅ `npx tsc --noEmit` — TypeScript passa sem erros
+- ✅ `pnpm run lint` — Sem novos erros
+
+---
+
 === SPRINT 32 - 24/09/2026 ===
 ### Resumo Técnico de Fechamento: Padronização de Services — Eliminação do axiosInstance e Unificação de Headers Multi-tenant
 
