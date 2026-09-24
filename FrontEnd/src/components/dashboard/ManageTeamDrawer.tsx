@@ -3,11 +3,9 @@
 
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
-import axios from "axios";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
 import { IUser } from "@/types/user";
 import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 
 interface ManageTeamDrawerProps {
@@ -20,8 +18,6 @@ interface ManageTeamDrawerProps {
 }
 
 export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAssignedMembers, onSuccess }: ManageTeamDrawerProps) {
-    const token = useSelector((state: RootState) => state.auth.token);
-
     const [orgMembers, setOrgMembers] = useState<IUser[]>([]);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
@@ -29,14 +25,11 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
     // Busca todos os membros da Organização quando a gaveta abre
     useEffect(() => {
         const fetchOrgMembers = async () => {
-            if (!isOpen || !orgId || !token) return;
+            if (!isOpen || !orgId) return;
             try {
                 setIsLoadingMembers(true);
-                const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/members`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                setOrgMembers(response.data);
+                const data = await fetchBff<IUser[]>(`/api/organizations/${orgId}/members`);
+                setOrgMembers(data);
             } catch (error) {
                 console.error("Erro ao buscar equipe da empresa:", error);
             } finally {
@@ -45,7 +38,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
         };
 
         fetchOrgMembers();
-    }, [isOpen, orgId, token]);
+    }, [isOpen, orgId]);
 
     // Função para Alocar no projeto
     const handleAssign = async (userId: string, userName: string) => {

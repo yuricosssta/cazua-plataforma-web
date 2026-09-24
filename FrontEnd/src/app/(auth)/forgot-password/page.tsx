@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +15,10 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axiosInstance.post("/users/forgot-password", { email });
+      await fetchBff("/api/users/forgot-password", {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
       setIsSuccess(true);
     } catch (error) {
       setIsSuccess(true); // evita vazamento de e-mails

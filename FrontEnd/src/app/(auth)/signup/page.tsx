@@ -4,7 +4,6 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
 import { HardHat, Activity, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import LogoBloco from '@/components/LogoBloco'; 
 import Spinner from '@/components/Spinner';
@@ -31,12 +30,20 @@ export default function SignupPage() {
 
     try {
       setIsLoading(true);
-      // Bate na rota pública do seu Back-end para criar a conta global
-      await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
+      const response = await fetch('/api/users/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
       });
+      
+      if (!response.ok) {
+        const errData = await response.json();
+        throw { response: { data: { message: errData.error || 'Erro ao criar conta' } } };
+      }
       
       setIsSuccess(true);
       

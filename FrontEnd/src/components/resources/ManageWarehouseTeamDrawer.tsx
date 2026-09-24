@@ -3,11 +3,9 @@
 
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
-import axios from "axios";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
 import { IUser } from "@/types/user";
 import { resourceService } from "@/lib/services/resourceService";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 interface ManageWarehouseTeamDrawerProps {
   isOpen: boolean;
@@ -19,22 +17,16 @@ interface ManageWarehouseTeamDrawerProps {
 }
 
 export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssignedMembers, orgRole, onSuccess }: ManageWarehouseTeamDrawerProps) {
-  const token = useSelector((state: RootState) => state.auth.token);
-
   const [orgMembers, setOrgMembers] = useState<IUser[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrgMembers = async () => {
-      if (!isOpen || !orgId || !token) return;
+      if (!isOpen || !orgId) return;
       try {
         setIsLoadingMembers(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/${orgId}/members`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setOrgMembers(response.data);
+        setOrgMembers(await fetchBff<IUser[]>(`/api/organizations/${orgId}/members`));
       } catch (error) {
         console.error("Erro ao buscar equipe da empresa:", error);
       } finally {
@@ -43,7 +35,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
     };
 
     fetchOrgMembers();
-  }, [isOpen, orgId, token]);
+  }, [isOpen, orgId]);
 
   const handleAssign = async (userId: string) => {
     try {

@@ -1,9 +1,8 @@
 // FrontEnd/src/lib/redux/slices/authSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { RootState } from '../store';
 import { jwtDecode } from 'jwt-decode';
-import axiosInstance from '@/app/api/axiosInstance';
+import { fetchBff } from '@/lib/api/fetchBff';
 
 interface UserPayload {
   sub: string;
@@ -53,22 +52,25 @@ const safeDecode = (token: string): UserPayload | null => {
 };
 
 export const loginUser = createAsyncThunk<AuthResponse, { email: string; password: string }>(
-  'auth/loginUser', //nome da ação
+  'auth/loginUser',
   async (credentials) => {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, credentials);
-    return response.data;
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Falha ao autenticar');
+    }
+    return data;
   }
 );
 
 export const renewToken = createAsyncThunk<AuthResponse>(
   'auth/renewToken',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post('/auth/refresh');
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data || 'Erro ao renovar token');
-    }
+  async () => {
+    return fetchBff('/api/auth/refresh', { method: 'POST' });
   }
 );
 

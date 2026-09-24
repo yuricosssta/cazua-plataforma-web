@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { UploadCloud, Loader2, CheckCircle, PaintBucket } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
-import axiosInstance from "@/app/api/axiosInstance";
+import { fetchBff } from "@/lib/api/fetchBff";
 import { updateCurrentOrgSettings } from "@/lib/redux/slices/organizationSlice";
 import { uploadFileToR2 } from "@/lib/services/storageService";
 
@@ -37,15 +37,16 @@ export function BrandingSettings() {
       setIsLoading(prev => ({ ...prev, [fieldName]: true }));
       setSuccessMsg("");
 
-      const fileUrl = await uploadFileToR2(file);
+      const fileUrl = await uploadFileToR2(file, orgId, currentMembership?.role || 'MEMBER');
 
       const updatedSettings = {
         ...images,
         [fieldName]: fileUrl
       };
 
-      await axiosInstance.patch(`/organizations/${orgId}/settings`, {
-        settings: updatedSettings
+      await fetchBff(`/api/organizations/${orgId}/settings`, {
+        method: 'PATCH',
+        body: JSON.stringify({ settings: updatedSettings }),
       });
 
       setImages(updatedSettings);
@@ -69,8 +70,9 @@ export function BrandingSettings() {
     try {
       setIsLoading(prev => ({ ...prev, primaryColor: true }));
 
-      await axiosInstance.patch(`/organizations/${orgId}/settings`, {
-        settings: { primaryColorHex: newColor }
+      await fetchBff(`/api/organizations/${orgId}/settings`, {
+        method: 'PATCH',
+        body: JSON.stringify({ settings: { primaryColorHex: newColor } }),
       });
 
       dispatch(updateCurrentOrgSettings({ primaryColorHex: newColor }));

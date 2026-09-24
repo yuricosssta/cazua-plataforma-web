@@ -37,7 +37,6 @@ export function ProjectsList() {
   const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
 
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
 
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;
@@ -87,7 +86,7 @@ export function ProjectsList() {
   };
 
   const fetchProjects = async () => {
-    if (!orgId || !token) return;
+    if (!orgId) return;
 
     try {
       setIsLoading(true);
@@ -136,7 +135,7 @@ export function ProjectsList() {
 
   useEffect(() => {
     fetchProjects();
-  }, [orgId, token]);
+  }, [orgId]);
 
   useEffect(() => {
     if (urlTab && allAvailableTabs.includes(urlTab)) {

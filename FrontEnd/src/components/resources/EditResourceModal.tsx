@@ -9,11 +9,12 @@ interface EditResourceModalProps {
   isOpen: boolean;
   onClose: () => void;
   orgId: string;
+  orgRole: string;
   resource: Resource | null;
   onSuccess: () => void;
 }
 
-export function EditResourceModal({ isOpen, onClose, orgId, resource, onSuccess }: EditResourceModalProps) {
+export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, onSuccess }: EditResourceModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +56,7 @@ export function EditResourceModal({ isOpen, onClose, orgId, resource, onSuccess 
         type: formData.type,
         unit: formData.unit,
         standardCost: Number(formData.standardCost),
-      });
+      }, orgRole);
       onSuccess();
       onClose();
     } catch (err: any) {

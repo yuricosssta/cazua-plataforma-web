@@ -2,10 +2,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
-import axios from "axios";
 import { ShieldAlert, Zap, Loader2, Search, Building2, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import { fetchBff } from "@/lib/api/fetchBff";
 
 interface OwnerMembership {
   _id: string;
@@ -33,7 +31,6 @@ interface AdminOrg {
 }
 
 export default function MasterAdminPage() {
-  const token = useSelector((state: RootState) => state.auth.token);
   const [orgs, setOrgs] = useState<AdminOrg[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,11 +39,7 @@ export default function MasterAdminPage() {
   const fetchAllOrgs = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/admin/all`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setOrgs(response.data);
+      setOrgs(await fetchBff<AdminOrg[]>('/api/organizations/admin/all'));
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.message || "Acesso negado ou erro ao buscar dados.");
@@ -56,18 +49,17 @@ export default function MasterAdminPage() {
   };
 
   useEffect(() => {
-    if (token) fetchAllOrgs();
-  }, [token]);
+    fetchAllOrgs();
+  }, []);
 
   const handleUpdatePlan = async (orgId: string, newPlan: string) => {
     if (!confirm(`Tem certeza que deseja alterar o plano desta empresa para ${newPlan}?`)) return;
 
     try {
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/organizations/admin/${orgId}/plan`,
-        { plan: newPlan },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await fetchBff(`/api/organizations/admin/${orgId}/plan`, {
+        method: 'PATCH',
+        body: JSON.stringify({ plan: newPlan }),
+      });
       fetchAllOrgs(); // Recarrega a lista para atualizar a tela
     } catch (error: any) {
       alert(error.response?.data?.message || "Erro ao atualizar plano.");

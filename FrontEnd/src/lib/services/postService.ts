@@ -1,61 +1,69 @@
 // src/lib/services/postService.ts
-import axios from 'axios';
+import { fetchBff, getAuthHeaders } from '@/lib/api/fetchBff';
 import { IPost } from '@/types/post';
 
-const localClient = axios.create({ baseURL: '/api' });
-
-// Interceptor para plugar os cabeçalhos da organização nas chamadas ao BFF
-localClient.interceptors.request.use(
-  async (config) => {
+// Helper to get org headers from Redux store (async import to avoid circular deps)
+async function getOrgHeaders(): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') return {};
+  try {
     const { store } = await import('@/lib/redux/store');
     const state = store.getState();
-    const token = state.auth?.token;
     const currentOrg = state.organizations?.currentOrganization;
-
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-
     if (currentOrg && currentOrg.organizationId) {
-      // Trata a estrutura independentemente de estar populada ou apenas como string
       const orgId = typeof currentOrg.organizationId === 'string'
         ? currentOrg.organizationId
         : currentOrg.organizationId._id || currentOrg.organizationId.id;
-
-      config.headers['x-org-id'] = orgId;
-      config.headers['x-org-role'] = currentOrg.role;
+      if (!orgId) return {};
+      return {
+        'x-org-id': orgId,
+        'x-org-role': currentOrg.role,
+      };
     }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  } catch {}
+  return {};
+}
 
 export const postService = {
   getPosts: async (page: number, limit: number = 10, term?: string) => {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (term) params.append('term', term);
     
-    const response = await localClient.get(`/posts?${params.toString()}`);
-    return response.data;
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff<{ data: IPost[]; total: number; page: number; limit: number; totalPages: number }>(`/api/posts?${params.toString()}`, {
+      headers: orgHeaders,
+    });
   },
 
   getPostById: async (id: string) => {
-    const response = await localClient.get(`/posts/${id}`);
-    return response.data;
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff<IPost>(`/api/posts/${id}`, {
+      headers: orgHeaders,
+    });
   },
 
   createPost: async (data: Omit<IPost, 'id'>) => {
-    const response = await localClient.post('/posts', data);
-    return response.data;
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff<IPost>('/api/posts', {
+      method: 'POST',
+      headers: orgHeaders,
+      body: JSON.stringify(data),
+    });
   },
 
   updatePost: async (id: string, data: Partial<IPost>) => {
-    const response = await localClient.put(`/posts/${id}`, data);
-    return response.data;
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff<IPost>(`/api/posts/${id}`, {
+      method: 'PUT',
+      headers: orgHeaders,
+      body: JSON.stringify(data),
+    });
   },
   
   deletePost: async (id: string) => {
-    const response = await localClient.delete(`/posts/${id}`);
-    return response.data;
+    const orgHeaders = await getOrgHeaders();
+    return fetchBff<void>(`/api/posts/${id}`, {
+      method: 'DELETE',
+      headers: orgHeaders,
+    });
   }
 };

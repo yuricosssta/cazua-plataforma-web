@@ -81,10 +81,10 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
     try {
       if (actionType === "APPROVE") {
         if (actionData.quantity <= 0) throw new Error("Quantidade deve ser maior que zero.");
-        await resourceService.approveRequest(orgId, processingId, { approvedQuantity: actionData.quantity });
+        await resourceService.approveRequest(orgId, processingId, { approvedQuantity: actionData.quantity }, currentOrg?.role);
       } else {
         if (actionData.reason.trim().length < 5) throw new Error("Informe um motivo válido (mín. 5 caracteres).");
-        await resourceService.rejectRequest(orgId, processingId, { reason: actionData.reason });
+        await resourceService.rejectRequest(orgId, processingId, { reason: actionData.reason }, currentOrg?.role);
       }
 
       handleCancelAction();

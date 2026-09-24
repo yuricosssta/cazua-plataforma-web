@@ -25,7 +25,6 @@ interface UserData {
 
 export function OrganizationPeople() {
   const currentOrg = useSelector(selectCurrentOrg);
-  const token = useSelector((state: RootState) => state.auth.token);
   const loggedUser = useSelector((state: RootState) => state.auth.user);
   const loggedUserId = loggedUser?.sub || (loggedUser as any)?._id;
 
@@ -58,8 +57,8 @@ export function OrganizationPeople() {
   };
 
   useEffect(() => {
-    if (token && orgId) fetchMembers();
-  }, [token, orgId]);
+    if (orgId) fetchMembers();
+  }, [orgId]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();

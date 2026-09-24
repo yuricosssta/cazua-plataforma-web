@@ -9,10 +9,11 @@ interface AddStockModalProps {
   isOpen: boolean;
   onClose: () => void;
   orgId: string;
+  orgRole: string;
   onSuccess: () => void;
 }
 
-export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockModalProps) {
+export function AddStockModal({ isOpen, onClose, orgId, orgRole, onSuccess }: AddStockModalProps) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +72,7 @@ export function AddStockModal({ isOpen, onClose, orgId, onSuccess }: AddStockMod
         payload.unitCostSnapshot = Number(formData.unitCostSnapshot);
       }
 
-      await resourceService.addStock(orgId, payload);
+      await resourceService.addStock(orgId, payload, orgRole);
       
       // Reseta o formulário
       setFormData({ resourceId: "", quantity: 0, unitCostSnapshot: "", origin: "" });

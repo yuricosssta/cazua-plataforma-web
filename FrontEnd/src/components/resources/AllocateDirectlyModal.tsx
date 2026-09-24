@@ -10,10 +10,11 @@ interface AllocateDirectlyModalProps {
   isOpen: boolean;
   onClose: () => void;
   orgId: string;
+  orgRole: string;
   onSuccess: () => void;
 }
 
-export function AllocateDirectlyModal({ isOpen, onClose, orgId, onSuccess }: AllocateDirectlyModalProps) {
+export function AllocateDirectlyModal({ isOpen, onClose, orgId, orgRole, onSuccess }: AllocateDirectlyModalProps) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,7 +112,7 @@ export function AllocateDirectlyModal({ isOpen, onClose, orgId, onSuccess }: All
         resourceId: formData.resourceId,
         quantity: Number(formData.quantity),
         origin: formData.origin,
-      });
+      }, orgRole);
       
       setFormData({ projectId: "", resourceId: "", quantity: 0, origin: "Envio Direto Almoxarifado" });
       setProjectSearch("");
