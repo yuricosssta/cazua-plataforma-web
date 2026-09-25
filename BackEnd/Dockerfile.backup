@@ -1,0 +1,11 @@
+FROM mongo:8-tools
+
+RUN apk add --no-cache aws-cli tar gzip bash
+
+WORKDIR /app
+
+COPY scripts/ /app/scripts/
+
+RUN chmod +x /app/scripts/*.sh
+
+ENTRYPOINT ["/bin/bash"]
