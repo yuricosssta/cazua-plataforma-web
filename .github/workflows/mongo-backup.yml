@@ -1,0 +1,74 @@
+name: MongoDB Backup to R2
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: 'Dias de retenção no R2'
+        required: false
+        default: '7'
+
+env:
+  MONGO_URI: ${{ secrets.MONGO_URI }}
+  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container:
+      image: mongo:8-tools
+      options: --entrypoint ""
+    outputs:
+      artifact_path: ${{ steps.backup.outputs.artifact_path }}
+    steps:
+      - name: Install deps
+        run: apk add --no-cache aws-cli tar gzip
+
+      - name: Run backup
+        id: backup
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          ARCHIVE="mongo_${TIMESTAMP}.tar.gz"
+          TMP_DIR=$(mktemp -d)
+          mongodump --uri="${MONGO_URI}" --out="${TMP_DIR}/dump" --gzip
+          tar -czf "${TMP_DIR}/${ARCHIVE}" -C "${TMP_DIR}" dump
+          aws --endpoint-url="${R2_ENDPOINT}" s3 cp "${TMP_DIR}/${ARCHIVE}" "s3://${R2_BUCKET_NAME}/backups/mongo/${ARCHIVE}"
+          cp "${TMP_DIR}/${ARCHIVE}" "${RUNNER_TEMP}/${ARCHIVE}"
+          echo "artifact_path=${RUNNER_TEMP}/${ARCHIVE}" >> $GITHUB_OUTPUT
+          rm -rf "${TMP_DIR}"
+
+      - name: Upload artifact (download local)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mongo-backup-${{ github.run_id }}
+          path: ${{ steps.backup.outputs.artifact_path }}
+          retention-days: 7
+
+      - name: Cleanup old backups (R2)
+        if: github.event_name == 'schedule'
+        run: |
+          RETENTION=${{ github.event.inputs.retention_days || 7 }}
+          aws --endpoint-url="${R2_ENDPOINT}" s3 ls "s3://${R2_BUCKET_NAME}/backups/mongo/" | while read -r line; do
+            FILE_DATE=$(echo "$line" | awk '{print $1}')
+            FILE_NAME=$(echo "$line" | awk '{print $4}')
+            if [[ $(date -d "$FILE_DATE" +%s) -lt $(date -d "-${RETENTION} days" +%s) ]]; then
+              aws --endpoint-url="${R2_ENDPOINT}" s3 rm "s3://${R2_BUCKET_NAME}/backups/mongo/${FILE_NAME}"
+              echo "🗑️ Removido: ${FILE_NAME}"
+            fi
+          done
+
+      - name: Summary
+        run: |
+          cat <<EOF >> $GITHUB_STEP_SUMMARY
+          ## ✅ Backup MongoDB concluído
+          
+          - **Arquivo:** \`${{ steps.backup.outputs.artifact_path }}\`
+          - **Bucket R2:** \`s3://${R2_BUCKET_NAME}/backups/mongo/$(basename ${{ steps.backup.outputs.artifact_path }})\`
+          - **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Download:** Artifacts disponíveis por 7 dias
+          EOF

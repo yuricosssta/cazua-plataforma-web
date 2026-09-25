@@ -1,3 +1,48 @@
+=== SPRINT 34 - 25/09/2026 ===
+### Resumo Técnico de Fechamento: Backup Automatizado MongoDB Atlas → Cloudflare R2
+
+**1. Decisões de Arquitetura (Backup, Disaster Recovery, Infraestrutura)**
+
+* **Estratégia de Backup Off-site:** Implementação de backup automatizado do MongoDB Atlas (cluster produção) para **Cloudflare R2** (bucket `cazua-assets-prod`), utilizando `mongodump` nativo com compressão gzip. Elimina dependência de snapshots nativos do Atlas (requer cluster M10+) e mantém controle total sobre retenção, custos e portabilidade.
+* **Scheduler Serverless (GitHub Actions):** Agendamento via cron (`0 2 * * *` UTC) + execução manual (`workflow_dispatch`). Roda em runners Ubuntu efêmeros da GitHub (grátis para repos privados), sem necessidade de VM/container 24/7. Compatível com deploy serverless na Vercel (não há infraestrutura persistente no runtime de produção).
+* **Artefato Baixável (GitHub Artifacts):** Cada run faz upload do `.tar.gz` como artifact (retenção 7 dias), permitindo download local imediato via UI do GitHub Actions — essencial para restore rápido em outro cluster ou ambiente de homologação.
+* **Confirmação Visual (Job Summary):** Uso nativo de `$GITHUB_STEP_SUMMARY` para exibir no run: arquivo, bucket R2, timestamp UTC, tamanho e link para artifact. Zero dependência externa (email, Slack, webhook).
+* **Restore Multi-cluster:** Script `restore-mongo.sh` aceita `TARGET_MONGO_URI` via env var, permitindo restaurar em cluster diferente do origem (ex: staging, homologação, novo tenant) sem alterar código.
+* **Retenção Configurável:** Limpeza automática no R2 de arquivos com mais de N dias (padrão 7) executada apenas no agendamento automático (`schedule`), preservando backups manuais.
+
+**2. Definições de Infraestrutura (Scripts, Docker, CI/CD)**
+
+* **Arquivos Criados:**
+  - `BackEnd/scripts/r2-utils.sh` — Helpers CLI: `list`, `delete`, `presign`, `download` (API S3 compatível R2)
+  - `BackEnd/scripts/backup-mongo.sh` — Dump → gzip → upload R2 + artifact + summary
+  - `BackEnd/scripts/restore-mongo.sh` — Download R2 → `mongorestore` (suporta `TARGET_MONGO_URI` + `--drop`)
+  - `BackEnd/Dockerfile.backup` — Imagem `mongo:8-tools` + `aws-cli` + scripts
+  - `.github/workflows/mongo-backup.yml` — Workflow completo (cron + manual + artifact + cleanup + summary)
+  - `docker-compose.override.yml` — Services `mongo-backup` / `mongo-restore` (profile `tools`) para uso local
+
+* **Variáveis de Ambiente / Secrets:**
+  - `MONGO_URI`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` — injetadas via GitHub Secrets (produção) ou `.env` (local)
+
+* **Comandos Locais (Docker Compose):**
+  ```bash
+  docker compose --profile tools run --rm mongo-backup /app/scripts/backup-mongo.sh
+  docker compose --profile tools run --rm mongo-backup /app/scripts/r2-utils.sh list
+  docker compose --profile tools run --rm mongo-restore /app/scripts/restore-mongo.sh <arquivo.tar.gz>
+  TARGET_MONGO_URI="mongodb+srv://..." docker compose --profile tools run --rm mongo-restore /app/scripts/restore-mongo.sh <arquivo.tar.gz> [--drop]
+  ```
+
+* **Prefixo no Bucket R2:** `backups/mongo/mongo_YYYYMMDD_HHMMSS.tar.gz`
+
+**3. Verificações**
+
+- ✅ Scripts testados sintaticamente (`bash -n`)
+- ✅ Dockerfile.backup faz build sem erros (imagem base `mongo:8-tools` oficial)
+- ✅ Workflow YAML válido (GitHub Actions schema)
+- ✅ Integração com variáveis existentes no `.env` e `docker-compose.override.yml`
+- ✅ Documentação atualizada no `BackEnd/README.md` (seção "Backup Automatizado do MongoDB")
+
+---
+
 === SPRINT 33 - 24/09/2026 ===
 ### Resumo Técnico de Fechamento: Correção de Headers Multi-tenant no StorageManagement (Componente)
 

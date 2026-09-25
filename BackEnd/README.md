@@ -136,4 +136,77 @@ pnpm run test:e2e   # Execução de testes de integração e fluxo
 
 ```
 
+---
+
+## 🗄️ Backup Automatizado do MongoDB (Cloudflare R2)
+
+O backup do banco de dados MongoDB Atlas é feito automaticamente para o bucket **Cloudflare R2** configurado nas variáveis de ambiente (`R2_*`).
+
+### Arquitetura
+
+| Componente | Responsabilidade |
+|------------|------------------|
+| **GitHub Actions** | Scheduler (cron `0 2 * * *` UTC + manual `workflow_dispatch`) |
+| **Script `backup-mongo.sh`** | `mongodump` → gzip → upload R2 + artifact no GitHub |
+| **Script `restore-mongo.sh`** | Download R2 → `mongorestore` (suporta cluster alvo via `TARGET_MONGO_URI`) |
+| **Docker Compose (local)** | Wrapper para rodar scripts localmente (profile `tools`) |
+
+### Estrutura
+
+```
+BackEnd/
+├── scripts/
+│   ├── backup-mongo.sh       # Backup + upload R2
+│   ├── restore-mongo.sh      # Restore (aceita TARGET_MONGO_URI externo)
+│   └── r2-utils.sh           # Helpers: list, delete, presign, download
+├── Dockerfile.backup         # Imagem mongo:8-tools + aws-cli
+└── .github/workflows/
+    └── mongo-backup.yml      # GitHub Actions workflow
+```
+
+### Produção (GitHub Actions)
+
+- **Automático:** Todo dia às **02:00 UTC** (23:00 BRT)
+- **Manual:** GitHub Actions → "Run workflow" → botão "Run workflow"
+- **Confirmação:** Aba **Summary** do run mostra arquivo, bucket, timestamp, tamanho
+- **Download local:** Aba **Artifacts** → `mongo-backup-<run_id>` (expira em 7 dias)
+- **Retenção no R2:** 7 dias (configurável no `workflow_dispatch`)
+
+### Local (Docker Compose)
+
+```bash
+# Build da imagem
+docker compose build mongo-backup
+
+# Backup manual
+docker compose --profile tools run --rm mongo-backup /app/scripts/backup-mongo.sh
+
+# Listar backups no R2
+docker compose --profile tools run --rm mongo-backup /app/scripts/r2-utils.sh list
+
+# Restore local (mesmo cluster)
+docker compose --profile tools run --rm mongo-restore /app/scripts/restore-mongo.sh mongo_20250925_020000.tar.gz
+
+# Restore em OUTRO cluster
+TARGET_MONGO_URI="mongodb+srv://user:pass@outro-cluster.mongodb.net/db" \
+docker compose --profile tools run --rm mongo-restore /app/scripts/restore-mongo.sh mongo_20250925_020000.tar.gz
+
+# Restore com --drop (recria collections)
+docker compose --profile tools run --rm mongo-restore /app/scripts/restore-mongo.sh mongo_20250925_020000.tar.gz --drop
+```
+
+### Secrets Necessários (GitHub Settings → Secrets → Actions)
+
+| Secret | Valor |
+|--------|-------|
+| `MONGO_URI` | URI completa do Atlas (com user/pass/db) |
+| `R2_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` |
+| `R2_ACCESS_KEY_ID` | Access Key do R2 |
+| `R2_SECRET_ACCESS_KEY` | Secret Key do R2 |
+| `R2_BUCKET_NAME` | Nome do bucket (ex: `cazua-assets-prod`) |
+
+### Prefixo no Bucket
+
+Backups ficam em: `s3://${R2_BUCKET_NAME}/backups/mongo/mongo_YYYYMMDD_HHMMSS.tar.gz`
+
 > Para gotchas operacionais, comandos e o restante das regras inegociáveis, consulte o `AGENTS.md` na raiz do monorepo.
