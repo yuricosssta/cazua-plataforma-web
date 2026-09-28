@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source /app/.env
+# source /app/.env
 source /app/scripts/r2-utils.sh
 
 : "${MONGO_URI:?Variável MONGO_URI é obrigatória}"

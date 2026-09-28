@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-source /app/.env
+# source /app/.env
 
 # Endpoint R2 (extrai account_id se necessário)
 if [[ "${R2_ENDPOINT}" =~ ^https://([^.]+)\.r2\.cloudflarestorage\.com$ ]]; then
