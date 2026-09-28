@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-source /app/.env
+# source /app/.env
 source /app/scripts/r2-utils.sh
 
 # Permite sobrescrever MONGO_URI via env (para outro cluster)
