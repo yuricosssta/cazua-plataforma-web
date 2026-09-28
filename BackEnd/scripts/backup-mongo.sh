@@ -7,11 +7,15 @@ set -euo pipefail
 source /app/.env
 source /app/scripts/r2-utils.sh
 
+: "${MONGO_URI:?Variável MONGO_URI é obrigatória}"
+: "${R2_ENDPOINT:?Variável R2_ENDPOINT é obrigatória}"
+: "${R2_BUCKET_NAME:?Variável R2_BUCKET_NAME é obrigatória}"
+
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ARCHIVE="mongo_${TIMESTAMP}.tar.gz"
 TMP_DIR=$(mktemp -d)
 
-echo "🔄 Iniciando backup: ${ARCHIVE}"
+echo "Iniciando backup: ${ARCHIVE}"
 
 # 1. mongodump
 mongodump --uri="${MONGO_URI}" --out="${TMP_DIR}/dump" --gzip
@@ -34,7 +38,7 @@ rm -rf "${TMP_DIR}"
 # 6. Summary para GitHub Actions
 if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
   cat <<EOF >> $GITHUB_STEP_SUMMARY
-## ✅ Backup MongoDB concluído
+## Backup MongoDB concluído
 
 - **Arquivo:** \`${ARCHIVE}\`
 - **Bucket R2:** \`s3://${R2_BUCKET_NAME}/${BACKUP_PREFIX}${ARCHIVE}\`
@@ -45,4 +49,4 @@ if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
 EOF
 fi
 
-echo "✅ Backup salvo: s3://${R2_BUCKET_NAME}/${BACKUP_PREFIX}${ARCHIVE}"
+echo "Backup salvo: s3://${R2_BUCKET_NAME}/${BACKUP_PREFIX}${ARCHIVE}"
