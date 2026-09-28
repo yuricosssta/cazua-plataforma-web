@@ -27,13 +27,15 @@ tar -czf "${TMP_DIR}/${ARCHIVE}" -C "${TMP_DIR}" dump
 ${AWS_CLI} cp "${TMP_DIR}/${ARCHIVE}" "s3://${R2_BUCKET_NAME}/${BACKUP_PREFIX}${ARCHIVE}"
 
 # 4. Copia para artifact do GitHub Actions (se rodando no CI)
-if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-  cp "${TMP_DIR}/${ARCHIVE}" "${RUNNER_TEMP}/${ARCHIVE}"
-  echo "artifact_path=${RUNNER_TEMP}/${ARCHIVE}" >> $GITHUB_OUTPUT
+if [[ -n "${EXPORT_DIR:-}" ]]; then
+  cp "${TMP_DIR}/${ARCHIVE}" "${EXPORT_DIR}/${ARCHIVE}"
+  chmod 666 "${EXPORT_DIR}/${ARCHIVE}"
 fi
 
 # 5. Cleanup local
 rm -rf "${TMP_DIR}"
+
+echo "✅ Backup salvo: s3://${R2_BUCKET_NAME}/${BACKUP_PREFIX}${ARCHIVE}"
 
 # 6. Summary para GitHub Actions
 if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
