@@ -35,13 +35,20 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
             -e R2_BUCKET_NAME="${R2_BUCKET_NAME}" \
             -e BACKUP_PREFIX="${BACKUP_PREFIX}" \
-            -e GITHUB_ACTIONS="true" \
-            -e RUNNER_TEMP="/export" \
+            -e EXPORT_DIR="/export" \
             -v ${{ github.workspace }}/backup-artifacts:/export \
             cazu-mongo-backup /app/scripts/backup-mongo.sh
           
+          # Processamento dos artefatos nativo no Runner
           ARCHIVE_NAME=$(ls ./backup-artifacts | grep .tar.gz | head -n 1)
           echo "artifact_path=./backup-artifacts/${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+          
+          cat <<EOF >> $GITHUB_STEP_SUMMARY
+          ## ✅ Backup MongoDB concluído
+          - **Arquivo:** \`${ARCHIVE_NAME}\`
+          - **Bucket R2:** \`${R2_BUCKET_NAME}\`
+          - **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
 
       - name: Upload local artifact
         uses: actions/upload-artifact@v4
