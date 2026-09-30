@@ -4,9 +4,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/redux/store";
-// import { fetchProjectStatement } from "@/lib/redux/slices/resourcesSlice";
+import { fetchProjectStatement } from "@/lib/redux/slices/resourcesSlice";
 import { resourceService } from "@/lib/services/resourceService";
 import { RequestResourceModal } from "./RequestResourceModal";
+import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 // import { ProjectCostSummary } from "./ProjectCostSummary";
 import { Plus, Minus, Box, Loader2, AlertCircle } from "lucide-react";
 import { ReturnResourceModal } from "./ReturnResourceModal";
@@ -20,6 +21,8 @@ interface ProjectResourcesTabProps {
 export function ProjectResourcesTab({ orgId, projectId, hasPermission }: ProjectResourcesTabProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { statement, loading: statementLoading, error: statementError } = useSelector((state: RootState) => state.resources);
+  const currentOrg = useSelector(selectCurrentOrg);
+  const orgRole = currentOrg?.role;
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +45,9 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
     } finally {
       setIsLoading(false);
     }
+
+    // Busca o extrato do projeto para popular o dropdown de devolução
+    dispatch(fetchProjectStatement({ orgId, projectId }));
   }, [orgId, projectId, dispatch]);
 
   const allocatedResources = statement?.items?.map(item => ({
@@ -172,6 +178,7 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         projectId={projectId}
         onSuccess={fetchAllData}
         allocatedResources={allocatedResources}
+        orgRole={orgRole}
       />
     </div>
   );

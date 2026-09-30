@@ -30,9 +30,9 @@ export const fetchProjectStatement = createAsyncThunk(
 
 export const returnResourceThunk = createAsyncThunk(
   'resources/returnResource',
-  async ({ orgId, projectId, data }: { orgId: string; projectId: string; data: AllocateResourceData }, { rejectWithValue }) => {
+  async ({ orgId, projectId, data, orgRole }: { orgId: string; projectId: string; data: AllocateResourceData; orgRole?: string }, { rejectWithValue }) => {
     try {
-      return await resourceService.returnFromProject(orgId, projectId, data);
+      return await resourceService.returnFromProject(orgId, projectId, data, orgRole);
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Falha ao processar a devolução do recurso.'

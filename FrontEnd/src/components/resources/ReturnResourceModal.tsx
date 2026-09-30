@@ -31,10 +31,11 @@ interface ReturnResourceModalProps {
   orgId: string;
   projectId: string;
   onSuccess: () => void;
-  allocatedResources: AllocatedResource[]; 
+  allocatedResources: AllocatedResource[];
+  orgRole?: string;
 }
 
-export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSuccess, allocatedResources }: ReturnResourceModalProps) {
+export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSuccess, allocatedResources, orgRole }: ReturnResourceModalProps) {
   const dispatch = useDispatch<AppDispatch>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSucce
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
-      const resultAction = await dispatch(returnResourceThunk({ orgId, projectId, data }));
+      const resultAction = await dispatch(returnResourceThunk({ orgId, projectId, data, orgRole }));
       if (returnResourceThunk.fulfilled.match(resultAction)) {
         reset();
         onSuccess();
