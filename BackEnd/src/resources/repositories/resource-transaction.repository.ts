@@ -87,9 +87,24 @@ export class ResourceTransactionRepository {
     return updated;
   }
 
-  async findAllByOrganization(orgId: string): Promise<ResourceTransaction[]> {
+  async findAllByOrganization(
+    orgId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ResourceTransaction[]> {
+    const filter: any = {
+      organizationId: new (Types.ObjectId as any)(orgId),
+    };
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate)
+        filter.createdAt.$lte = new Date(endDate + 'T23:59:59.999Z');
+    }
+
     return this.model
-      .find({ organizationId: new (Types.ObjectId as any)(orgId) })
+      .find(filter)
       .sort({ createdAt: -1 })
       .populate('resourceId', 'name unit')
       .populate('projectId', 'title')

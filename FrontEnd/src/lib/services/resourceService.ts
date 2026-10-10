@@ -238,8 +238,12 @@ export const resourceService = {
   },
 
   // --- LIVRO RAZÃO & FINANCEIRO ---
-  listTransactions: async (orgId: string): Promise<ResourceTransaction[]> => {
-    return fetchBff(`/api/organizations/${orgId}/resources/transactions`, {
+  listTransactions: async (orgId: string, startDate?: string, endDate?: string): Promise<ResourceTransaction[]> => {
+    const params = new URLSearchParams();
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    const qs = params.toString();
+    return fetchBff(`/api/organizations/${orgId}/resources/transactions${qs ? `?${qs}` : ''}`, {
       headers: { 'x-org-id': orgId },
     });
   },

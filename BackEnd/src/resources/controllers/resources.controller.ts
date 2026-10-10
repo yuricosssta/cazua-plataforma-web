@@ -6,6 +6,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   Req,
   UseGuards,
   ForbiddenException,
@@ -231,8 +232,12 @@ export class ResourcesController {
   }
 
   @Get('transactions')
-  async listTransactions(@Param('orgId') orgId: string) {
-    return this.resourcesService.listTransactions(orgId);
+  async listTransactions(
+    @Param('orgId') orgId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.resourcesService.listTransactions(orgId, startDate, endDate);
   }
 
   @Patch(':resourceId')

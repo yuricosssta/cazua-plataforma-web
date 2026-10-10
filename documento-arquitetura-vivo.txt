@@ -1,3 +1,31 @@
+=== SPRINT 35 - 10/10/2026 ===
+### Resumo Técnico de Fechamento: Filtro por Período e Soma de Custos no Extrato de Movimentação (Almoxarifado Central)
+
+**1. Decisões de Arquitetura (Query Params, Filtro Server-side, Cálculo no Client)**
+
+* **Filtro Server-side (MongoDB):** Implementação de filtro por `createdAt` (`$gte`/`$lte`) no repositório `ResourceTransactionRepository.findAllByOrganization`. As datas `startDate` e `endDate` são recebidas como query params opcionais via `@Query()` no controller, repassadas pelo service ao repository — a filtragem ocorre no banco, não no cliente. O BFF já propaga query params automaticamente (nenhuma alteração necessária em `transactions/route.ts`).
+* **Padrão Data Inicial/Final:** Default do período é 01/janeiro do ano corrente até a data atual, definido no estado local do componente `TransactionHistory.tsx` via `useMemo`/`useState`.
+* **Soma do Período (Client-side):** Cálculo do custo total do período feito via `useMemo` no front-end: soma `totalCost` de entradas (ENTRY) + saídas (ALLOCATION), subtrai devoluções (RETURN), **exclui transações canceladas** (`isCanceled: true`). Exibido em card destacado com ícone `Calendar` e formatação `pt-BR`.
+
+**2. Definições de Infraestrutura**
+
+| Camada | Arquivo | Mudança |
+|---|---|---|
+| **Controller** | `BackEnd/src/resources/controllers/resources.controller.ts` | `@Query('startDate')` e `@Query('endDate')` opcionais em `listTransactions` |
+| **Service** | `BackEnd/src/resources/services/resources.service.ts` | Repassa `startDate?`/`endDate?` ao repository |
+| **Repository** | `BackEnd/src/resources/repositories/resource-transaction.repository.ts` | `findAllByOrganization` com filtro condicional `createdAt.$gte`/`$lte` |
+| **Controller Spec** | `BackEnd/src/resources/controllers/resources.controller.spec.ts` | Teste atualizado com parâmetros de data |
+| **Frontend Service** | `FrontEnd/src/lib/services/resourceService.ts` | `listTransactions` aceita `startDate?`/`endDate?` e monta query string |
+| **Component** | `FrontEnd/src/components/resources/TransactionHistory.tsx` | Inputs `Data Inicial`/`Data Final` + card "Custo total do período" |
+
+**3. Verificações**
+
+- ✅ `npx jest --config jest.config.ts --testPathPattern="resources.controller"` — 20 testes passam (0 falhas)
+- ✅ BFF route `transactions/route.ts` inalterado (já propaga query params)
+- ✅ Componente usa variáveis semânticas (`bg-card`, `border-border`, `bg-background`, `text-foreground`, `text-muted-foreground`) e `rounded-md`
+
+---
+
 === SPRINT 34 - 25/09/2026 ===
 ### Resumo Técnico de Fechamento: Backup Automatizado MongoDB Atlas → Cloudflare R2
 
