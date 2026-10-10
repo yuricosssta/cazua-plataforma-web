@@ -476,8 +476,8 @@ export class ResourcesService {
     return canceledTx;
   }
 
-  async listTransactions(orgId: string) {
-    return this.transactionRepo.findAllByOrganization(orgId);
+  async listTransactions(orgId: string, startDate?: string, endDate?: string) {
+    return this.transactionRepo.findAllByOrganization(orgId, startDate, endDate);
   }
 
   async getProjectStatement(
