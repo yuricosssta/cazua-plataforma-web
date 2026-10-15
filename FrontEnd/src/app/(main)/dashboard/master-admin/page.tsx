@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ShieldAlert, Zap, Loader2, Search, Building2, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import { ShieldAlert, Zap, Search, Building2, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import { toast } from 'sonner';
 import { fetchBff } from "@/lib/api/fetchBff";
 
 interface OwnerMembership {
@@ -42,7 +43,7 @@ export default function MasterAdminPage() {
       setOrgs(await fetchBff<AdminOrg[]>('/api/organizations/admin/all'));
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "Acesso negado ou erro ao buscar dados.");
+      toast.error(String(error.response?.data?.message || "Acesso negado ou erro ao buscar dados."));
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +63,7 @@ export default function MasterAdminPage() {
       });
       fetchAllOrgs(); // Recarrega a lista para atualizar a tela
     } catch (error: any) {
-      alert(error.response?.data?.message || "Erro ao atualizar plano.");
+      toast.error(String(error.response?.data?.message || "Erro ao atualizar plano."));
     }
   };
 
@@ -77,14 +78,28 @@ export default function MasterAdminPage() {
   );
 
   if (isLoading) {
-    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="max-w-6xl mx-auto w-full flex flex-col space-y-6 pb-24 animate-pulse" aria-busy="true">
+        <div className="h-10 w-80 bg-secondary rounded-md" />
+        <div className="h-10 max-w-xs bg-secondary rounded-md" />
+        <div className="bg-card border border-border rounded-sm shadow-sm overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-8 px-6 py-5 border-b border-border last:border-0">
+              <div className="h-4 w-44 bg-muted rounded-md" />
+              <div className="h-4 w-60 bg-muted rounded-md" />
+              <div className="h-4 w-20 bg-muted rounded-md" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-6xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-red-600 flex items-center gap-3">
+          <h1 className="text-3xl font-black tracking-tight text-red-600 dark:text-red-400 flex items-center gap-3">
             <ShieldAlert className="w-8 h-8" />
             Painel Administrador Master
           </h1>
@@ -99,7 +114,7 @@ export default function MasterAdminPage() {
             placeholder="Buscar empresa ou email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-red-600"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
       </div>
@@ -147,9 +162,9 @@ export default function MasterAdminPage() {
                     
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider border ${
-                        org.plan === 'ENTERPRISE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                        org.plan === 'PRO' ? 'bg-amber-100 text-amber-700 border-amber-200' : 
-                        'bg-zinc-100 text-zinc-600 border-zinc-200'
+                        org.plan === 'ENTERPRISE' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200' :
+                        org.plan === 'PRO' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 border-amber-200' : 
+                        'bg-muted text-muted-foreground border-border'
                       }`}>
                         {org.plan === 'ENTERPRISE' || org.plan === 'PRO' ? <Zap className={`w-3 h-3 ${org.plan === 'ENTERPRISE' ? 'fill-purple-500' : 'fill-amber-500'}`} /> : null}
                         {org.plan || 'FREE'}
@@ -160,7 +175,7 @@ export default function MasterAdminPage() {
                       <select
                         value={org.plan || 'FREE'}
                         onChange={(e) => handleUpdatePlan(org._id, e.target.value)}
-                        className="h-8 rounded-sm border border-input bg-background px-2 text-xs font-semibold focus:ring-1 focus:ring-red-600 outline-none cursor-pointer"
+                        className="h-8 rounded-sm border border-input bg-background px-2 text-xs font-semibold focus:ring-1 focus:ring-ring outline-none cursor-pointer"
                       >
                         <option value="FREE">FREE</option>
                         <option value="PRO">PRO</option>

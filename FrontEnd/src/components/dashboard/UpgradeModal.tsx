@@ -28,7 +28,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-primary/20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden relative">
+      <div className="bg-card w-full max-w-lg rounded-md shadow-2xl border border-primary/20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden relative">
         
         {/* Efeito de Brilho no Topo */}
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 via-primary to-amber-400"></div>
@@ -38,7 +38,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
         </button>
 
         <div className="p-8 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-5 shadow-inner">
+          <div className="w-16 h-16 bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-full flex items-center justify-center mb-5 shadow-inner">
             <Zap className="w-8 h-8 fill-amber-500" />
           </div>
           
@@ -63,7 +63,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
                 "Suporte Técnico Prioritário"
               ].map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2.5 text-sm font-medium text-foreground/80">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   {item}
                 </li>
               ))}
@@ -74,7 +74,7 @@ export function UpgradeModal({ isOpen, onClose, title, message }: UpgradeModalPr
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-primary-foreground rounded-md font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
           >
             <MessageCircle className="w-5 h-5" />
             Falar com Consultor no WhatsApp

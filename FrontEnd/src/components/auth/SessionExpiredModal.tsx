@@ -24,14 +24,14 @@ export const SessionExpiredModal = () => {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
       
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="bg-card w-full max-w-md rounded-md shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
         
         {/* Faixa de Destaque no Topo */}
         <div className="h-1.5 w-full bg-red-500"></div>
 
         <div className="p-8 text-center flex flex-col items-center">
           
-          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-red-50">
+          <div className="w-16 h-16 bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-red-50 dark:ring-red-950/50">
             <ShieldAlert className="w-8 h-8" />
           </div>
           

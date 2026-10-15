@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2, Building2, Tag, AlertTriangle } from "lucide-react";
+import { toast } from 'sonner';
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/redux/store";
 import { fetchMyOrganizations } from "@/lib/redux/slices/organizationSlice";
@@ -37,7 +38,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
     e.preventDefault();
 
     if (acronym.length < 2) {
-      return alert("A sigla precisa ter pelo menos 2 letras.");
+      return toast.warning("A sigla precisa ter pelo menos 2 letras.");
     }
 
     try {
@@ -54,7 +55,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
         setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
         setIsUpgradeModalOpen(true);
       } else {
-        alert(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);
@@ -95,7 +96,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-muted-foreground" />
-              Nome da Empresa <span className="text-red-500">*</span>
+              Nome da Empresa <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -111,7 +112,7 @@ export function CreateOrganizationModal({ isOpen, onClose, forceOnboarding = fal
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
               <Tag className="w-4 h-4 text-muted-foreground" />
-              Sigla de Rastreio (Ticker) <span className="text-red-500">*</span>
+              Sigla de Rastreio (Ticker) <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <input
               type="text"

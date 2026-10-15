@@ -9,6 +9,7 @@ import {
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { fetchBff } from "@/lib/api/fetchBff";
+import { toast } from 'sonner';
 
 // Limites fixos em Bytes
 const LIMITS = {
@@ -110,7 +111,7 @@ export function StorageManagement() {
         e.stopPropagation(); // Evita que a linha seja clicada e abra o link
 
         if (orgRole === 'MEMBER') {
-            return alert("Apenas administradores podem excluir arquivos do acervo.");
+            return toast.warning("Apenas administradores podem excluir arquivos do acervo.");
         }
 
         const confirmDelete = window.confirm(
@@ -137,16 +138,16 @@ export function StorageManagement() {
 
         } catch (error) {
             console.error("Erro ao excluir arquivo:", error);
-            alert("Falha ao excluir o arquivo.");
+            toast.error("Falha ao excluir o arquivo.");
         } finally {
             setIsDeleting(null);
         }
     };
 
     const getFileIcon = (mimeType: string) => {
-        if (mimeType.includes('image')) return <ImageIcon className="w-5 h-5 text-blue-500" />;
-        if (mimeType.includes('pdf')) return <FileText className="w-5 h-5 text-red-500" />;
-        return <File className="w-5 h-5 text-gray-500" />;
+        if (mimeType.includes('image')) return <ImageIcon className="w-5 h-5 text-blue-500 dark:text-blue-400" />;
+        if (mimeType.includes('pdf')) return <FileText className="w-5 h-5 text-red-500 dark:text-red-400" />;
+        return <File className="w-5 h-5 text-muted-foreground" />;
     };
 
     // Cálculos da Barra de Progresso
@@ -169,7 +170,7 @@ export function StorageManagement() {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-md ${isNearLimit ? 'bg-red-100 text-red-600' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`p-2 rounded-md ${isNearLimit ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400' : 'bg-primary/10 text-primary'}`}>
                             <HardDrive className="w-6 h-6" />
                         </div>
                         <div>
@@ -191,7 +192,7 @@ export function StorageManagement() {
                 </div>
 
                 {isNearLimit && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm font-medium">
+                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 border border-red-200 rounded-md text-sm font-medium">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
                         Você está se aproximando do limite de armazenamento. Exclua arquivos antigos ou faça upgrade de plano.
                     </div>
@@ -263,7 +264,7 @@ export function StorageManagement() {
                                                         type="button"
                                                         onClick={(e) => handleDelete(asset, e)}
                                                         disabled={isDeleting === asset._id}
-                                                        className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                                                        className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/40 rounded-md transition-colors disabled:opacity-50"
                                                         title="Excluir arquivo permanentemente"
                                                     >
                                                         {isDeleting === asset._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}

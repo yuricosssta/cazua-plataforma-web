@@ -71,7 +71,7 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border w-full max-w-md rounded-lg shadow-xl flex flex-col overflow-hidden">
+      <div className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden">
         
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
           <h2 className="text-base font-semibold text-foreground tracking-tight">Editar Recurso</h2>
@@ -88,7 +88,7 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
           )}
 
           {hasStock && (
-             <div className="p-3 text-xs text-orange-800 bg-orange-50 rounded-md border border-orange-200 font-medium">
+             <div className="p-3 text-xs  text-primary-300  bg-primary-950/40  border-primary-800 rounded-md border font-medium">
                Este recurso possui saldo ativo no almoxarifado. A categoria e a unidade de medida foram bloqueadas para edição a fim de proteger o histórico contábil.
              </div>
           )}

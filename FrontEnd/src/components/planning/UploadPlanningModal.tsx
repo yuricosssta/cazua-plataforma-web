@@ -7,6 +7,7 @@ import { AppDispatch, RootState } from '@/lib/redux/store';
 import { uploadExcelFile, clearUploadState } from '@/lib/redux/slices/planningSlice';
 import { UploadPlanningPayload } from '@/lib/services/planningService';
 import { X, ChevronDown, ChevronRight, Download, UploadCloud, CheckCircle2, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UploadPlanningModalProps {
   isOpen: boolean;
@@ -55,12 +56,12 @@ export const UploadPlanningModal = ({ isOpen, onClose }: UploadPlanningModalProp
     e.preventDefault();
 
     if (!file) {
-      alert('Por favor, selecione um arquivo.');
+      toast.warning('Por favor, selecione um arquivo.');
       return;
     }
 
     if (!formData.state || !formData.grupo) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+      toast.warning('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
@@ -138,7 +139,7 @@ export const UploadPlanningModal = ({ isOpen, onClose }: UploadPlanningModalProp
                   <button
                     type="button"
                     onClick={handleDownloadTemplate}
-                    className="h-8 px-3 bg-secondary text-secondary-foreground border border-border rounded-sm text-xs font-bold hover:bg-muted transition-colors flex items-center gap-2"
+                    className="min-h-11 px-3 bg-secondary text-secondary-foreground border border-border rounded-sm text-xs font-bold hover:bg-muted transition-colors flex items-center gap-2"
                   >
                     <Download className="w-3.5 h-3.5" /> Baixar Template (.csv)
                   </button>
@@ -287,14 +288,14 @@ export const UploadPlanningModal = ({ isOpen, onClose }: UploadPlanningModalProp
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-9 px-4 bg-transparent border border-border text-foreground hover:bg-muted rounded-sm text-sm font-bold transition-colors"
+                className="min-h-11 px-4 bg-transparent border border-border text-foreground hover:bg-muted rounded-sm text-sm font-bold transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={uploadLoading}
-                className="h-9 px-4 bg-primary text-primary-foreground rounded-sm text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="min-h-11 px-4 bg-primary text-primary-foreground rounded-sm text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {uploadLoading ? (
                   <>

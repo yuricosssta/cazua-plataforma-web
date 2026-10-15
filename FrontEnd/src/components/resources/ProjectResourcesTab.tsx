@@ -63,9 +63,9 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDING': return <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-700 text-xs font-bold">Aguardando</span>;
-      case 'APPROVED': return <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-bold">Aprovado</span>;
-      case 'REJECTED': return <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-bold">Rejeitado</span>;
+      case 'PENDING': return <span className="px-2 py-0.5 rounded bg-primary-950/40 text-primary-300 text-xs font-bold">Aguardando</span>;
+      case 'APPROVED': return <span className="px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-300 text-xs font-bold">Aprovado</span>;
+      case 'REJECTED': return <span className="px-2 py-0.5 rounded bg-red-950/40 text-red-300 text-xs font-bold">Rejeitado</span>;
       default: return <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-bold">{status}</span>;
     }
   };

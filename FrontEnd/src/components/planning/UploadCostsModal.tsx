@@ -96,7 +96,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-background w-full max-w-2xl max-h-[90vh] rounded-lg shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+      <div className="bg-background w-full max-w-2xl max-h-[90vh] rounded-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
         
         {/* Header do Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
@@ -134,7 +134,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
               <button
                 type="button"
                 onClick={() => setShowTemplate(!showTemplate)}
-                className="text-sm font-semibold text-[#8B4513] dark:text-[#A0522D] hover:opacity-80 flex items-center gap-2 transition-opacity"
+                className="text-sm font-semibold text-primary hover:opacity-80 flex items-center gap-2 transition-opacity"
               >
                 {showTemplate ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 Modelo de Planilha de Custos
@@ -148,7 +148,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                   <button
                     type="button"
                     onClick={handleDownloadTemplate}
-                    className="h-8 px-3 bg-secondary text-secondary-foreground border border-border rounded-md text-xs font-bold hover:bg-muted transition-colors flex items-center gap-2"
+                    className="min-h-11 px-3 bg-secondary text-secondary-foreground border border-border rounded-md text-xs font-bold hover:bg-muted transition-colors flex items-center gap-2"
                   >
                     <Download className="w-3.5 h-3.5" /> Baixar Template (.csv)
                   </button>
@@ -168,7 +168,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                     name="isGlobalCosts"
                     checked={formData.isGlobal === true}
                     onChange={() => handleFormChange('isGlobal', true)}
-                    className="w-4 h-4 text-[#8B4513] border-input focus:ring-[#8B4513]/50"
+                    className="w-4 h-4 text-primary border-input focus:ring-ring/50"
                   />
                   <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Global (SINAPI)</span>
                 </label>
@@ -178,7 +178,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                     name="isGlobalCosts"
                     checked={formData.isGlobal === false}
                     onChange={() => handleFormChange('isGlobal', false)}
-                    className="w-4 h-4 text-[#8B4513] border-input focus:ring-[#8B4513]/50"
+                    className="w-4 h-4 text-primary border-input focus:ring-ring/50"
                   />
                   <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Organização (Customizada)</span>
                 </label>
@@ -193,7 +193,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                 <select
                   value={formData.state}
                   onChange={(e) => handleFormChange('state', e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8B4513]"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   required
                 >
                   <option value="">Selecione</option>
@@ -211,7 +211,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                   value={formData.grupo}
                   onChange={(e) => handleFormChange('grupo', e.target.value)}
                   placeholder="Ex: SERVIÇOS"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8B4513]"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   required
                 />
               </div>
@@ -223,7 +223,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                 <select
                   value={formData.referenceMonth}
                   onChange={(e) => handleFormChange('referenceMonth', parseInt(e.target.value))}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8B4513]"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                     <option key={month} value={month}>{month.toString().padStart(2, '0')}</option>
@@ -236,7 +236,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                   type="number"
                   value={formData.referenceYear}
                   onChange={(e) => handleFormChange('referenceYear', parseInt(e.target.value))}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#8B4513]"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   min="2020" max="2099"
                 />
               </div>
@@ -255,11 +255,11 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   required
                 />
-                <div className={`flex items-center justify-center border-2 border-dashed rounded-md p-6 transition-colors ${file ? 'border-[#8B4513] bg-[#8B4513]/5' : 'border-border bg-muted/20 group-hover:bg-muted/40 group-hover:border-[#8B4513]/50'}`}>
+                <div className={`flex items-center justify-center border-2 border-dashed rounded-md p-6 transition-colors ${file ? 'border-primary bg-primary/5' : 'border-border bg-muted/20 group-hover:bg-muted/40 group-hover:border-primary/50'}`}>
                   <div className="text-center">
                     {file ? (
                       <div className="flex flex-col items-center">
-                        <DollarSign className="w-8 h-8 text-[#8B4513] dark:text-[#A0522D] mb-2" />
+                        <DollarSign className="w-8 h-8 text-primary mb-2" />
                         <p className="text-sm font-semibold text-foreground">{file.name}</p>
                         <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024).toFixed(1)} KB - Clique ou arraste para alterar</p>
                       </div>
@@ -281,18 +281,18 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="h-9 px-4 bg-transparent border border-border text-foreground hover:bg-muted rounded-md text-sm font-bold transition-colors disabled:opacity-50"
+                className="min-h-11 px-4 bg-transparent border border-border text-foreground hover:bg-muted rounded-md text-sm font-bold transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !file}
-                className="h-9 px-4 bg-[#8B4513] text-white rounded-md text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                className="min-h-11 px-4 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
               >
                 {isSubmitting ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Processando Arquivo...
                   </>
                 ) : (

@@ -1,3 +1,42 @@
+=== SPRINT 36 - 15/10/2026 ===
+### Resumo Técnico de Fechamento: Melhoria de Contraste Dark Mode, Toasts e Alvos de Toque (FrontEnd)
+
+**1. Decisões de Arquitetura (Design System, Contraste, Acessibilidade)**
+
+* **Tokens Semânticos vs Hardcode:** Eliminação de cores hexadecimais fixas da marca (`#8B4513`, `#5D2E0D`, `#A0522D`) e utilitários `gray`/`zinc`/`slate` em texto/fundo de 32 componentes do dashboard — substituídos por tokens semânticos (`bg-primary`, `text-primary`, `text-muted-foreground`, `border-border`, `border-input`, `ring-ring`) que adaptam ao dark mode automaticamente via variáveis CSS em `globals.css`.
+* **Variantes Dark em Badges/Ícones:** Padronização de chips de status com variante escura: `text-X-600` → `text-X-600 dark:text-X-400` ; `bg-X-50/100` → `bg-X-50/100 dark:bg-X-950/40 dark:border-X-800`. Aplicado em ~20 arquivos de dashboard (ProjectsList, TimelineEventCard, DashboardMetrics, ActivityLog, TransactionHistory, ResourceCatalog, modais de recursos, etc).
+* **Remoção de Wrapper Opaco:** A aba "Extrato de Movimentações" e "Saldo de Recursos" estavam envoltas em `opacity-60 text-muted-foreground` que clareava todo o conteúdo. Removido; agora herda `text-foreground` natural.
+* **Spinner Cross-mode:** `Spinner.tsx` com `color="#000000ff"` → `color="currentColor"`, adaptando-se a temas claro/escuro.
+
+**2. Definições de Infraestrutura (UI, Feedback, Ergonomia)**
+
+* **alert() → Toast (sonner):** 41 chamadas de `alert()` em 19 arquivos convertidas para `toast.success/error/warning` (`sonner` já instalado e Toaster montado no layout). Inclui erros de rede, validações, geolocalização e mensagens de sucesso.
+* **Alvos de Toque (Lei de Fitts):** Botões de ação primária com `h-9`/`h-8` (32-36px) elevados para `h-11`/`min-h-11` (44px mínimo de toque) em planning, SearchCompositions, UploadCosts, UploadPlanning, DataManagement, PendingRequests, MyProfile.
+* **Border-radius Padronizado:** `rounded-lg`/`rounded-2xl` → `rounded-md` (4px) em 9 painéis/modais (planning cards, modais de sessão, upgrade, UploadCosts, UploadPlanning, AllocateDirectly, EditResource, ReturnResource, RequestResource).
+* **Skeletons de Carregamento:** Substituição de `Loader2` centralizado por skeleton `animate-pulse` com blocos `bg-muted`/`bg-secondary` nas telas master-admin (tabela), ActivityLog (lista), ProjectsList (cards) e OrganizationPeople (linhas). Mantém feedback visual sem depender de ícone lucide.
+
+**3. Arquivos Alterados (36)**
+
+`resources/page.tsx`, `master-admin/page.tsx`, `planning/page.tsx`, `projects/[id]/page.tsx`,
+`Spinner.tsx`, `SessionExpiredModal.tsx`, `SessionWarningModal.tsx`,
+`ActivityLog.tsx`, `CreateOrganizationModal.tsx`, `CreateProjectModal.tsx`, `DashboardMetrics.tsx`,
+`EmitParecerModal.tsx`, `ExportPdfModal.tsx`, `ManageTeamDrawer.tsx`, `MyProfile.tsx`,
+`OrganizationPeople.tsx`, `ProjectsList.tsx`, `TimelineEventCard.tsx`, `UpgradeModal.tsx`,
+`DataManagement.tsx`, `StorageManagement.tsx`,
+`SearchCompositionsModal.tsx`, `UploadCostsModal.tsx`, `UploadPlanningModal.tsx`,
+`AllocateDirectlyModal.tsx`, `CreateResourceModal.tsx`, `EditResourceModal.tsx`,
+`ManageWarehouseTeamDrawer.tsx`, `PendingRequests.tsx`, `ProjectCostSummary.tsx`,
+`ProjectResourcesTab.tsx`, `RequestResourceModal.tsx`, `ResourceCatalog.tsx`,
+`ReturnResourceModal.tsx`, `TransactionHistory.tsx`, `BrandingSettings.tsx`
+
+**4. Verificações**
+
+- ✅ `npx tsc --noEmit` — TypeScript passa sem erros
+- ✅ `pnpm run lint` — 45 erros pré-existentes inalterados (set-state-in-effect, interface I*, no-empty); nenhum novo erro introduzido
+- ✅ `pnpm run build` bloqueado apenas por permissão `.next/server` (dono root de build docker); não relacionado às mudanças
+
+---
+
 === SPRINT 35 - 10/10/2026 ===
 ### Resumo Técnico de Fechamento: Filtro por Período e Soma de Custos no Extrato de Movimentação (Almoxarifado Central)
 

@@ -68,14 +68,14 @@ export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSucce
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-card w-full max-w-md p-6 rounded-lg shadow-lg border border-border relative">
+      <div className="bg-card w-full max-w-md p-6 rounded-md shadow-lg border border-border relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X className="w-5 h-5" />
         </button>
         
         <h2 className="text-lg font-bold mb-4">Devolver Recurso ao Almoxarifado</h2>
         
-        {errorMsg && <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-md">{errorMsg}</div>}
+        {errorMsg && <div className="mb-4 p-3 bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 text-sm rounded-md">{errorMsg}</div>}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -91,7 +91,7 @@ export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSucce
                 </option>
               ))}
             </select>
-            {errors.resourceId && <p className="text-xs text-red-500 mt-1">{errors.resourceId.message}</p>}
+            {errors.resourceId && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.resourceId.message}</p>}
           </div>
 
           <div>
@@ -102,7 +102,7 @@ export function ReturnResourceModal({ isOpen, onClose, orgId, projectId, onSucce
               {...register("quantity")} 
               className="w-full p-2 border border-border rounded-md bg-background text-sm" 
             />
-            {errors.quantity && <p className="text-xs text-red-500 mt-1">{errors.quantity.message}</p>}
+            {errors.quantity && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.quantity.message}</p>}
           </div>
 
           <div>

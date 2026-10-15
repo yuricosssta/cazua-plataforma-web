@@ -73,11 +73,11 @@ export const SessionWarningModal = () => {
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-amber-500/30 overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="bg-card w-full max-w-md rounded-md shadow-2xl border border-amber-500/30 overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="h-1.5 w-full bg-amber-500"></div>
 
         <div className="p-8 text-center flex flex-col items-center">
-          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-amber-50">
+          <div className="w-16 h-16 bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-full flex items-center justify-center mb-6 shadow-inner ring-4 ring-amber-50 dark:ring-amber-950/50">
             <Clock className="w-8 h-8 animate-pulse" />
           </div>
           
@@ -86,13 +86,13 @@ export const SessionWarningModal = () => {
           </h2>
           
           <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-            Por inatividade, você será desconectado em <span className="font-bold text-amber-600 text-lg">{formatTime(timeLeft)}</span> para proteger seus dados. Deseja continuar trabalhando?
+            Por inatividade, você será desconectado em <span className="font-bold text-amber-600 dark:text-amber-400 text-lg">{formatTime(timeLeft)}</span> para proteger seus dados. Deseja continuar trabalhando?
           </p>
 
           <button
             onClick={handleRenew}
             disabled={isRenewing}
-            className="w-full h-11 bg-amber-500 text-white font-bold rounded-md hover:bg-amber-600 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
+            className="w-full h-11 bg-amber-500 text-primary-foreground font-bold rounded-md hover:bg-amber-600 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {isRenewing ? (
               <RefreshCw className="w-4 h-4 animate-spin" />

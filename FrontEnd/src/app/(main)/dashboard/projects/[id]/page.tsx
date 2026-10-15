@@ -19,6 +19,7 @@ import {
   Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package
 } from "lucide-react";
 import { ProjectCostTab } from "@/components/resources/ProjectCostTab";
+import { toast } from 'sonner';
 
 type DetailTabType = "TIMELINE" | "RESOURCES" | "COSTS";
 
@@ -69,7 +70,7 @@ export default function ProjectDetailsPage() {
       setTimeline(data.timeline);
     } catch (error) {
       console.error("Erro ao buscar detalhes:", error);
-      alert("Não foi possível carregar os detalhes do projeto.");
+      toast.error("Não foi possível carregar os detalhes do projeto.");
       router.push("/dashboard/projects");
     } finally {
       if (showFullLoader) setIsLoading(false);
@@ -99,27 +100,27 @@ export default function ProjectDetailsPage() {
       await apiRemoveMember(orgId, projectId, currentUserId, currentUserName);
       router.push(`/dashboard/projects`);
     } catch (error: any) {
-      alert(error.message || "Falha ao sair da demanda.");
+      toast.error(String(error.message || "Falha ao sair da demanda."));
     }
   };
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
-      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-orange-600", bg: "bg-orange-100 border-orange-200" };
-      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-600", bg: "bg-blue-100 border-blue-200" };
-      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-700", bg: "bg-amber-100 border-amber-200" };
-      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-700", bg: "bg-emerald-100 border-emerald-200" };
+      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary-600 dark:text-primary-400", bg: "bg-primary-100 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800" };
+      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" };
+      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800" };
+      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
-      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-gray-600", bg: "bg-gray-100 border-gray-200" };
+      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
     }
   };
 
   const getPriorityConfig = (score?: number) => {
-    if (!score) return { label: "Sem Prioridade", icon: Clock, color: "text-gray-500", bg: "bg-transparent border-dashed border-gray-300" };
-    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-700", bg: "bg-red-50 border-red-200" };
-    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-orange-700", bg: "bg-orange-50 border-orange-200" };
-    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-700", bg: "bg-blue-50 border-blue-200" };
-    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" };
+    if (!score) return { label: "Sem Prioridade", icon: Clock, color: "text-muted-foreground", bg: "bg-transparent border-dashed border-border" };
+    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800" };
+    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-primary-700 dark:text-primary-400", bg: "bg-primary-50 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800" };
+    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" };
+    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800" };
   };
 
   if (isLoading || !project) {
@@ -172,11 +173,11 @@ export default function ProjectDetailsPage() {
             <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-primary/20' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
-            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
+            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} RDO
             </button>
             {isAssigned && (
-              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
+              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/60 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
                 <LogOut className="w-4 h-4" /> Sair
               </button>
             )}

@@ -199,11 +199,11 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                         {composition.grupo}
                       </span>
                       {composition.isGlobal ? (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 uppercase font-bold rounded-sm tracking-wider flex items-center gap-1">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 dark:text-blue-400 uppercase font-bold rounded-sm tracking-wider flex items-center gap-1">
                           <Database className="w-3 h-3" /> SINAPI
                         </span>
                       ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-orange-500 uppercase font-bold rounded-sm tracking-wider">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-primary-500/10 text-primary-500 dark:text-primary-400 uppercase font-bold rounded-sm tracking-wider">
                           CUSTOMIZADA
                         </span>
                       )}
@@ -314,7 +314,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
               <button
                 onClick={handleLoadMore}
                 disabled={searchLoading}
-                className="h-9 px-6 bg-secondary text-secondary-foreground border border-border rounded-sm text-sm font-bold hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
+                className="min-h-11 px-6 bg-secondary text-secondary-foreground border border-border rounded-sm text-sm font-bold hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
               >
                 {searchLoading ? 'Carregando...' : 'Carregar mais resultados'}
               </button>
@@ -326,7 +326,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
         <div className="px-6 py-4 border-t border-border flex justify-end bg-muted/10">
           <button
             onClick={handleClose}
-            className="h-9 px-6 bg-transparent border border-border text-foreground hover:bg-muted rounded-sm text-sm font-bold transition-colors"
+            className="min-h-11 px-6 bg-transparent border border-border text-foreground hover:bg-muted rounded-sm text-sm font-bold transition-colors"
           >
             Fechar Janela
           </button>

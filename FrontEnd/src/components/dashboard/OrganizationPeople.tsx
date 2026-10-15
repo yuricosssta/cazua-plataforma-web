@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { UserPlus, Settings, Loader2, Save, Trash2, ShieldAlert, X } from "lucide-react";
+import { toast } from 'sonner';
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { RootState } from "@/lib/redux/store";
 import {
@@ -70,9 +71,9 @@ export function OrganizationPeople() {
       });
       setFormData({ name: "", email: "", password: "", membership: { role: "MEMBER" } });
       fetchMembers();
-      alert("Usuário criado com sucesso!");
+      toast.success("Usuário criado com sucesso!");
     } catch (error: any) {
-      alert(error.message || "Erro ao cadastrar usuário.");
+      toast.error(String(error.message || "Erro ao cadastrar usuário."));
     } finally {
       setIsSubmitting(false);
     }
@@ -86,7 +87,7 @@ export function OrganizationPeople() {
       setEditingMember(null);
       fetchMembers();
     } catch (error: any) {
-      alert(error.message || "Erro ao atualizar cargo.");
+      toast.error(String(error.message || "Erro ao atualizar cargo."));
     } finally {
       setIsUpdatingAction(false);
     }
@@ -102,7 +103,7 @@ export function OrganizationPeople() {
       setEditingMember(null);
       fetchMembers();
     } catch (error: any) {
-      alert(error.message || "Erro ao remover usuário.");
+      toast.error(String(error.message || "Erro ao remover usuário."));
     } finally {
       setIsUpdatingAction(false);
     }
@@ -167,7 +168,14 @@ export function OrganizationPeople() {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Carregando usuários...</td></tr>
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-4"><div className="h-4 w-48 bg-muted rounded" /></td>
+                    <td className="px-4 py-4 hidden sm:table-cell"><div className="h-4 w-56 bg-muted rounded" /></td>
+                    <td className="px-4 py-4"><div className="h-4 w-20 bg-muted rounded" /></td>
+                    <td className="px-4 py-4 text-right"><div className="h-8 w-24 bg-muted rounded ml-auto" /></td>
+                  </tr>
+                ))
               ) : members.length === 0 ? (
                 <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhum usuário encontrado.</td></tr>
               ) : (
@@ -235,7 +243,7 @@ export function OrganizationPeople() {
               <div className="border-t border-border pt-4">
                 <button
                   onClick={handleRemoveMember} disabled={isUpdatingAction}
-                  className="w-full h-9 bg-red-50 text-red-600 border border-red-200 rounded-md text-sm font-bold hover:bg-red-100 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-9 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 border border-red-200 rounded-md text-sm font-bold hover:bg-red-100 dark:hover:bg-red-950/60 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" /> Remover da Empresa
                 </button>

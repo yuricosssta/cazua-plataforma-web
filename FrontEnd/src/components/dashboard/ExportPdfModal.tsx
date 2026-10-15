@@ -6,6 +6,7 @@ import { X, Image as ImageIcon, FileText, Loader2, UploadCloud, Trash2, PenTool,
 import { createPortal } from "react-dom";
 import jsPDF from "jspdf";
 import { TimelineEventType } from "@/types/project";
+import { toast } from 'sonner';
 
 interface TimelineEvent {
   _id: string;
@@ -290,7 +291,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
       setTimeout(() => { setStep("ASK"); setPhotos([]); onClose(); }, 500);
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
-      alert("Houve um erro ao montar o arquivo PDF.");
+      toast.error("Houve um erro ao montar o arquivo PDF.");
       setStep("ASK");
     }
   };
@@ -332,7 +333,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
                       {signers.length > 1 && (
                         <button
                           onClick={() => removeSigner(idx)}
-                          className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-1 rounded-full border border-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800 p-1 rounded-full border border-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <UserMinus className="w-3 h-3" />
                         </button>

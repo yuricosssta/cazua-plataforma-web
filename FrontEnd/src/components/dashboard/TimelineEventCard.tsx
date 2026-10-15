@@ -44,11 +44,11 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
 
   const getEventConfig = (type: TimelineEventType) => {
     switch (type) {
-      case "COMMENT": return { icon: MessageSquare, color: "text-blue-500", bg: "bg-blue-100" };
-      case "STATUS_CHANGE": return { icon: ArrowRightCircle, color: "text-orange-500", bg: "bg-orange-100" };
-      case "DOCUMENT": return { icon: FileText, color: "text-purple-500", bg: "bg-purple-100" };
-      case "REPORT": return { icon: ClipboardList, color: "text-emerald-500", bg: "bg-emerald-100" };
-      default: return { icon: Activity, color: "text-gray-500", bg: "bg-gray-100" };
+      case "COMMENT": return { icon: MessageSquare, color: "text-blue-700 dark:text-blue-300", bg: "bg-blue-500/15 dark:bg-blue-950/50" };
+      case "STATUS_CHANGE": return { icon: ArrowRightCircle, color: "text-primary-700 dark:text-primary-300", bg: "bg-primary-500/15 dark:bg-primary-950/50" };
+      case "DOCUMENT": return { icon: FileText, color: "text-purple-700 dark:text-purple-300", bg: "bg-purple-500/15 dark:bg-purple-950/50" };
+      case "REPORT": return { icon: ClipboardList, color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-500/15 dark:bg-emerald-950/50" };
+      default: return { icon: Activity, color: "text-muted-foreground", bg: "bg-muted" };
     }
   };
 
@@ -136,12 +136,12 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
                 <span className="text-sm text-foreground">Prioridade: {event.metadata.priorityScore}</span>
               )}
               {event.metadata.newStatus && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-orange-50 text-orange-700 px-2.5 py-1 rounded-md border border-orange-200">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 dark:border-primary-800 px-2.5 py-1 rounded-md border border-primary-200">
                   <ArrowRightCircle className="w-4 h-4" /> Status Avançado
                 </span>
               )}
               {event.metadata.isInitialDemand && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-md border border-zinc-200">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-muted text-foreground px-2.5 py-1 rounded-md border border-border">
                   <FileText className="w-4 h-4" /> Demanda Original
                 </span>
               )}
@@ -181,7 +181,7 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
                   >
                     {isPdf ? (
                       <>
-                        <FileText className="w-6 h-6 text-red-500" />
+                        <FileText className="w-6 h-6 text-red-600 dark:text-red-400" />
                         <span className="text-[8px] font-bold mt-1 text-muted-foreground">PDF</span>
                       </>
                     ) : (
