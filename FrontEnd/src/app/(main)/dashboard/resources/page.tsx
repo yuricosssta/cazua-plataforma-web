@@ -111,8 +111,8 @@ export default function ResourcesPage() {
             </div>
 
             {!hasWriteAccess && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-md flex items-center gap-3 text-sm font-medium">
-                    <ShieldAlert className="w-5 h-5 text-amber-600" />
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 p-3 rounded-md flex items-center gap-3 text-sm font-medium">
+                    <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                     Você está em modo de visualização. Apenas a equipe autorizada do Almoxarifado Central pode registrar movimentações.
                 </div>
             )}
@@ -155,7 +155,7 @@ export default function ResourcesPage() {
             {/* ÁREA DE CONTEÚDO (RENDERIZAÇÃO CONDICIONAL) */}
             <div className="flex-1 bg-card shadow-sm min-h-[400px] p-1">
                 {activeTab === "catalog" && (
-                    <div className="flex flex-col items-center justify-start h-full text-muted-foreground opacity-60">
+                    <div className="flex flex-col items-center justify-start h-full">
                         <ResourceCatalog refreshKey={refreshKey} />
                     </div>
                 )}
@@ -168,7 +168,7 @@ export default function ResourcesPage() {
                 )}
 
                 {activeTab === "history" && (
-                    <div className="flex flex-col items-center justify-start h-full text-muted-foreground opacity-60">
+                    <div className="flex flex-col items-center justify-start h-full">
                         <TransactionHistory refreshKey={refreshKey} />
                     </div>
                 )}

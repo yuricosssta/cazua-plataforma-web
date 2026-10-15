@@ -2,7 +2,7 @@ import { FallingLines } from 'react-loader-spinner';
 
 const Spinner = () => {
     return <FallingLines
-        color="#000000ff"
+        color="currentColor"
         width="25"
         visible={true}
     />;

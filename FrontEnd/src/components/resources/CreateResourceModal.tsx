@@ -141,8 +141,8 @@ export function CreateResourceModal({ isOpen, onClose, orgId, orgRole, onSuccess
           )}
 
           {isCapital && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md">
-              <p className="text-xs text-emerald-800 font-medium">
+            <div className="p-3 bg-emerald-950/40 border-emerald-800 border rounded-md">
+              <p className="text-xs text-emerald-300 font-medium">
                 Recursos financeiros adotam automaticamente o Real (R$) como unidade de medida e custo unitário.
               </p>
             </div>

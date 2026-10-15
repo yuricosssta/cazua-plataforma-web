@@ -45,7 +45,7 @@ export default function PlanningPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {/* Card 1: Base Principal */}
-              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-lg shadow-sm gap-4">
+              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-md shadow-sm gap-4">
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">Upload de Composições</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -54,14 +54,14 @@ export default function PlanningPage() {
                 </div>
                 <button
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="h-9 w-full px-4 py-2 bg-[#8B4513] text-white border border-transparent rounded-md text-sm font-bold hover:bg-[#8B4513]/90 transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                  className="h-11 w-full px-4 py-2 bg-primary text-primary-foreground border border-transparent rounded-md text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   <UploadCloud className="w-4 h-4" /> Importar Estrutura
                 </button>
               </section>
 
               {/* Card 2: Atualização de Custos */}
-              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-lg shadow-sm gap-4">
+              <section className="flex flex-col justify-between border border-border bg-card p-5 rounded-md shadow-sm gap-4">
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">Atualização de Custos</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -70,7 +70,7 @@ export default function PlanningPage() {
                 </div>
                 <button
                   onClick={() => setIsUploadCostsModalOpen(true)}
-                  className="h-9 w-full px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-md text-sm font-bold hover:bg-muted transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                  className="h-11 w-full px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-md text-sm font-bold hover:bg-muted transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   <DollarSign className="w-4 h-4" /> Injetar Custos
                 </button>
@@ -94,7 +94,7 @@ export default function PlanningPage() {
             </div>
             <button
               onClick={() => setIsSearchModalOpen(true)}
-              className="h-9 px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-sm text-sm font-bold hover:bg-muted transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap"
+              className="h-11 px-4 py-2 bg-secondary text-secondary-foreground border border-border rounded-sm text-sm font-bold hover:bg-muted transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap"
             >
               <Search className="w-4 h-4" /> Abrir Pesquisa
             </button>

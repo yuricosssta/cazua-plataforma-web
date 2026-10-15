@@ -7,6 +7,7 @@ import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { resourceService, Resource, ResourceType } from '@/lib/services/resourceService';
 import { Box, HardHat, Wrench, DollarSign, AlertCircle, Edit2, Archive } from "lucide-react";
+import { toast } from 'sonner';
 import { EditResourceModal } from "./EditResourceModal";
 
 interface ResourceCatalogProps {
@@ -55,7 +56,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     if (!orgId) return;
     
     if (resource.currentStock !== 0) {
-      alert("Operação bloqueada: Zere o saldo deste recurso antes de inativá-lo para evitar furos contábeis.");
+      toast.warning("Operação bloqueada: Zere o saldo deste recurso antes de inativá-lo para evitar furos contábeis.");
       return;
     }
 
@@ -66,7 +67,7 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
       await resourceService.inactivateResource(orgId, resource._id, orgRole);
       triggerLocalRefresh();
     } catch (err: any) {
-      alert(err.response?.data?.message || err.message || "Erro ao inativar recurso.");
+      toast.error(String(err.response?.data?.message || err.message || "Erro ao inativar recurso."));
     }
   };
 
@@ -81,25 +82,25 @@ export function ResourceCatalog({ refreshKey }: ResourceCatalogProps) {
     switch (type) {
       case ResourceType.MATERIAL:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-950 text-blue-300 border-blue-800 text-xs font-medium border">
             <Box className="w-3.5 h-3.5" /> Material
           </span>
         );
       case ResourceType.LABOR:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium border border-orange-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-950 text-red-300 border-red-800 text-xs font-medium border">
             <HardHat className="w-3.5 h-3.5" /> Mão de Obra
           </span>
         );
       case ResourceType.EQUIPMENT:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-medium border border-purple-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-950 text-purple-300 border-purple-800 text-xs font-medium border">
             <Wrench className="w-3.5 h-3.5" /> Equipamento
           </span>
         );
       case ResourceType.CAPITAL:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-950 text-emerald-300 border-emerald-800 text-xs font-medium border">
             <DollarSign className="w-3.5 h-3.5" /> Financeiro
           </span>
         );

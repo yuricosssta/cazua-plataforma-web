@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Loader2, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal, PauseCircle
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal, PauseCircle
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -194,10 +194,10 @@ export function ProjectsList() {
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
-      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-orange-500", bg: "bg-orange-500/10" };
-      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" };
-      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600", bg: "bg-amber-600/10" };
-      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" };
+      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary-500 dark:text-primary-400", bg: "bg-primary-500/10" };
+      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-500/10" };
+      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-600/10" };
+      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-500/10" };
       // Nova escala Stone Escura para Paralisada
       case "ON_HOLD": return { label: "Paralisada", icon: PauseCircle, color: "text-stone-50", bg: "bg-stone-800 dark:bg-stone-700 border border-stone-900 dark:border-stone-600" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted" };
@@ -207,10 +207,10 @@ export function ProjectsList() {
 
   const getPriorityConfig = (score?: number) => {
     if (!score) return null;
-    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600", bg: "bg-red-600/10 border-red-200 dark:border-red-900" };
-    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-orange-600", bg: "bg-orange-600/10 border-orange-200 dark:border-orange-900" };
-    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-600/10 border-blue-200 dark:border-blue-900" };
-    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-600/10 border-emerald-200 dark:border-emerald-900" };
+    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600 dark:text-red-400", bg: "bg-red-600/10 border-red-200 dark:border-red-900" };
+    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-primary-600 dark:text-primary-400", bg: "bg-primary-600/10 border-primary-200 dark:border-primary-900" };
+    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-600/10 border-blue-200 dark:border-blue-900" };
+    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-600/10 border-emerald-200 dark:border-emerald-900" };
   };
 
   const allTabsConfig = [
@@ -315,9 +315,14 @@ export function ProjectsList() {
       {/* Lista de Cards */}
       <div className="flex flex-col space-y-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Sincronizando com o canteiro...</p>
+          <div className="flex flex-col space-y-4" aria-busy="true">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-md p-5 shadow-sm animate-pulse space-y-3">
+                <div className="h-4 w-1/3 bg-muted rounded" />
+                <div className="h-3 w-2/3 bg-muted rounded" />
+                <div className="h-3 w-1/2 bg-muted rounded" />
+              </div>
+            ))}
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center">

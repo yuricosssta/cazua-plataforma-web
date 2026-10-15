@@ -12,6 +12,7 @@ import {
 import { fetchBff } from "@/lib/api/fetchBff";
 import Papa from 'papaparse';
 import { UpgradeModal } from "../UpgradeModal";
+import { toast } from 'sonner';
 
 interface ImportRow {
   id: string;
@@ -137,10 +138,10 @@ export function DataManagement() {
   const handleFinalSubmit = async () => {
     const unverifiedCount = draftRows.filter(r => !r.isVerified).length;
     if (unverifiedCount > 0) {
-      return alert(`Faltam ${unverifiedCount} demanda(s) para conferência.`);
+      return toast.warning(`Faltam ${unverifiedCount} demanda(s) para conferência.`);
     }
 
-    if (!orgId) return alert("Erro: Organização não identificada.");
+    if (!orgId) return toast.warning("Erro: Organização não identificada.");
 
     try {
       setIsSubmitting(true);
@@ -150,7 +151,7 @@ export function DataManagement() {
         body: JSON.stringify({ projects: draftRows }),
       });
 
-      alert("Demandas importadas com sucesso! Vá para a tela de Projetos para conferir.");
+      toast.success("Demandas importadas com sucesso! Vá para a tela de Projetos para conferir.");
       setDraftRows([]);
       setIsImporting(false);
       setIsModalOpen(false);
@@ -163,7 +164,7 @@ export function DataManagement() {
         setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
         setIsUpgradeModalOpen(true);
       } else {
-        alert(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);
@@ -185,21 +186,21 @@ export function DataManagement() {
             Importe novas demandas em lote via CSV ou exporte sua base atual.
           </p>
           {isImporting && (
-            <p className="text-[10px] font-bold text-amber-600 mt-2 uppercase flex items-center gap-1">
+            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-2 uppercase flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> Rascunho pendente
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="h-9 px-4 py-2 bg-background border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
+            className="h-11 px-4 py-2 bg-background border border-border rounded-sm text-sm font-medium hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
             title="Em breve"
           >
             Exportar CSV
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="h-9 px-4 py-2 bg-primary text-primary-foreground rounded-sm text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2"
+            className="h-11 px-4 py-2 bg-primary text-primary-foreground rounded-sm text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2"
           >
             <Upload className="w-4 h-4" /> Importar
           </button>
@@ -332,7 +333,7 @@ export function DataManagement() {
             {/* Rodapé do Modal */}
             <div className="px-5 py-4 border-t border-border bg-background flex items-center justify-between">
               {isImporting ? (
-                <button onClick={cancelImport} className="text-sm font-bold text-red-500 hover:text-red-600 flex items-center gap-1.5 transition-colors">
+                <button onClick={cancelImport} className="text-sm font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1.5 transition-colors">
                   <Trash2 className="w-4 h-4" /> Descartar Tudo
                 </button>
               ) : (
@@ -342,7 +343,7 @@ export function DataManagement() {
               <button
                 onClick={handleFinalSubmit}
                 disabled={(!allVerified && isImporting) || isSubmitting || !isImporting}
-                className="h-10 px-6 bg-foreground text-background text-sm font-bold rounded-sm hover:bg-foreground/90 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 px-6 bg-primary text-primary-foreground text-sm font-bold rounded-sm hover:bg-primary/90 transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {allVerified ? 'Salvar no Sistema' : isImporting ? 'Verifique todas as linhas' : 'Aguardando Arquivo'}

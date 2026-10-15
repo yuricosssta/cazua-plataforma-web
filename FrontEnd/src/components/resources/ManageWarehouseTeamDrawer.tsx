@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
+import { toast } from 'sonner';
 import { IUser } from "@/types/user";
 import { resourceService } from "@/lib/services/resourceService";
 import { fetchBff } from "@/lib/api/fetchBff";
@@ -43,7 +44,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
       await resourceService.assignWarehouseMember(orgId, userId, orgRole);
       onSuccess();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Falha ao alocar o membro.");
+      toast.error(String(error.response?.data?.message || "Falha ao alocar o membro."));
     } finally {
       setProcessingId(null);
     }
@@ -55,7 +56,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
       await resourceService.removeWarehouseMember(orgId, userId, orgRole);
       onSuccess();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Falha ao remover o membro do almoxarifado.");
+      toast.error(String(error.response?.data?.message || "Falha ao remover o membro do almoxarifado."));
     } finally {
       setProcessingId(null);
     }
@@ -118,7 +119,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
                       onClick={() => isAssigned ? handleRemove(String(member._id || member.id)) : handleAssign(String(member._id || member.id))}
                       className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors flex-shrink-0 ${isProcessing ? 'bg-muted text-muted-foreground cursor-not-allowed' :
                           isAssigned
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-100'
+                            ? 'bg-red-950/40 text-red-300 border-red-800 hover:bg-red-950/60 hover:text-red-200 border'
                             : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20'
                         }`}
                       title={isAssigned ? "Remover do Almoxarifado" : "Alocar no Almoxarifado"}
@@ -134,7 +135,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
         </div>
 
         <div className="p-6 border-t border-border bg-background">
-          <div className="flex items-start gap-3 p-3 bg-blue-50 text-blue-800 rounded-md border border-blue-100">
+          <div className="flex items-start gap-3 p-3 bg-blue-950/40  text-blue-300  border-blue-800 rounded-md border">
             <Shield className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600" />
             <p className="text-xs leading-relaxed">
               Apenas os membros alocados podem registrar entradas, saídas, estornos e aprovar requisições de projetos.

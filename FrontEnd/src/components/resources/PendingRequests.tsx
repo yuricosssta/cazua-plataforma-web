@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { resourceService } from "@/lib/services/resourceService";
 import { CheckCircle, XCircle, AlertCircle, ClipboardList, Loader2 } from "lucide-react";
+import { toast } from 'sonner';
 
 interface PendingRequestsProps {
   refreshKey?: number;
@@ -90,7 +91,7 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
       handleCancelAction();
       onActionComplete(); 
     } catch (err: any) {
-      alert(err.message || err.response?.data?.message || "Erro ao processar a requisição.");
+      toast.error(String(err.message || err.response?.data?.message || "Erro ao processar a requisição."));
     }
   };
 
@@ -153,7 +154,7 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                 <td className="px-4 py-3 text-muted-foreground text-xs min-w-[250px] max-w-[400px] whitespace-normal break-words">
                   {req.origin || "Não informada"}
                 </td>
-                <td className="px-4 py-3 text-center font-semibold text-orange-600">
+                <td className="px-4 py-3 text-center font-semibold text-red-600">
                   {req.quantity}
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-muted-foreground">
@@ -162,13 +163,13 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                 <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                   <button
                     onClick={() => handleOpenAction(req._id, "REJECT")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md hover:bg-destructive/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 min-h-11 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md hover:bg-destructive/20 transition-colors"
                   >
                     <XCircle className="w-3.5 h-3.5" /> Rejeitar
                   </button>
                   <button
                     onClick={() => handleOpenAction(req._id, "APPROVE", req.quantity)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 min-h-11 text-xs font-medium text-emerald-300 bg-emerald-950/40 border-emerald-800 border rounded-md hover:bg-emerald-100 transition-colors"
                   >
                     <CheckCircle className="w-3.5 h-3.5" /> Analisar
                   </button>
@@ -209,13 +210,13 @@ export function PendingRequests({ refreshKey = 0, onActionComplete }: PendingReq
                       <div className="flex gap-2">
                         <button
                           onClick={handleCancelAction}
-                          className="px-4 py-2 text-sm font-medium border border-border rounded-md hover:bg-muted transition-colors"
+                          className="px-4 min-h-11 text-sm font-medium border border-border rounded-md hover:bg-muted transition-colors"
                         >
                           Cancelar
                         </button>
                         <button
                           onClick={handleConfirmAction}
-                          className={`px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors ${
+                          className={`px-4 min-h-11 text-sm font-medium text-white rounded-md shadow-sm transition-colors ${
                             actionType === "APPROVE" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-destructive hover:bg-destructive/90"
                           }`}
                         >

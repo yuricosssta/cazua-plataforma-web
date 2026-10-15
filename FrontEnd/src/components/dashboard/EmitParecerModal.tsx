@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Loader2, Activity, ArrowRightCircle, Flame, Navigation, MapPin, Map as MapIcon, Check, Calendar, Briefcase, Paperclip, Trash2, FileText } from "lucide-react";
+import { toast } from 'sonner';
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { Project, ProjectStatus } from "@/types/project";
@@ -147,7 +148,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   }, [showMap, location]);
 
   const handleGetLocation = () => {
-    if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
+    if (!navigator.geolocation) return toast.warning("Seu navegador não suporta geolocalização.");
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -161,7 +162,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       },
       (error) => {
         console.error("Erro de GPS:", error);
-        alert("Não foi possível acessar a localização.");
+        toast.warning("Não foi possível acessar a localização.");
         setIsGettingLocation(false);
       }
     );
@@ -183,7 +184,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       setAttachments(prev => [...prev, ...newAttachmentUrls]);
     } catch (error: any) {
       console.error("Erro no upload R2:", error);
-      alert(error.message || "Houve um erro ao subir os arquivos.");
+      toast.error(String(error.message || "Houve um erro ao subir os arquivos."));
     } finally {
       setIsUploadingFiles(false);
     }
@@ -200,11 +201,11 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orgId) return alert("Erro: Organização não identificada.");
-    if (!parecerText.trim()) return alert("O texto do parecer é obrigatório.");
+    if (!orgId) return toast.warning("Erro: Organização não identificada.");
+    if (!parecerText.trim()) return toast.warning("O texto do parecer é obrigatório.");
 
     if (isPlanningMode && !technicalTitle.trim()) {
-      return alert("Ao aprovar para planejamento, é obrigatório definir o Nome Técnico da Obra.");
+      return toast.warning("Ao aprovar para planejamento, é obrigatório definir o Nome Técnico da Obra.");
     }
 
     try {
@@ -234,7 +235,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       onSuccess();
       onClose();
     } catch (error: any) {
-      alert(error.message || error.response?.data?.message || "Erro interno ao emitir o parecer.");
+      toast.error(String(error.message || error.response?.data?.message || "Erro interno ao emitir o parecer."));
     } finally {
       setIsSubmitting(false);
     }
@@ -340,7 +341,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <input type="checkbox" className="w-4 h-4 rounded border-input text-primary focus:ring-ring accent-primary cursor-pointer bg-background" checked={updateGUT} onChange={(e) => setUpdateGUT(e.target.checked)} />
                     <span className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Flame className={`w-4 h-4 ${updateGUT ? 'text-orange-500' : 'text-muted-foreground'}`} /> Alterar Prioridade (GUT)
+                      <Flame className={`w-4 h-4 ${updateGUT ? 'text-primary-500' : 'text-muted-foreground'}`} /> Alterar Prioridade (GUT)
                     </span>
                   </label>
                   {updateGUT && (

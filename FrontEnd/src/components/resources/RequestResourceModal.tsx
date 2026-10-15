@@ -92,9 +92,9 @@ export function RequestResourceModal({ isOpen, onClose, orgId, projectId, onSucc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border w-full max-w-md rounded-lg shadow-xl flex flex-col overflow-visible">
+      <div className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-visible">
         
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted">
           <h2 className="text-base font-semibold">Solicitar Recurso</h2>
           <button onClick={onClose} className="p-1 text-muted-foreground hover:bg-muted rounded-md transition-colors">
             <X className="w-5 h-5" />
@@ -102,7 +102,7 @@ export function RequestResourceModal({ isOpen, onClose, orgId, projectId, onSucc
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col p-5 space-y-4">
-          {error && <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">{error}</div>}
+          {error && <div className="p-3 text-sm text-destructive bg-destructive rounded-md border border-destructive/20">{error}</div>}
 
           <div className="space-y-1.5" ref={resourceRef}>
             <label className="text-sm font-medium">Buscar Recursos</label>

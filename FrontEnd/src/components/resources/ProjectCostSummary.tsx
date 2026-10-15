@@ -45,7 +45,7 @@ export function ProjectCostSummary({ data }: ProjectCostSummaryProps) {
               </div>
               <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-slate-600 rounded-full transition-all duration-1000 ease-out"
+                  className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${cat.percentage}%` }}
                 />
               </div>

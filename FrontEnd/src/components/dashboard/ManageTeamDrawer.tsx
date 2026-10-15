@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, UserMinus, Shield, Loader2, Users } from "lucide-react";
+import { toast } from 'sonner';
 import { IUser } from "@/types/user";
 import { apiAssignMember, apiRemoveMember } from "@/lib/services/projectService";
 import { fetchBff } from "@/lib/api/fetchBff";
@@ -49,7 +50,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
             onSuccess();
         } catch (error) {
             console.error("Erro ao alocar membro:", error);
-            alert("Falha ao alocar o membro.");
+            toast.error("Falha ao alocar o membro.");
         } finally {
             setProcessingId(null);
         }
@@ -64,7 +65,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
             onSuccess();
         } catch (error) {
             console.error("Erro ao remover membro:", error);
-            alert("Falha ao remover o membro do projeto.");
+            toast.error("Falha ao remover o membro do projeto.");
         } finally {
             setProcessingId(null);
         }
@@ -147,7 +148,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                                             onClick={() => isAssigned ? handleRemove(member._id, member.name) : handleAssign(member._id, member.name)}
                                             className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors flex-shrink-0 ${isProcessing ? 'bg-muted text-muted-foreground cursor-not-allowed' :
                                                     isAssigned
-                                                        ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-100'
+                                                        ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-950/60 dark:hover:text-red-200 border border-red-100'
                                                         : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20'
                                                 }`}
                                             title={isAssigned ? "Remover do Projeto" : "Alocar no Projeto"}
@@ -165,8 +166,8 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
 
                 {/* Rodapé do Drawer */}
                 <div className="p-6 border-t border-border bg-background">
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 text-blue-800 rounded-md border border-blue-100">
-                        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600" />
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 rounded-md border border-blue-100">
+                        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
                         <p className="text-xs leading-relaxed">
                             Apenas membros alocados nesta equipe poderão registrar Diários de Obra e emitir Pareceres Técnicos em nome deste projeto.
                         </p>

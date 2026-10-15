@@ -83,7 +83,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
   const getTransactionBadge = (type: string, isCanceled: boolean) => {
     if (isCanceled) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20">
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-destructive text-destructive-foreground text-xs font-medium border border-destructive/20">
           <Ban className="w-3.5 h-3.5" /> Estornado
         </span>
       );
@@ -92,19 +92,19 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
     switch (type) {
       case "ENTRY":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-950 text-emerald-300 border-emerald-800 text-xs font-medium border">
             <ArrowDownLeft className="w-3.5 h-3.5" /> Entrada
           </span>
         );
       case "ALLOCATION":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium border border-orange-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-950 text-red-300 text-xs font-medium border border-destructive-800">
             <ArrowUpRight className="w-3.5 h-3.5" /> Saída (destino)
           </span>
         );
       case "RETURN":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-950 text-blue-300 border-blue-800 text-xs font-medium border">
             <RefreshCcw className="w-3.5 h-3.5" /> Devolução
           </span>
         );
@@ -117,7 +117,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-muted-foreground">Carregando livro razão...</p>
+        <p className="text-sm text-muted-foreground">Carregando histórico...</p>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
             className="px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 border border-primary/20">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary border border-primary/20">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-primary">
             Custo total do período: {formatCurrency(Math.abs(totalCostSum))}
@@ -195,7 +195,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
           </thead>
           <tbody className="divide-y divide-border">
             {transactions.map((tx) => (
-              <tr key={tx._id} className={`hover:bg-muted/10 transition-colors group ${tx.isCanceled ? 'opacity-60 bg-muted/5' : ''}`}>
+              <tr key={tx._id} className={`hover:bg-muted/10 transition-colors group ${tx.isCanceled ? 'bg-muted' : ''}`}>
                 <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                   {formatDate(tx.createdAt)}
                 </td>
@@ -218,7 +218,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
                   ) : (
                     <span>{tx.origin || "Estoque Central"}</span>
                   )}
-                  {tx.status === 'PENDING' && <span className="ml-2 text-orange-500 font-medium">(Pendente)</span>}
+                  {tx.status === 'PENDING' && <span className="ml-2 text-primary-500 dark:text-primary-400 font-medium">(Pendente)</span>}
                 </td>
               </tr>
             ))}

@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { UploadCloud, Loader2, CheckCircle, PaintBucket } from "lucide-react";
+import { toast } from 'sonner';
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { fetchBff } from "@/lib/api/fetchBff";
@@ -55,7 +56,7 @@ export function BrandingSettings() {
       setSuccessMsg("Imagem atualizada com sucesso no servidor!");
 
     } catch (error: any) {
-      alert(error.message || "Falha ao fazer upload da imagem.");
+      toast.error(String(error.message || "Falha ao fazer upload da imagem."));
     } finally {
       setIsLoading(prev => ({ ...prev, [fieldName]: false }));
     }
@@ -79,7 +80,7 @@ export function BrandingSettings() {
       setSuccessMsg("Cor primária atualizada!");
 
     } catch (error: any) {
-      alert(error.message || "Falha ao salvar a cor primária.");
+      toast.error(String(error.message || "Falha ao salvar a cor primária."));
     } finally {
       setIsLoading(prev => ({ ...prev, primaryColor: false }));
     }

@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Loader2, MapPin, AlignLeft, Calendar, Navigation, FileText, Map as MapIcon, Check, Link as LinkIcon } from "lucide-react";
+import { toast } from 'sonner';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
@@ -120,7 +121,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
   }, [showMap]);
 
   const handleGetLocation = () => {
-    if (!navigator.geolocation) return alert("Seu navegador não suporta geolocalização.");
+    if (!navigator.geolocation) return toast.warning("Seu navegador não suporta geolocalização.");
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -131,7 +132,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
       },
       (error) => {
         console.error("Erro de GPS:", error);
-        alert("Não foi possível acessar a localização.");
+        toast.warning("Não foi possível acessar a localização.");
         setIsGettingLocation(false);
       }
     );
@@ -139,7 +140,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orgId) return alert("Erro: Organização não identificada.");
+    if (!orgId) return toast.warning("Erro: Organização não identificada.");
 
     try {
       setIsSubmitting(true);
@@ -167,7 +168,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
         setUpgradeMessage(errorMsg.replace("LIMITE_FREE_EXCEDIDO:", "").trim());
         setIsUpgradeModalOpen(true);
       } else {
-        alert(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);
@@ -220,7 +221,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
                 <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                Título da Demanda <span className="text-red-500">*</span>
+                Título da Demanda <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input type="text" required placeholder="Ex: Infiltração na Escola Municipal" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
             </div>
@@ -228,7 +229,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-muted-foreground" />
-                Descrição Breve <span className="text-red-500">*</span>
+                Descrição Breve <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <textarea required rows={3} placeholder="Descreva o problema estrutural de forma sucinta..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none" />
             </div>
@@ -252,7 +253,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-primary" />
-                  Localização <span className="text-red-500">*</span>
+                  Localização <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1 rounded border border-primary/20">

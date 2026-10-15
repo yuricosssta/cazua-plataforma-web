@@ -129,7 +129,7 @@ export function AllocateDirectlyModal({ isOpen, onClose, orgId, orgRole, onSucce
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border w-full max-w-lg rounded-lg shadow-xl flex flex-col overflow-visible">
+      <div className="bg-card border border-border w-full max-w-lg rounded-md shadow-xl flex flex-col overflow-visible">
         
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
           <h2 className="text-base font-semibold text-foreground tracking-tight">Saída Direta para Destino</h2>
@@ -273,8 +273,8 @@ export function AllocateDirectlyModal({ isOpen, onClose, orgId, orgRole, onSucce
           </div>
 
           {selectedResource && formData.quantity > 0 && selectedResource.currentStock - formData.quantity < 0 && !isCapital && selectedResource.type !== ResourceType.LABOR && (
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
-              <p className="text-xs text-orange-800 font-medium">
+            <div className="p-3 bg-red-950/40 border-red-800 border rounded-md">
+              <p className="text-xs text-red-300 font-medium">
                 Aviso: Esta saída deixará o saldo do Almoxarifado Central negativo.
               </p>
             </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, MessageSquare, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { Plus, Edit2, MessageSquare, AlertCircle, FileText } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { fetchBff } from "@/lib/api/fetchBff";
@@ -39,13 +39,13 @@ function getRelativeTime(dateString: string) {
 const getEventConfig = (type: string) => {
   switch (type) {
     case "DOCUMENT":
-      return { icon: <Plus className="w-3.5 h-3.5 text-emerald-500" />, actionText: "abriu a demanda" };
+      return { icon: <Plus className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />, actionText: "abriu a demanda" };
     case "COMMENT":
-      return { icon: <MessageSquare className="w-3.5 h-3.5 text-blue-500" />, actionText: "emitiu parecer em" };
+      return { icon: <MessageSquare className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />, actionText: "emitiu parecer em" };
     case "STATUS_CHANGE":
-      return { icon: <Edit2 className="w-3.5 h-3.5 text-amber-500" />, actionText: "atualizou o status de" };
+      return { icon: <Edit2 className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />, actionText: "atualizou o status de" };
     case "REPORT":
-      return { icon: <FileText className="w-3.5 h-3.5 text-purple-500" />, actionText: "gerou relatório de" };
+      return { icon: <FileText className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />, actionText: "gerou relatório de" };
     default:
       return { icon: <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />, actionText: "interagiu com" };
   }
@@ -90,9 +90,16 @@ export function ActivityLog() {
 
       <div className="flex-1 rounded-sm border border-border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
-            <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
-            <p className="text-sm text-muted-foreground">Sincronizando atividades...</p>
+          <div className="flex-1 flex flex-col divide-y divide-border overflow-hidden" aria-busy="true">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 p-4 animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-secondary flex-shrink-0" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="h-3 w-2/3 bg-muted rounded" />
+                  <div className="h-3 w-1/3 bg-muted rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : events.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] p-6 text-center">
