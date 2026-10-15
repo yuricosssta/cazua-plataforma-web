@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { resourceService, ResourceTransaction } from "@/lib/services/resourceService";
-import { ArrowDownLeft, ArrowUpRight, RefreshCcw, Ban, AlertCircle, History, Calendar } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, RefreshCcw, Ban, AlertCircle, History, Calendar, Filter } from "lucide-react";
 
 interface TransactionHistoryProps {
   refreshKey?: number;
@@ -24,6 +24,13 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
 
   const [startDate, setStartDate] = useState(yearStart);
   const [endDate, setEndDate] = useState(today);
+  const [appliedStartDate, setAppliedStartDate] = useState(yearStart);
+  const [appliedEndDate, setAppliedEndDate] = useState(today);
+
+  const hasNonDefaultFilter = useMemo(
+    () => startDate !== yearStart || endDate !== today,
+    [startDate, endDate, yearStart, today],
+  );
 
   const currentOrg = useSelector(selectCurrentOrg);
   const orgId = typeof currentOrg?.organizationId === "object"
@@ -35,7 +42,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
       if (!orgId) return;
       try {
         setIsLoading(true);
-        const data = await resourceService.listTransactions(orgId, startDate, endDate);
+        const data = await resourceService.listTransactions(orgId, appliedStartDate, appliedEndDate);
         setTransactions(data);
         setError(null);
       } catch (err) {
@@ -47,7 +54,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
     }
 
     fetchHistory();
-  }, [orgId, refreshKey, startDate, endDate]);
+  }, [orgId, refreshKey, appliedStartDate, appliedEndDate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -163,6 +170,15 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
             )}
           </span>
         </div>
+        {hasNonDefaultFilter && (
+          <button
+            onClick={() => { setAppliedStartDate(startDate); setAppliedEndDate(endDate); }}
+            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <Filter className="w-4 h-4 inline-block mr-1.5" />
+            Filtrar
+          </button>
+        )}
       </div>
 
       <div className="w-full overflow-x-auto">
