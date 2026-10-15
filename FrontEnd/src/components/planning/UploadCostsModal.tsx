@@ -255,7 +255,7 @@ export const UploadCostsModal = ({ isOpen, onClose }: UploadCostsModalProps) => 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   required
                 />
-                <div className={`flex items-center justify-center border-2 border-dashed rounded-md p-6 transition-colors ${file ? 'border-primary bg-primary/5' : 'border-border bg-muted/20 group-hover:bg-muted/40 group-hover:border-primary/50'}`}>
+                <div className={`flex items-center justify-center border-2 border-dashed rounded-md p-6 transition-colors ${file ? 'border-primary bg-primary-bg' : 'border-border bg-muted/20 group-hover:bg-muted/40 group-hover:border-primary/50'}`}>
                   <div className="text-center">
                     {file ? (
                       <div className="flex flex-col items-center">

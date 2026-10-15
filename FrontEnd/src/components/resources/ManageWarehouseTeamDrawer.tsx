@@ -104,7 +104,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
                 const isProcessing = processingId === String(member._id || member.id);
 
                 return (
-                  <div key={member._id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isAssigned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
+                  <div key={member._id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isAssigned ? 'bg-primary-bg border-primary-border' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
                     <div className="flex items-center gap-3 overflow-hidden">
                       <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm flex-shrink-0 ${isAssigned ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                         {member.name.charAt(0).toUpperCase()}
@@ -120,7 +120,7 @@ export function ManageWarehouseTeamDrawer({ isOpen, onClose, orgId, currentAssig
                       className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors flex-shrink-0 ${isProcessing ? 'bg-muted text-muted-foreground cursor-not-allowed' :
                           isAssigned
                             ? 'bg-red-950/40 text-red-300 border-red-800 hover:bg-red-950/60 hover:text-red-200 border'
-                            : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20'
+                            : 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border border-primary-border'
                         }`}
                       title={isAssigned ? "Remover do Almoxarifado" : "Alocar no Almoxarifado"}
                     >

@@ -189,7 +189,7 @@ export function OrganizationPeople() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{member.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${member.membership.role === 'ADMIN' || member.membership.role === 'OWNER' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border border-border'}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${member.membership.role === 'ADMIN' || member.membership.role === 'OWNER' ? 'bg-primary-bg text-primary border border-primary-border' : 'bg-muted text-muted-foreground border border-border'}`}>
                         {member.membership.role}
                       </span>
                     </td>
@@ -197,7 +197,7 @@ export function OrganizationPeople() {
                       {isCurrentUserAdmin && member.membership.role !== 'OWNER' && (
                         <button
                           onClick={() => { setEditingMember(member); setEditRole(member.membership.role); }}
-                          className="text-primary hover:text-primary/80 transition-colors p-1.5 rounded-md hover:bg-primary/10 flex items-center gap-2 ml-auto text-xs font-bold"
+                          className="text-primary hover:text-primary/80 transition-colors p-1.5 rounded-md hover:bg-primary-hover-bg flex items-center gap-2 ml-auto text-xs font-bold"
                         >
                           <Settings className="w-4 h-4" /> Gerenciar
                         </button>

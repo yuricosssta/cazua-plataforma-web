@@ -106,7 +106,7 @@ export function SettingsSidebar() {
                     // href={`/account/organization/`} // Ajuste esta rota conforme sua arquitetura
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${isCurrent
-                      ? "bg-primary/10 text-primary border border-primary/20"
+                      ? "bg-primary-bg text-primary border border-primary-border"
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                       }`}
                   >

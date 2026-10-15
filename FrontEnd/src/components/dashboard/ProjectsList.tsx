@@ -294,7 +294,7 @@ export function ProjectsList() {
               >
                 {tab.icon && <tab.icon className="w-4 h-4" />}
                 {tab.label}
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary-bg text-primary" : "bg-muted text-muted-foreground"
                   }`}>
                   {tab.count}
                 </span>
@@ -437,7 +437,7 @@ export function ProjectsList() {
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
                       className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
-                        ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground'
+                        ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground'
                         : 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
                         }`}
                     >

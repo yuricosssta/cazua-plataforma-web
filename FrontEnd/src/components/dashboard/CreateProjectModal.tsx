@@ -256,10 +256,10 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
                   Localização <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1 rounded border border-primary/20">
+                  <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1 rounded border border-primary-border">
                     <MapIcon className="w-3 h-3" /> Mapa Interativo
                   </button>
-                  <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1 rounded border border-primary/20">
+                  <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary/80 flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1 rounded border border-primary-border">
                     {isGettingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />} GPS
                   </button>
                 </div>

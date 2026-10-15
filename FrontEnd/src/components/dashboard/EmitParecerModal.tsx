@@ -365,16 +365,16 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                   <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Laudo / Corpo do Parecer <span className="text-destructive">*</span></span>
 
                   <div className="flex gap-2 ml-auto">
-                    <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-1.5 rounded border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:bg-primary/10 bg-primary/5 border-primary/20'}`}>
+                    <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-1.5 rounded border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:bg-primary-hover-bg bg-primary-bg border-primary-border'}`}>
                       {isUploadingFiles ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
                       {isUploadingFiles ? 'Enviando...' : 'Anexar'}
                       <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploadingFiles} />
                     </label>
 
-                    <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1.5 rounded border border-primary/20">
+                    <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1.5 rounded border border-primary-border">
                       <MapIcon className="w-3 h-3" /> Ver Mapa
                     </button>
-                    <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 flex items-center gap-1 transition-colors bg-primary/5 px-2 py-1.5 rounded border border-primary/20">
+                    <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1.5 rounded border border-primary-border">
                       {isGettingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />} Usar GPS
                     </button>
                   </div>

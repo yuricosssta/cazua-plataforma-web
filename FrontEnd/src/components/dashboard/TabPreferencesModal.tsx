@@ -53,7 +53,7 @@ export function TabPreferencesModal({
                 key={tab.id}
                 className={`flex items-center gap-3 p-2.5 rounded-md border transition-colors cursor-pointer ${
                   isChecked 
-                    ? "border-primary/30 bg-primary/10" 
+                    ? "border-primary-border bg-primary-bg" 
                     : "border-border bg-secondary hover:bg-secondary/80"
                 } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >

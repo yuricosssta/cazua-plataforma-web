@@ -200,7 +200,7 @@ export default function MasterAdminPage() {
                                   {mem.organizationId?.name || 'Desconhecida'}
                                 </span>
                                 <div className="flex items-center justify-between">
-                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${mem.role === 'OWNER' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${mem.role === 'OWNER' ? 'bg-primary-bg text-primary' : 'bg-muted text-muted-foreground'}`}>
                                     {mem.role}
                                   </span>
                                   <span className="text-[10px] font-bold text-muted-foreground">

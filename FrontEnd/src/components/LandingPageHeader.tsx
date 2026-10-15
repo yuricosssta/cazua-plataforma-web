@@ -21,7 +21,7 @@ import { Footer } from "./Footer";
 // Componente para as Badges de Recurso
 function FeatureBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary-bg text-primary border border-primary-border">
       {children}
     </span>
   );
