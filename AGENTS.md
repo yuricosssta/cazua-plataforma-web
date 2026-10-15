@@ -37,6 +37,10 @@ Monorepo "Sistema Cazuá" (PropTech SaaS B2B): `BackEnd/` (NestJS + MongoDB) e `
 - Route groups em `src/app/`: `(auth)`, `(main)` com `account` e `dashboard/{projects,resources,planning,people,storage,marketing,master-admin}`, além de `api/` (camada BFF).
 - Env: `NEXT_PUBLIC_API_BASE_URL` (ex: http://localhost:3001), `INTERNAL_API_URL` (docker: http://backend:3001), `NEXT_PUBLIC_INITIAL_MAP_CENTER`, `NEXT_PUBLIC_ROOT_DOMAIN`.
 - `middleware.ts` reescreve subdomínios para `src/app/sites/${hostname}` (landing pages multi-tenant); `next.config.ts` usa `output: 'standalone'`.
+- Ao modificar arquivos frontend (`.html`, `.css`, `.js`, `.tsx`, `.liquid`),
+antes de concluir a tarefa, chame o subagente `belezura` passando os
+arquivos alterados para auditoria de UX. Apresente o relatório ao usuário
+e aguarde decisão antes de aplicar qualquer correção.
 
 ## Docker
 - `docker-compose.yml` raiz: backend + frontend em `app-network`, portas 3001/3000. Dev local: `docker compose up --build -d` (usa o `docker-compose.override.yml` gitignored para mounts).
