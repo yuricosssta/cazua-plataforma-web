@@ -398,7 +398,7 @@ export function ExportPdfModal({ isOpen, onClose, event, currentOrg }: ExportPdf
 
           {step === "PHOTOS" && (
             <div className="space-y-4">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/50 rounded-md bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/50 rounded-md bg-primary-bg hover:bg-primary-hover-bg cursor-pointer transition-colors">
                 <UploadCloud className="w-8 h-8 text-primary mb-2" />
                 <span className="text-sm font-semibold text-primary">Clique para anexar extras (Máx. 4)</span>
                 <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />

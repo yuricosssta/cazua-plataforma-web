@@ -67,7 +67,7 @@ export function OrgSwitcher() {
       <>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="w-full h-10 px-3 flex items-center justify-center gap-2 border border-dashed border-primary/50 text-primary hover:bg-primary/5 rounded-md text-sm font-semibold transition-colors"
+          className="w-full h-10 px-3 flex items-center justify-center gap-2 border border-dashed border-primary/50 text-primary hover:bg-primary-bg rounded-md text-sm font-semibold transition-colors"
         >
           <Plus className="w-4 h-4" /> Nova Empresa
         </button>
@@ -156,7 +156,7 @@ export function OrgSwitcher() {
               setIsOpen(false);
               setIsCreateModalOpen(true); // Abre 
             }}
-            className="w-full flex items-center justify-center gap-2 px-2 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-sm transition-colors mt-1"
+            className="w-full flex items-center justify-center gap-2 px-2 py-2 text-sm font-medium text-primary hover:bg-primary-hover-bg rounded-sm transition-colors mt-1"
           >
             <Plus className="w-4 h-4" />
             Nova Empresa

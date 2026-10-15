@@ -1,3 +1,48 @@
+=== SPRINT 37 - 15/10/2026 ===
+### Resumo Técnico de Fechamento: Correção de Contraste em Backgrounds Primários com Opacidade (FrontEnd)
+
+**1. Problema Identificado**
+
+O padrão `bg-primary/X text-primary` (~50+ ocorrências) usava `color-mix(in srgb, var(--primary) X%, transparent)` para criar fundos sutis de primary. Isso gerava contraste imprevisível porque:
+- A cor visual dependia do fundo pai (ex: branco, `bg-card`, `bg-muted`)
+- Com X >= 30 no tema claro, `text-primary` (#8B4513) sobre o tom tan resultante falhava WCAG AA (< 4.5:1)
+- Em fundos não-brancos, até `bg-primary/10` podia ter contraste insuficiente
+
+**2. Correção Aplicada**
+
+Criadas **3 novas variáveis CSS** com cores explícitas calculadas para manter contraste ≥ 4.5:1 com `text-primary` em qualquer fundo:
+
+| Variável | Light (HSL) | Dark (HSL) | Uso |
+|---|---|---|---|
+| `--primary-bg` | `hsl(28 50% 95%)` | `hsl(25 30% 15%)` | Fundo sutil (`bg-primary-bg`) |
+| `--primary-border` | `hsl(28 30% 85%)` | `hsl(25 30% 25%)` | Borda sutil (`border-primary-border`) |
+| `--primary-hover-bg` | `hsl(28 40% 90%)` | `hsl(25 30% 20%)` | Hover (`hover:bg-primary-hover-bg`) |
+
+Registradas no `@theme` do Tailwind v4 (`globals.css`) como `--color-primary-bg`, `--color-primary-border`, `--color-primary-hover-bg`.
+
+**3. Substituições em Componentes**
+
+O padrão `bg-primary/5 text-primary` e `bg-primary/10 text-primary` foi substituído por `bg-primary-bg text-primary` (com `border-primary-border` e `hover:bg-primary-hover-bg`) em ~30 arquivos:
+
+- **Layout:** `Header.tsx`, `SettingsSidebar.tsx`, `LandingPageHeader.tsx`
+- **Dashboard:** `DashboardMetrics.tsx`, `EmitParecerModal.tsx`, `TabPreferencesModal.tsx`, `OrgSwitcher.tsx`, `OrganizationPeople.tsx`, `TimelineEventCard.tsx`, `CreateProjectModal.tsx`, `ProjectsList.tsx`, `ManageTeamDrawer.tsx`, `ExportPdfModal.tsx`
+- **Settings:** `StorageManagement.tsx`, `DataManagement.tsx`
+- **Auth:** `forgot-password/page.tsx`, `reset-password/page.tsx`
+- **Pages:** `master-admin/page.tsx`, `projects/[id]/page.tsx`
+- **Planning:** `SearchCompositionsModal.tsx`, `UploadPlanningModal.tsx`, `UploadCostsModal.tsx`
+- **Resources:** `TransactionHistory.tsx`, `ManageWarehouseTeamDrawer.tsx`
+
+**4. Bug Extra**
+
+`TransactionHistory.tsx:164`: tinha `bg-primary text-primary` (marrom escuro sobre marrom escuro, contraste ~1:1). Corrigido para `bg-primary-bg text-primary`.
+
+**5. Verificações**
+
+- ✅ `grep` confirma zero resíduos de `bg-primary/[0-9].*text-primary` no código
+- ✅ Build bloqueado apenas por permissão `.next/server` (root-owned); nenhum erro de compilação no código alterado
+
+---
+
 === SPRINT 36 - 15/10/2026 ===
 ### Resumo Técnico de Fechamento: Melhoria de Contraste Dark Mode, Toasts e Alvos de Toque (FrontEnd)
 

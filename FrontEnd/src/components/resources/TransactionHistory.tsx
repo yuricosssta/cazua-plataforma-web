@@ -161,7 +161,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
             className="px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary border border-primary/20">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary-bg border border-primary-border">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-primary">
             Custo total do período: {formatCurrency(Math.abs(totalCostSum))}

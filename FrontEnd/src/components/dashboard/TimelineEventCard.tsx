@@ -101,7 +101,7 @@ export function TimelineEventCard({ event, isLatest, onExportPdf }: TimelineEven
                       setIsMenuOpen(false);
                       onExportPdf(event);
                     }}
-                    className="w-full text-left px-4 py-2 text-sm font-semibold text-foreground hover:bg-primary/10 hover:text-primary flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm font-semibold text-foreground hover:bg-primary-hover-bg hover:text-primary flex items-center gap-2 transition-colors"
                   >
                     <FileDown className="w-4 h-4" />
                     Exportar para PDF

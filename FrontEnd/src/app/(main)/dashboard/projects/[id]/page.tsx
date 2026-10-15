@@ -170,7 +170,7 @@ export default function ProjectDetailsPage() {
                 <Users className="w-4 h-4" /> Equipe
               </button>
             )}
-            <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-primary/20' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
+            <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border-primary-border' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
             <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>

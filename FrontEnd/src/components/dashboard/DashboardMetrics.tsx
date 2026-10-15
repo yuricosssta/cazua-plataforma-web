@@ -106,7 +106,7 @@ export function DashboardMetrics() {
         
         <Link href="/dashboard/projects?tab=ALL" className="bg-card border border-border p-4 rounded-sm shadow-sm hover:border-primary/50 hover:shadow-md transition-all block group">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-md group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
+            <div className="p-2 bg-primary-bg text-primary rounded-md group-hover:bg-primary group-hover:text-primary-foreground transition-colors"><FileText className="w-4 h-4" /></div>
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Total</span>
           </div>
           <div className="text-3xl font-black text-foreground">{totalDemandas}</div>
@@ -137,7 +137,7 @@ export function DashboardMetrics() {
         </Link>
 
         <Link href="/dashboard/projects?tab=MINE" className="bg-card border border-primary/20 p-4 rounded-sm shadow-sm md:col-span-2 flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-all cursor-pointer">
-          <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+          <div className="absolute inset-0 bg-primary-bg group-hover:bg-primary-hover-bg transition-colors" />
           <div className="relative z-10">
             <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Meus Projetos (Alocado)</div>
             <div className="text-sm text-muted-foreground">Projetos onde você faz parte da equipe técnica.</div>

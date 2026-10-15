@@ -129,7 +129,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                                 const isProcessing = processingId === member._id;
 
                                 return (
-                                    <div key={member._id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isAssigned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
+                                    <div key={member._id} className={`flex items-center justify-between p-3 rounded-md border transition-colors ${isAssigned ? 'bg-primary-bg border-primary-border' : 'bg-card border-border hover:border-muted-foreground/30'}`}>
 
                                         {/* Info do Usuário */}
                                         <div className="flex items-center gap-3 overflow-hidden">
@@ -149,7 +149,7 @@ export function ManageTeamDrawer({ isOpen, onClose, orgId, projectId, currentAss
                                             className={`flex items-center justify-center w-9 h-9 rounded-md transition-colors flex-shrink-0 ${isProcessing ? 'bg-muted text-muted-foreground cursor-not-allowed' :
                                                     isAssigned
                                                         ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-950/60 dark:hover:text-red-200 border border-red-100'
-                                                        : 'bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20'
+                                                        : 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border border-primary-border'
                                                 }`}
                                             title={isAssigned ? "Remover do Projeto" : "Alocar no Projeto"}
                                         >

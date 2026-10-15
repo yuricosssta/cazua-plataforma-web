@@ -195,7 +195,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                       <span className="text-sm font-bold text-foreground">
                         {composition.codigoComposicao}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary uppercase font-bold rounded-sm tracking-wider">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-primary-bg text-primary uppercase font-bold rounded-sm tracking-wider">
                         {composition.grupo}
                       </span>
                       {composition.isGlobal ? (

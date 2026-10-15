@@ -92,7 +92,7 @@ export function Header() {
           {displayUser?.avatarUrl ? (
             <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
-            <div className="flex items-center justify-center w-full h-full bg-primary/10 text-primary font-bold text-xs uppercase">
+            <div className="flex items-center justify-center w-full h-full bg-primary-bg text-primary font-bold text-xs uppercase">
               {displayUser?.name ? displayUser.name.charAt(0) : <User className="w-4 h-4" />}
             </div>
           )}

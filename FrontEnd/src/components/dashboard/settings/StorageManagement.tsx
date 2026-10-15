@@ -170,7 +170,7 @@ export function StorageManagement() {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-md ${isNearLimit ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`p-2 rounded-md ${isNearLimit ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400' : 'bg-primary-bg text-primary'}`}>
                             <HardDrive className="w-6 h-6" />
                         </div>
                         <div>

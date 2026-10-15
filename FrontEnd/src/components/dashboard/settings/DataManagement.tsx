@@ -227,7 +227,7 @@ export function DataManagement() {
             <div className="flex-1 overflow-y-auto bg-muted/10">
               {!isImporting ? (
                 <div className="p-10 flex flex-col items-center justify-center text-center space-y-6 h-full min-h-[400px]">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-2 border border-primary/20">
+                  <div className="w-16 h-16 bg-primary-bg rounded-full flex items-center justify-center text-primary mb-2 border border-primary-border">
                     <Upload className="w-8 h-8" />
                   </div>
                   <div className="max-w-md">
@@ -316,7 +316,7 @@ export function DataManagement() {
                             <td className="px-3 py-2 text-center">
                               <button
                                 onClick={() => toggleVerify(idx)}
-                                className={`h-8 px-3 rounded-sm text-xs font-bold flex items-center justify-center gap-1.5 transition-all w-24 mx-auto border ${row.isVerified ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-background text-muted-foreground hover:bg-primary/10 hover:border-primary/50 hover:text-primary border-border'}`}
+                                className={`h-8 px-3 rounded-sm text-xs font-bold flex items-center justify-center gap-1.5 transition-all w-24 mx-auto border ${row.isVerified ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-background text-muted-foreground hover:bg-primary-hover-bg hover:border-primary-border hover:text-primary border-border'}`}
                               >
                                 {row.isVerified ? <><CheckCircle2 className="w-3.5 h-3.5" /> Ok</> : 'Conferir'}
                               </button>

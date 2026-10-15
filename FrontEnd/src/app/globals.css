@@ -16,6 +16,10 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 
+  --color-primary-bg: var(--primary-bg);
+  --color-primary-border: var(--primary-border);
+  --color-primary-hover-bg: var(--primary-hover-bg);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
 
@@ -99,6 +103,10 @@
     /* #8B4513 */
     --primary-foreground: hsl(0 0% 98%);
 
+    --primary-bg: hsl(28 50% 95%);
+    --primary-border: hsl(28 30% 85%);
+    --primary-hover-bg: hsl(28 40% 90%);
+
     --secondary: hsl(20 14% 96%);
     /* Stone 100 */
     --secondary-foreground: hsl(20 14.3% 9%);
@@ -135,6 +143,10 @@
     --primary: hsl(25 76% 50%);
     /* Marrom mais claro no dark mode */
     --primary-foreground: hsl(20 14.3% 4.1%);
+
+    --primary-bg: hsl(25 30% 15%);
+    --primary-border: hsl(25 30% 25%);
+    --primary-hover-bg: hsl(25 30% 20%);
 
     --secondary: hsl(20 6% 15%);
     --secondary-foreground: hsl(20 14.3% 98%);
