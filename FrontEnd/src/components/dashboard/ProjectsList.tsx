@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Lock, Search, UserCircle, ArrowUpDown, SlidersHorizontal, PauseCircle
+  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Lock, Search, UserCircle, ArrowUpDown, ChevronDown, SlidersHorizontal, PauseCircle
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
@@ -15,6 +15,10 @@ import { MapViewerModal } from "../ui/MapViewer";
 import { ProjectStatus, Project, TabType } from "@/types/project";
 import { listProjects } from "@/lib/services/projectService";
 import { TabPreferencesModal } from "./TabPreferencesModal";
+
+import { getStatusConfig, getPriorityConfig } from "@/lib/projectConfig";
+import { getOrgId, isUserAssigned } from "@/lib/projectHelpers";
+import { Badge } from "./Badge";
 
 export function ProjectsList() {
   const router = useRouter();
@@ -31,24 +35,17 @@ export function ProjectsList() {
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  // Array atualizado com o novo status
-  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD"];
+  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD", "INVALID"];
   const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
 
   const currentOrg = useSelector(selectCurrentOrg);
   const user = useSelector((state: RootState) => state.auth.user);
 
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;
+  const orgId = getOrgId(currentOrg);
 
-  const getOrgId = (): string => {
-    if (!currentOrg?.organizationId) return "";
-    if (typeof currentOrg.organizationId === "object" && "_id" in currentOrg.organizationId) {
-      return (currentOrg.organizationId as any)._id;
-    }
-    return currentOrg.organizationId as string;
-  };
-  const orgId = getOrgId();
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
 
@@ -90,6 +87,7 @@ export function ProjectsList() {
 
     try {
       setIsLoading(true);
+      setHasError(false);
 
       const rawData = await listProjects(orgId);
 
@@ -128,6 +126,7 @@ export function ProjectsList() {
       setProjects(formattedProjects);
     } catch (error) {
       console.error("Erro ao buscar projetos:", error);
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -146,19 +145,8 @@ export function ProjectsList() {
     }
   }, [urlTab]);
 
-  const isUserAssigned = (assignedMembers: any[]) => {
-    const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
-    if (!currentUserId || currentUserId === "undefined") return false;
-
-    return assignedMembers?.some((m: any) => {
-      if (typeof m === 'string') return m === currentUserId;
-      if (m && typeof m === 'object') return String(m._id || m.id || "") === currentUserId;
-      return false;
-    });
-  };
-
   const counts = {
-    MINE: projects.filter(p => isUserAssigned(p.assignedMembers || [])).length,
+    MINE: projects.filter(p => isUserAssigned(p.assignedMembers || [], userId)).length,
     ALL: projects.length,
     DEMAND: projects.filter(p => p.status === "DEMAND").length,
     PLANNING: projects.filter(p => p.status === "PLANNING").length,
@@ -171,7 +159,7 @@ export function ProjectsList() {
   const filteredProjects = projects.filter((p) => {
     let matchesTab = false;
     if (activeTab === "ALL") matchesTab = true;
-    else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || []);
+    else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || [], userId);
     else matchesTab = p.status === activeTab;
 
     const term = searchTerm.toLowerCase();
@@ -191,26 +179,6 @@ export function ProjectsList() {
       default: return 0;
     }
   });
-
-  const getStatusConfig = (status: ProjectStatus) => {
-    switch (status) {
-      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary-500 dark:text-primary-400", bg: "bg-primary-500/10" };
-      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-500/10" };
-      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-600/10" };
-      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-500/10" };
-      case "ON_HOLD": return { label: "Paralisada", icon: PauseCircle, color: "text-stone-50", bg: "bg-stone-800 dark:bg-stone-700 border border-stone-900 dark:border-stone-600" };
-      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted" };
-      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
-    }
-  };
-
-  const getPriorityConfig = (score?: number) => {
-    if (!score) return null;
-    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-600 dark:text-red-400", bg: "bg-red-600/10 border-red-200 dark:border-red-900" };
-    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-primary-600 dark:text-primary-400", bg: "bg-primary-600/10 border-primary-200 dark:border-primary-900" };
-    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-600/10 border-blue-200 dark:border-blue-900" };
-    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-600/10 border-emerald-200 dark:border-emerald-900" };
-  };
 
   const allTabsConfig = [
     { id: "MINE", label: "Minhas", icon: UserCircle, count: counts.MINE },
@@ -256,7 +224,7 @@ export function ProjectsList() {
             placeholder="Buscar por código, título ou local..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm transition-all"
+            className="flex h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm transition-all"
           />
         </div>
 
@@ -264,10 +232,14 @@ export function ProjectsList() {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
           </div>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </div>
           <select
+            aria-label="Ordenar projetos"
             value={sortBy}
             onChange={(e: any) => setSortBy(e.target.value)}
-            className="flex h-10 w-full md:w-[220px] rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm appearance-none cursor-pointer"
+            className="flex h-11 w-full md:w-[220px] rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm appearance-none cursor-pointer"
           >
             <option value="PRIORITY_DESC">Maior Prioridade</option>
             <option value="PRIORITY_ASC">Menor Prioridade</option>
@@ -279,14 +251,14 @@ export function ProjectsList() {
 
       {/* NAVEGAÇÃO POR ABAS + BOTÃO DE CONFIGURAÇÃO */}
       <div className="flex items-center border-b border-border">
-        <div className="flex space-x-1 overflow-x-auto pb-[-1px] scrollbar-hide flex-1">
+        <div className="tab-rail flex space-x-1 flex-1">
           {tabsToRender.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
+                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"
                   }`}
@@ -304,7 +276,7 @@ export function ProjectsList() {
         
         <button
           onClick={() => setIsPreferencesModalOpen(true)}
-          className="ml-2 p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors border border-transparent hover:border-border"
+          className="ml-2 p-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors border border-transparent hover:border-border"
           title="Configurar visibilidade das abas"
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -313,7 +285,19 @@ export function ProjectsList() {
 
       {/* Lista de Cards */}
       <div className="flex flex-col space-y-4">
-        {isLoading ? (
+        {hasError ? (
+          <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center gap-3">
+            <AlertCircle className="w-10 h-10 text-destructive" />
+            <p className="text-card-foreground font-semibold">Erro ao carregar projetos.</p>
+            <p className="text-muted-foreground text-sm">Verifique sua conexão e tente novamente.</p>
+            <button
+              onClick={fetchProjects}
+              className="bg-primary text-primary-foreground px-4 py-2.5 min-h-11 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : isLoading ? (
           <div className="flex flex-col space-y-4" aria-busy="true">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="bg-card border border-border rounded-md p-5 shadow-sm animate-pulse space-y-3">
@@ -340,10 +324,8 @@ export function ProjectsList() {
         ) : (
           filteredProjects.map((project) => {
             const statusConfig = getStatusConfig(project.status);
-            const StatusIcon = statusConfig.icon;
             const priorityConfig = getPriorityConfig(project.priorityScore);
-            const PriorityIcon = priorityConfig?.icon;
-            const hasPermission = isOrgAdmin || isUserAssigned(project.assignedMembers || []);
+            const hasPermission = isOrgAdmin || isUserAssigned(project.assignedMembers || [], userId);
 
             return (
               <div
@@ -377,16 +359,10 @@ export function ProjectsList() {
                   </div>
 
                   <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                    <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {statusConfig.label}
-                    </span>
+                    <Badge icon={statusConfig.icon} label={statusConfig.label} color={statusConfig.color} bg={statusConfig.bg} />
 
-                    {priorityConfig && PriorityIcon && (
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold ${priorityConfig.bg} ${priorityConfig.color}`}>
-                        <PriorityIcon className="w-3 h-3" />
-                        {priorityConfig.label}
-                      </span>
+                    {priorityConfig && (
+                      <Badge icon={priorityConfig.icon} label={priorityConfig.label} color={priorityConfig.color} bg={priorityConfig.bg} />
                     )}
                   </div>
                 </div>
@@ -435,7 +411,7 @@ export function ProjectsList() {
                         }
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
-                      className={`w-full py-2 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
+                      className={`w-full py-2.5 min-h-11 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
                         ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground'
                         : 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
                         }`}

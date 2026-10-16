@@ -41,6 +41,35 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
+  /* --- Status & Priority Badges --- */
+  --color-st-planning: var(--st-planning);
+  --color-st-planning-bg: var(--st-planning-bg);
+  --color-st-planning-border: var(--st-planning-border);
+  --color-st-execution: var(--st-execution);
+  --color-st-execution-bg: var(--st-execution-bg);
+  --color-st-execution-border: var(--st-execution-border);
+  --color-st-completed: var(--st-completed);
+  --color-st-completed-bg: var(--st-completed-bg);
+  --color-st-completed-border: var(--st-completed-border);
+  --color-st-onhold: var(--st-onhold);
+  --color-st-onhold-bg: var(--st-onhold-bg);
+  --color-st-onhold-border: var(--st-onhold-border);
+  --color-st-critical: var(--st-critical);
+  --color-st-critical-bg: var(--st-critical-bg);
+  --color-st-critical-border: var(--st-critical-border);
+  --color-pri-critical: var(--pri-critical);
+  --color-pri-critical-bg: var(--pri-critical-bg);
+  --color-pri-critical-border: var(--pri-critical-border);
+  --color-pri-high: var(--pri-high);
+  --color-pri-high-bg: var(--pri-high-bg);
+  --color-pri-high-border: var(--pri-high-border);
+  --color-pri-medium: var(--pri-medium);
+  --color-pri-medium-bg: var(--pri-medium-bg);
+  --color-pri-medium-border: var(--pri-medium-border);
+  --color-pri-low: var(--pri-low);
+  --color-pri-low-bg: var(--pri-low-bg);
+  --color-pri-low-border: var(--pri-low-border);
+
   /* --- Font Family --- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
@@ -126,6 +155,37 @@
     --input: hsl(20 5.9% 80%);
     --ring: hsl(25 76% 31%);
 
+    /* Status badges (light theme) */
+    --st-planning: hsl(221 83% 43%);
+    --st-planning-bg: hsl(214 100% 94%);
+    --st-planning-border: hsl(214 75% 83%);
+    --st-execution: hsl(25 100% 28%);
+    --st-execution-bg: hsl(48 100% 90%);
+    --st-execution-border: hsl(25 80% 72%);
+    --st-completed: hsl(160 84% 26%);
+    --st-completed-bg: hsl(152 81% 91%);
+    --st-completed-border: hsl(156 72% 79%);
+    --st-onhold: hsl(20 3% 27%);
+    --st-onhold-bg: hsl(24 6% 83%);
+    --st-onhold-border: hsl(30 4% 60%);
+    --st-critical: hsl(0 72% 42%);
+    --st-critical-bg: hsl(0 86% 94%);
+    --st-critical-border: hsl(0 78% 84%);
+
+    /* Priority badges (light theme) — muted vs status */
+    --pri-critical: hsl(0 70% 35%);
+    --pri-critical-bg: hsl(0 60% 96%);
+    --pri-critical-border: hsl(0 55% 82%);
+    --pri-high: hsl(25 76% 31%);
+    --pri-high-bg: hsl(28 50% 95%);
+    --pri-high-border: hsl(28 30% 85%);
+    --pri-medium: hsl(215 50% 40%);
+    --pri-medium-bg: hsl(215 40% 96%);
+    --pri-medium-border: hsl(215 40% 85%);
+    --pri-low: hsl(145 40% 33%);
+    --pri-low-bg: hsl(145 40% 96%);
+    --pri-low-border: hsl(145 40% 85%);
+
     --radius: 0.25rem;
   }
 
@@ -163,6 +223,37 @@
     --border: hsl(20 5.9% 15%);
     --input: hsl(20 5.9% 15%);
     --ring: hsl(25 76% 50%);
+
+    /* Status badges (dark theme) */
+    --st-planning: hsl(213 98% 73%);
+    --st-planning-bg: hsl(215 50% 15%);
+    --st-planning-border: hsl(215 25% 30%);
+    --st-execution: hsl(33 100% 60%);
+    --st-execution-bg: hsl(30 50% 15%);
+    --st-execution-border: hsl(30 30% 28%);
+    --st-completed: hsl(156 72% 67%);
+    --st-completed-bg: hsl(152 40% 12%);
+    --st-completed-border: hsl(152 25% 25%);
+    --st-onhold: hsl(20 3% 60%);
+    --st-onhold-bg: hsl(24 5% 18%);
+    --st-onhold-border: hsl(24 4% 28%);
+    --st-critical: hsl(0 78% 65%);
+    --st-critical-bg: hsl(0 50% 15%);
+    --st-critical-border: hsl(0 30% 28%);
+
+    /* Priority badges (dark theme) */
+    --pri-critical: hsl(0 78% 65%);
+    --pri-critical-bg: hsl(0 50% 12%);
+    --pri-critical-border: hsl(0 30% 28%);
+    --pri-high: hsl(25 76% 65%);
+    --pri-high-bg: hsl(25 30% 12%);
+    --pri-high-border: hsl(25 25% 28%);
+    --pri-medium: hsl(215 70% 65%);
+    --pri-medium-bg: hsl(215 30% 12%);
+    --pri-medium-border: hsl(215 25% 28%);
+    --pri-low: hsl(145 50% 60%);
+    --pri-low-bg: hsl(145 30% 12%);
+    --pri-low-border: hsl(145 25% 28%);
   }
 
   * {
@@ -174,8 +265,22 @@
   }
 }
 
-.bottom-0 {
-  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2;
+@layer components {
+  .action-bar {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2 w-full sm:w-auto self-start gap-2;
+  }
+
+  .tab-rail {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  }
+
+  .tab-rail::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* --- Loader --- */
