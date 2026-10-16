@@ -1,14 +1,17 @@
 //src/app/(main)/dashboard/projects/[id]/page.tsx
 "use client";
-
+ 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import { getProjectDetails, apiRemoveMember } from "@/lib/services/projectService";
-import { ProjectStatus, TimelineEventType, Project } from "@/types/project";
+import { TimelineEventType, Project } from "@/types/project";
+import { getStatusConfig, getPriorityConfig } from "@/lib/projectConfig";
+import { getOrgId, getUserSub, isUserAssigned } from "@/lib/projectHelpers";
 import { TimelineEventCard } from "@/components/dashboard/TimelineEventCard";
+import { Badge } from "@/components/dashboard/Badge";
 import { ExportPdfModal } from "@/components/dashboard/ExportPdfModal";
 import { EmitParecerModal } from '@/components/dashboard/EmitParecerModal';
 import { ManageTeamDrawer } from "@/components/dashboard/ManageTeamDrawer";
@@ -16,7 +19,7 @@ import { MapViewerModal } from "@/components/ui/MapViewer";
 import { ProjectResourcesTab } from "@/components/resources/ProjectResourcesTab";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
-  Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package
+  Loader2, Users, LogOut, FolderKanban, Package, Activity
 } from "lucide-react";
 import { ProjectCostTab } from "@/components/resources/ProjectCostTab";
 import { toast } from 'sonner';
@@ -41,19 +44,14 @@ export default function ProjectDetailsPage() {
   const currentOrg = useSelector(selectCurrentOrg);
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
+  const orgId = getOrgId(currentOrg);
+  const currentUserId = getUserSub(user);
+  const currentUserName = user?.name || (user as any)?.displayName || "Usuário";
 
   const [activeTab, setActiveTab] = useState<DetailTabType>("TIMELINE");
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
   const [pdfEventTarget, setPdfEventTarget] = useState<any>(null);
 
-  const getOrgId = (): string => {
-    if (!currentOrg?.organizationId) return "";
-    if (typeof currentOrg.organizationId === "object" && "_id" in currentOrg.organizationId) {
-      return (currentOrg.organizationId as any)._id;
-    }
-    return currentOrg.organizationId as string;
-  };
-  const orgId = getOrgId();
 
   const [project, setProject] = useState<Project | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -81,16 +79,9 @@ export default function ProjectDetailsPage() {
     fetchDetails(true);
   }, [orgId, token, projectId]);
 
-  const currentUserId = String(user?.sub || (user as any)?._id || (user as any)?.id || "");
-  const currentUserName = user?.name || (user as any)?.displayName || "Usuário";
-
-  const isAssigned = project?.assignedMembers?.some((m: any) => {
-    if (typeof m === 'string') return m === currentUserId;
-    if (m && typeof m === 'object') return String(m._id || m.id || "") === currentUserId;
-    return false;
-  }) || false;
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
+  const isAssigned = isUserAssigned(project?.assignedMembers, currentUserId);
   const hasPermission = isOrgAdmin || isAssigned;
 
   const handleLeaveProject = async () => {
@@ -104,24 +95,6 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const getStatusConfig = (status: ProjectStatus) => {
-    switch (status) {
-      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary-600 dark:text-primary-400", bg: "bg-primary-100 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800" };
-      case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" };
-      case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800" };
-      case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800" };
-      case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
-      default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
-    }
-  };
-
-  const getPriorityConfig = (score?: number) => {
-    if (!score) return { label: "Sem Prioridade", icon: Clock, color: "text-muted-foreground", bg: "bg-transparent border-dashed border-border" };
-    if (score >= 100) return { label: `Crítica (${score})`, icon: Flame, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800" };
-    if (score >= 60) return { label: `Alta (${score})`, icon: Activity, color: "text-primary-700 dark:text-primary-400", bg: "bg-primary-50 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800" };
-    if (score >= 30) return { label: `Média (${score})`, icon: AlertCircle, color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" };
-    return { label: `Baixa (${score})`, icon: CheckCircle, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800" };
-  };
 
   if (isLoading || !project) {
     return (
@@ -134,8 +107,6 @@ export default function ProjectDetailsPage() {
 
   const statusConfig = getStatusConfig(project.status);
   const priorityConfig = getPriorityConfig(project.priorityScore);
-  const StatusIcon = statusConfig.icon;
-  const PriorityIcon = priorityConfig.icon;
 
   return (
     <div className="max-w-5xl mx-auto w-full flex flex-col space-y-6 text-foreground pb-24 relative min-h-screen">
@@ -144,7 +115,7 @@ export default function ProjectDetailsPage() {
       <div className="flex flex-col gap-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <button onClick={() => router.push("/dashboard/projects")} className="mt-1.5 p-2 rounded-full hover:bg-muted text-muted-foreground shrink-0">
+            <button onClick={() => router.push("/dashboard/projects")} className="mt-1.5 p-3 rounded-full hover:bg-muted text-muted-foreground shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
@@ -166,18 +137,18 @@ export default function ProjectDetailsPage() {
 
           <div className="flex flex-wrap items-center gap-2 ml-14 md:ml-0">
             {isOrgAdmin && (
-              <button onClick={() => setIsTeamDrawerOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold border border-border">
+              <button onClick={() => setIsTeamDrawerOpen(true)} className="flex items-center gap-1.5 px-3 py-2 min-h-11 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold border border-border">
                 <Users className="w-4 h-4" /> Equipe
               </button>
             )}
-            <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border-primary-border' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
+            <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border-primary-border' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
-            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
+            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} RDO
             </button>
-            {isAssigned && (
-              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/60 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
+            {isUserAssigned(project?.assignedMembers, currentUserId) && (
+              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 min-h-11 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/60 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
                 <LogOut className="w-4 h-4" /> Sair
               </button>
             )}
@@ -185,12 +156,8 @@ export default function ProjectDetailsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-md p-3 shadow-sm ml-0 md:ml-12">
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color}`}>
-            <StatusIcon className="w-4 h-4" /> {statusConfig.label}
-          </div>
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold uppercase tracking-wider ${priorityConfig.bg} ${priorityConfig.color}`}>
-            <PriorityIcon className="w-4 h-4" /> {priorityConfig.label}
-          </div>
+          <Badge icon={statusConfig.icon} label={statusConfig.label} color={statusConfig.color} bg={statusConfig.bg} size="md" />
+          <Badge icon={priorityConfig.icon} label={priorityConfig.label} color={priorityConfig.color} bg={priorityConfig.bg} size="md" />
           {(project.status === "EXECUTION" || project.status === "COMPLETED") && (
             <div className="flex-1 min-w-[150px] flex items-center gap-3 pl-3 md:pl-6 border-l border-border">
               <span className="text-xs font-bold whitespace-nowrap">{project.progress}% Físico</span>

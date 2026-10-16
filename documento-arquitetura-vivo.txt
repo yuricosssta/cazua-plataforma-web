@@ -1,3 +1,39 @@
+=== SPRINT 38 - 16/10/2026 ===
+### Resumo Técnico de Fechamento: Correção de Congelamento do VSCode ao Salvar com Docker (Dev Infra)
+
+**1. Problema Identificado**
+
+O VSCode travava (congelava a thread de UI) a cada salvamento de arquivo no ambiente Docker de dev. Causa raiz: combinação de **bind mounts** (`./BackEnd:/app`, `./FrontEnd:/app` no `docker-compose.override.yml`) com hot reload. Ao salvar, o watcher do container recompilava e o `nest start --watch` escrevia o output em `BackEnd/dist` — visível ao host — gerando rajadas de eventos de filesystem reprocessadas pelo File Watcher do VSCode (explorer, git, search), travando a UI. (Limites de inotify do host já eram altos — 1M watchers — e foram descartados como causa.)
+
+**2. Correções Aplicadas (Decisão Final — Pitfall do Volume Anônimo)**
+
+| Camada | Arquivo | Mudança |
+|---|---|---|
+| **VSCode** | `.vscode/settings.json` *(novo)* | `files.watcherExclude` para `node_modules`, `dist`, `.next`, `.git` + `search.followSymlinks: false`. O VSCode para de reagir ao churn de arquivos do hot reload. **Correção suficiente por si só** para o congelamento. |
+| **Backend CLI** | `BackEnd/nest-cli.json` | Mantido `deleteOutDir: true` (limpeza automática do `dist/` a cada startup, sem acumular órfãos). |
+
+**3. Caminho Descartado (Pitfall Documentado)**
+
+Tentativa intermediária de blindar o host com volume anônimo `/app/dist` no `docker-compose.override.yml` + `deleteOutDir: false` no `nest-cli.json`:
+
+- **EBUSY no startup:** o Nest executava `rm -rf /app/dist` (por `deleteOutDir: true`) e falhava com `EBUSY: resource busy or locked, rmdir '/app/dist'` — ponto de montagem de volume não pode ser removido de dentro do container → crash-loop.
+- **Correção do EBUSY criou órfãos:** com `deleteOutDir: false`, módulos renomeados/excluídos deixavam `.js` fantasmas em `dist/`. Como `dist` virou volume anônimo, a limpeza não era possível pela pasta do host (apenas via `docker compose exec backend sh -c 'rm -rf dist/*'`).
+- **Revertido (item 2):** o volume anônimo foi removido e `deleteOutDir: true` restaurado. A blindagem contra o VSCode passou a ser responsabilidade exclusiva do `files.watcherExclude`.
+
+**4. Alternativas Avaliadas e Não Adotadas**
+
+- **Polling** (`CHOKIDAR_USEPOLLING=true` / `WATCHPACK_POLLING=true`): converte eventos do kernel em leitura em intervalo fixo — consome CPU contínua sem necessidade real (o churn vinha do watcher do VSCode, não do watcher interno).
+- **tmpfs no `dist`** (`type: tmpfs`): mesmo efeito de blindagem do host com órfãos zerados a cada restart, mas recompila tudo a cada reinício e consome RAM proporcional ao `dist`; sem vantagem frente ao item 2.
+
+**5. Verificações**
+
+- ✅ `docker compose up -d backend` — container sobe sem EBUSY
+- ✅ `deleteOutDir: true` efetivo — `dist/` é limpo a cada startup (sem acumuição de órfãos)
+- ✅ Hot reload funcional: recompilação disparada por salvamento → "Found 0 errors. Watching for file changes" → app inicia e mapeia rotas
+- ✅ Trade-off do item 2: `dist/` volta a ser escrito no disco do host (I/O), mas o `files.watcherExclude` impede o VSCode de reprocessar esse churn
+
+---
+
 === SPRINT 37 - 15/10/2026 ===
 ### Resumo Técnico de Fechamento: Correção de Contraste em Backgrounds Primários com Opacidade (FrontEnd)
 
