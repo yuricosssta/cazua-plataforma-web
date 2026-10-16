@@ -29,6 +29,10 @@ interface EmitParecerModalProps {
   project: Project | null;
 }
 
+const MAP_PIN_ICON_SRC = "data:image/svg+xml;utf8," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B4513" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>'
+);
+
 const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
   { value: "DEMAND", label: "Demanda" },
   { value: "PLANNING", label: "Planejamento" },
@@ -70,7 +74,17 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   const vectorSource = useRef<VectorSource | null>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting && !isUploadingFiles) onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, isSubmitting, isUploadingFiles]);
+
+  useEffect(() => {
     if (isOpen && project && projectId) {
+      setShowMap(false);
       setNewStatus(project.status);
 
       const draftKey = `draft_parecer_${projectId}`;
@@ -106,7 +120,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
       const vectorLayer = new VectorLayer({
         source: vectorSource.current,
         style: new Style({
-          image: new Icon({ anchor: [0.5, 1], src: 'https://cdn-icons-png.flaticon.com/512/2776/2776067.png', scale: 0.06 }),
+          image: new Icon({ anchor: [0.5, 1], src: MAP_PIN_ICON_SRC, scale: 1.6 }),
         }),
       });
 
@@ -140,12 +154,12 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
     }
 
     return () => {
-      if (mapInstance.current && !showMap) {
+      if (mapInstance.current && (!showMap || !isOpen)) {
         mapInstance.current.setTarget(undefined);
         mapInstance.current = null;
       }
     };
-  }, [showMap, location]);
+  }, [showMap, location, isOpen]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) return toast.warning("Seu navegador não suporta geolocalização.");
@@ -191,7 +205,19 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   };
 
   const removeAttachment = (indexToRemove: number) => {
+    const removed = attachments[indexToRemove];
+    if (removed === undefined) return;
     setAttachments(prev => prev.filter((_, i) => i !== indexToRemove));
+    toast("Anexo removido", {
+      action: {
+        label: "Desfazer",
+        onClick: () => setAttachments(prev => {
+          const next = [...prev];
+          next.splice(Math.min(indexToRemove, next.length), 0, removed);
+          return next;
+        }),
+      },
+    });
   };
 
   if (!isOpen || !project || !projectId) return null;
@@ -247,11 +273,11 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
         <label className="text-sm font-semibold text-foreground">{label}</label>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{description}</span>
       </div>
-      <div className="flex justify-between gap-1.5">
+      <div className="flex justify-between gap-2">
         {[1, 2, 3, 4, 5].map((num) => (
           <button
             key={num} type="button" onClick={() => onChange(num)}
-            className={`flex-1 py-2 rounded-md text-sm font-bold transition-all border ${value === num ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
+            className={`flex-1 py-2.5 min-h-11 rounded-md text-sm font-bold transition-all border ${value === num ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}
           >
             {num}
           </button>
@@ -261,8 +287,8 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-6">
-      <div className={`bg-background w-full h-full md:h-[95vh] rounded-none md:rounded-md shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 transition-all ${showMap ? 'md:max-w-4xl' : 'md:max-w-7xl'}`}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-6" onClick={() => { if (!isSubmitting && !isUploadingFiles) onClose(); }}>
+      <div className={`bg-background w-full h-full md:h-[95vh] rounded-none md:rounded-md shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 transition-all ${showMap ? 'md:max-w-4xl' : 'md:max-w-7xl'}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card flex-shrink-0">
           <div>
@@ -274,7 +300,7 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
               Demanda: <span className="font-medium text-foreground">{project.title}</span>
             </p>
           </div>
-          <button onClick={() => showMap ? setShowMap(false) : onClose()} className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button onClick={() => showMap ? setShowMap(false) : onClose()} aria-label="Fechar" className="p-2.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -315,12 +341,12 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
                 {isPlanningMode && (
                   <div className="space-y-4 pt-4 border-t border-border animate-in fade-in slide-in-from-top-2">
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-3 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    <div className="bg-st-planning-bg border border-st-planning-border rounded-md p-3 text-sm text-st-planning font-medium">
                       Para transferir esta demanda para o Backlog da Engenharia, defina o Escopo Técnico.
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                        <Briefcase className="w-4 h-4 text-muted-foreground" /> Nome Técnico do Projeto <span className="text-destructive">*</span>
+                        <Briefcase className="w-4 h-4 text-muted-foreground" /> Nome Técnico do Projeto <span className="text-st-critical">*</span>
                       </label>
                       <input type="text" required placeholder="Ex: Reforma Estrutural da Cobertura..." value={technicalTitle} onChange={(e) => setTechnicalTitle(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" />
                     </div>
@@ -339,16 +365,16 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
 
                 <div className="space-y-4 pt-4 border-t border-border">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
-                    <input type="checkbox" className="w-4 h-4 rounded border-input text-primary focus:ring-ring accent-primary cursor-pointer bg-background" checked={updateGUT} onChange={(e) => setUpdateGUT(e.target.checked)} />
+                    <input type="checkbox" className="w-4 h-4 rounded-md border-input text-primary focus:ring-ring accent-primary cursor-pointer bg-background" checked={updateGUT} onChange={(e) => setUpdateGUT(e.target.checked)} />
                     <span className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Flame className={`w-4 h-4 ${updateGUT ? 'text-primary-500' : 'text-muted-foreground'}`} /> Alterar Prioridade (GUT)
+                      <Flame className={`w-4 h-4 ${updateGUT ? 'text-primary' : 'text-muted-foreground'}`} /> Alterar Prioridade (GUT)
                     </span>
                   </label>
                   {updateGUT && (
                     <div className="space-y-5 bg-background border border-border rounded-md p-4 animate-in fade-in slide-in-from-top-2">
                       <div className="flex justify-between items-center pb-2 mb-2 border-b border-dashed border-border">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Nova prioridade</span>
-                        <p className={`text-xl font-black leading-none ${currentScore >= 60 ? 'text-destructive' : 'text-primary'}`}>{currentScore}</p>
+                        <p className={`text-xl font-black leading-none ${currentScore >= 60 ? 'text-st-critical' : 'text-primary'}`}>{currentScore}</p>
                       </div>
                       <ScoreSelector label="Gravidade" description="Danos" value={gut.gravidade} onChange={(v) => setGut({ ...gut, gravidade: v })} />
                       <ScoreSelector label="Urgência" description="Tempo" value={gut.urgencia} onChange={(v) => setGut({ ...gut, urgencia: v })} />
@@ -362,19 +388,19 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
               <div className="order-1 md:order-2 flex-1 flex flex-col bg-muted/50 relative">
                 
                 <div className="px-5 py-3 border-b border-border bg-card flex flex-wrap gap-2 items-center justify-between text-sm font-medium text-muted-foreground flex-shrink-0 shadow-sm z-30">
-                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Laudo / Corpo do Parecer <span className="text-destructive">*</span></span>
+                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Laudo / Corpo do Parecer <span className="text-st-critical">*</span></span>
 
                   <div className="flex gap-2 ml-auto">
-                    <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-2 py-1.5 rounded border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:bg-primary-hover-bg bg-primary-bg border-primary-border'}`}>
+                    <label className={`cursor-pointer text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors px-3 py-2.5 min-h-11 rounded-md border ${isUploadingFiles ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'text-primary hover:bg-primary-hover-bg bg-primary-bg border-primary-border'}`}>
                       {isUploadingFiles ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
                       {isUploadingFiles ? 'Enviando...' : 'Anexar'}
                       <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploadingFiles} />
                     </label>
 
-                    <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1.5 rounded border border-primary-border">
+                    <button type="button" onClick={() => setShowMap(true)} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-3 py-2.5 min-h-11 rounded-md border border-primary-border">
                       <MapIcon className="w-3 h-3" /> Ver Mapa
                     </button>
-                    <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-2 py-1.5 rounded border border-primary-border">
+                    <button type="button" onClick={handleGetLocation} disabled={isGettingLocation} className="text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary-hover-bg flex items-center gap-1 transition-colors bg-primary-bg px-3 py-2.5 min-h-11 rounded-md border border-primary-border disabled:opacity-50 disabled:cursor-not-allowed">
                       {isGettingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />} Usar GPS
                     </button>
                   </div>
@@ -383,16 +409,15 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center w-full">
                   
                   {/* PAPEL A4 SIMPLIFICADO E AUTO-EXPANSÍVEL */}
-                  <div 
-                    className="relative w-full max-w-[210mm] bg-card border border-border shadow-md rounded-sm flex flex-col mb-6 shrink-0"
+                  <div className="relative w-full max-w-[210mm] bg-card border border-border shadow-md rounded-md flex flex-col mb-6 shrink-0"
                     style={{ minHeight: '297mm' }}
                   >
-                    
+
                     {/* Linha Tracejada Infinita (Corte de Página a cada 297mm) */}
-                    <div 
-                      className="absolute inset-0 pointer-events-none rounded-sm opacity-60"
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-md opacity-60"
                       style={{
-                        backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent calc(297mm - 2px), rgba(59, 130, 246, 0.6) calc(297mm - 2px), rgba(59, 130, 246, 0.6) 297mm)',
+                        backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent calc(297mm - 2px), color-mix(in srgb, var(--st-planning) 60%, transparent) calc(297mm - 2px), color-mix(in srgb, var(--st-planning) 60%, transparent) 297mm)',
                         backgroundSize: '100% 297mm'
                       }}
                     />
@@ -446,14 +471,22 @@ export function EmitParecerModal({ isOpen, onClose, onSuccess, project }: EmitPa
                       <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">Arquivos Enviados para Nuvem ({attachments.length})</h4>
                       <div className="flex flex-wrap gap-2">
                         {attachments.map((url, i) => (
-                          <div key={i} className="relative group rounded-md overflow-hidden bg-card border border-border flex items-center justify-center w-24 h-24 shadow-sm">
-                            {url.toLowerCase().endsWith('.pdf') ? (
-                              <FileText className="w-8 h-8 text-muted-foreground" />
-                            ) : (
-                              <img src={url} alt="Anexo" className="w-full h-full object-cover" />
-                            )}
-                            <button type="button" onClick={() => removeAttachment(i)} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
-                              <Trash2 className="w-5 h-5" />
+                          <div key={i} className="relative bg-card border border-border w-24 h-24 rounded-md shadow-sm">
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Abrir anexo ${i + 1}`}
+                              className="absolute inset-0 rounded-md overflow-hidden flex items-center justify-center hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary bg-card"
+                            >
+                              {url.toLowerCase().endsWith('.pdf') ? (
+                                <FileText className="w-8 h-8 text-muted-foreground" />
+                              ) : (
+                                <img src={url} alt={`Anexo ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              )}
+                            </a>
+                            <button type="button" onClick={() => removeAttachment(i)} aria-label={`Remover anexo ${i + 1}`} className="absolute -top-2 -right-2 w-11 h-11 flex items-center justify-center rounded-full bg-st-critical text-background border-2 border-background shadow-md hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary z-10">
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         ))}

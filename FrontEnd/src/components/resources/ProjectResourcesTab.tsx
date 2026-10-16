@@ -61,12 +61,20 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
     fetchAllData();
   }, [fetchAllData]);
 
+  const STATUS_LABELS: Record<string, string> = {
+    PENDING: 'Aguardando',
+    APPROVED: 'Aprovado',
+    REJECTED: 'Rejeitado',
+    CANCELED: 'Estornado',
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDING': return <span className="px-2 py-0.5 rounded bg-primary-950/40 text-primary-300 text-xs font-bold">Aguardando</span>;
-      case 'APPROVED': return <span className="px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-300 text-xs font-bold">Aprovado</span>;
-      case 'REJECTED': return <span className="px-2 py-0.5 rounded bg-red-950/40 text-red-300 text-xs font-bold">Rejeitado</span>;
-      default: return <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-bold">{status}</span>;
+      case 'PENDING': return <span className="px-2 py-0.5 rounded-md bg-primary-bg text-primary text-xs font-bold border border-primary-border">Aguardando</span>;
+      case 'APPROVED': return <span className="px-2 py-0.5 rounded-md bg-st-completed-bg text-st-completed text-xs font-bold border border-st-completed-border">Aprovado</span>;
+      case 'REJECTED': return <span className="px-2 py-0.5 rounded-md bg-st-critical-bg text-st-critical text-xs font-bold border border-st-critical-border">Rejeitado</span>;
+      case 'CANCELED': return <span className="px-2 py-0.5 rounded-md bg-st-critical text-background text-xs font-bold">Estornado</span>;
+      default: return <span className="px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-xs font-bold">{STATUS_LABELS[status] || status}</span>;
     }
   };
 
@@ -86,14 +94,14 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
       ) : statementError ? (
-        <div className="flex items-center gap-2 text-destructive py-4">
-          <AlertCircle className="w-5 h-5" /> {statementError}
+        <div className="flex items-center gap-2 flex-wrap text-st-critical bg-st-critical-bg border border-st-critical-border rounded-md p-3 text-sm">
+          <AlertCircle className="w-5 h-5 shrink-0" /> {statementError || "Erro ao carregar o extrato do projeto."}
         </div>
       ) : null}
 
       {/* Cabeçalho e Tabela de Movimentações */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="min-w-0">
           <h2 className="text-lg font-bold">Movimentação de Recursos</h2>
           <p className="text-sm text-muted-foreground">Histórico de requisições de insumos, mão de obra e verbas alocadas neste projeto.</p>
         </div>
@@ -101,7 +109,7 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         <button
           disabled={!hasPermission}
           onClick={() => setIsReturnModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md shadow-sm hover:bg-secondary/80 border border-border disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+          className="flex items-center gap-2 px-3 min-h-11 bg-secondary text-secondary-foreground rounded-md shadow-sm hover:bg-secondary/80 border border-border disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold w-full sm:w-auto justify-center"
         >
           <Minus className="w-4 h-4" /> Devolver Recurso
         </button>
@@ -109,7 +117,7 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         <button
           disabled={!hasPermission}
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+          className="flex items-center gap-2 px-3 min-h-11 bg-primary text-primary-foreground rounded-md shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4" /> Solicitar Recurso
         </button>
@@ -119,7 +127,7 @@ export function ProjectResourcesTab({ orgId, projectId, hasPermission }: Project
         {isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : error ? (
-          <div className="flex justify-center py-10 text-destructive gap-2"><AlertCircle className="w-5 h-5" /> {error}</div>
+          <div className="flex justify-center py-10 text-st-critical gap-2 bg-st-critical-bg"><AlertCircle className="w-5 h-5 shrink-0" /> {error}</div>
         ) : transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Box className="w-10 h-10 mb-3 opacity-20" />

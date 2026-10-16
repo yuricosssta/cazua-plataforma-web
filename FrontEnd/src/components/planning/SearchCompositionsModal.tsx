@@ -1,7 +1,7 @@
 //src/components/planning/SearchCompositionsModal.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/redux/store';
 import {
@@ -11,7 +11,7 @@ import {
   clearCompositionDetail,
 } from '@/lib/redux/slices/planningSlice';
 import { SearchPlanningQuery, CompositionItem } from '@/lib/services/planningService';
-import { X, Search, ChevronDown, ChevronUp, AlertCircle, FileText, Database, MapPin } from 'lucide-react';
+import { X, Search, ChevronDown, ChevronUp, AlertCircle, FileText, Database, MapPin, Loader2 } from 'lucide-react';
 
 interface SearchCompositionsModalProps {
   isOpen: boolean;
@@ -31,7 +31,9 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
 
   const formatCurrency = (value: any) => {
     const num = Number(String(value || '0').replace(',', '.'));
-    return isNaN(num) ? '0.00' : num.toFixed(2);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+      Number.isFinite(num) ? num : 0
+    );
   };
 
   const handleSearch = async () => {
@@ -59,7 +61,10 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
       limit,
     };
 
-    await dispatch(searchCompositions(query));
+    const result = await dispatch(searchCompositions(query));
+    if (searchCompositions.rejected.match(result)) {
+      setPage(page);
+    }
   };
 
   const handleExpandComposition = async (item: CompositionItem) => {
@@ -93,6 +98,15 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
     onClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, dispatch, onClose]);
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -105,15 +119,16 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
   const totalResults = searchResults?.total || 0;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-background w-full max-w-4xl max-h-[90vh] rounded-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={handleClose}>
+      <div className="bg-background w-full max-w-4xl max-h-[90vh] rounded-md shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in-95 duration-200 overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
 
         {/* Header do Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
           <h2 className="text-lg font-bold tracking-tight text-foreground">Pesquisar Composições</h2>
           <button
             onClick={handleClose}
-            className="p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors"
+            aria-label="Fechar busca de composições"
+            className="p-3 text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -130,19 +145,19 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="Buscar por descrição, código, insumo..."
-                className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
             <button
               onClick={handleSearch}
               disabled={searchLoading}
-              className="h-10 px-6 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="h-11 px-6 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {searchLoading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Buscando
                 </>
               ) : (
@@ -153,8 +168,8 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
 
           {/* Erro */}
           {searchError && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-3 text-destructive">
-              <AlertCircle className="w-5 h-5" />
+            <div className="mb-6 p-4 bg-st-critical-bg border border-st-critical-border rounded-md flex items-center gap-3 text-st-critical">
+              <AlertCircle className="w-5 h-5 shrink-0" />
               <p className="text-sm font-medium">{searchError}</p>
             </div>
           )}
@@ -177,7 +192,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
 
             {searchLoading && compositions.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                <span className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto block mb-4" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto block mb-4" />
                 <p>Carregando composições...</p>
               </div>
             )}
@@ -195,15 +210,15 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                       <span className="text-sm font-bold text-foreground">
                         {composition.codigoComposicao}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 bg-primary-bg text-primary uppercase font-bold rounded-sm tracking-wider">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-primary-bg text-primary uppercase font-bold rounded-md tracking-wider">
                         {composition.grupo}
                       </span>
                       {composition.isGlobal ? (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 dark:text-blue-400 uppercase font-bold rounded-sm tracking-wider flex items-center gap-1">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-muted text-foreground border border-border uppercase font-bold rounded-md tracking-wider flex items-center gap-1">
                           <Database className="w-3 h-3" /> SINAPI
                         </span>
                       ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-primary-500/10 text-primary-500 dark:text-primary-400 uppercase font-bold rounded-sm tracking-wider">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-primary-bg text-primary border border-primary-border uppercase font-bold rounded-md tracking-wider">
                           CUSTOMIZADA
                         </span>
                       )}
@@ -215,12 +230,12 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
                       <span><strong>Unid:</strong> {composition.unidade}</span>
-                      <span className="text-foreground"><strong>Custo:</strong> R$ {formatCurrency(composition.custo)}</span>
+                      <span className="text-foreground"><strong>Custo:</strong> {formatCurrency(composition.custo)}</span>
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {composition.state}</span>
                     </div>
                   </div>
 
-                  <div className="text-muted-foreground p-1 rounded-sm hover:bg-muted">
+                  <div className="text-muted-foreground p-2.5 rounded-md hover:bg-muted">
                     {selectedComposition === composition._id ? (
                       <ChevronUp className="w-5 h-5" />
                     ) : (
@@ -234,7 +249,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                   <div className="bg-muted/10 border-t border-border p-5">
                     {compositionLoading && (
                       <div className="text-center py-6 text-muted-foreground flex flex-col items-center">
-                        <span className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-2" />
+                        <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
                         <span className="text-xs">Carregando detalhamento...</span>
                       </div>
                     )}
@@ -261,7 +276,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                             </div>
                             <div>
                               <span className="text-xs text-muted-foreground block mb-0.5">Custo Unitário Total</span>
-                              <p className="font-bold text-primary">R$ {formatCurrency(compositionDetail.summary.custo)}</p>
+                              <p className="font-bold text-primary">{formatCurrency(compositionDetail.summary.custo)}</p>
                               {/* <p className="font-bold text-primary">R$ {formatCurrency(composition.custo)}</p> */}
                             </div>
                           </div>
@@ -287,7 +302,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
                                       {item.insumo && `Cód. Insumo: ${item.insumo}`}
                                     </p>
                                   </div>
-                                  <div className="text-left sm:text-right shrink-0 bg-muted/30 p-2 rounded-sm border border-border/50">
+                                  <div className="text-left sm:text-right shrink-0 bg-muted/30 p-2 rounded-md border border-border/50">
                                     <p className="text-xs text-muted-foreground mb-0.5">
                                       {item.coeficiente || 1} {item.unidade}
                                     </p>
@@ -314,7 +329,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
               <button
                 onClick={handleLoadMore}
                 disabled={searchLoading}
-                className="min-h-11 px-6 bg-secondary text-secondary-foreground border border-border rounded-sm text-sm font-bold hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
+                className="min-h-11 px-6 bg-secondary text-secondary-foreground border border-border rounded-md text-sm font-bold hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
               >
                 {searchLoading ? 'Carregando...' : 'Carregar mais resultados'}
               </button>
@@ -326,7 +341,7 @@ export const SearchCompositionsModal = ({ isOpen, onClose }: SearchCompositionsM
         <div className="px-6 py-4 border-t border-border flex justify-end bg-muted/10">
           <button
             onClick={handleClose}
-            className="min-h-11 px-6 bg-transparent border border-border text-foreground hover:bg-muted rounded-sm text-sm font-bold transition-colors"
+            className="min-h-11 px-6 bg-transparent border border-border text-foreground hover:bg-muted rounded-md text-sm font-bold transition-colors"
           >
             Fechar Janela
           </button>

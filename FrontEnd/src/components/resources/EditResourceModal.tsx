@@ -14,9 +14,15 @@ interface EditResourceModalProps {
   onSuccess: () => void;
 }
 
+const parseDecimalInput = (input: string): number => {
+    const cleaned = input.trim().replace(/[R$\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+    return Number(cleaned);
+  };
+
 export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, onSuccess }: EditResourceModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [costInput, setCostInput] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -33,9 +39,19 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
         unit: resource.unit,
         standardCost: resource.standardCost,
       });
+      setCostInput(String(resource.standardCost ?? 0).replace('.', ','));
       setError(null);
     }
   }, [isOpen, resource]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !resource) return null;
 
@@ -49,13 +65,21 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
       return setError("O nome do recurso deve ter pelo menos 2 caracteres.");
     }
 
+    const parsedCost = parseDecimalInput(costInput);
+    if (costInput.trim() === '' || !Number.isFinite(parsedCost)) {
+      return setError("Informe um valor numérico válido para o custo padrão.");
+    }
+    if (parsedCost < 0) {
+      return setError("O custo padrão não pode ser negativo.");
+    }
+
     try {
       setIsSubmitting(true);
       await resourceService.updateResource(orgId, resource._id, {
         name: formData.name,
         type: formData.type,
         unit: formData.unit,
-        standardCost: Number(formData.standardCost),
+        standardCost: parsedCost,
       }, orgRole);
       onSuccess();
       onClose();
@@ -70,25 +94,25 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
   const isCapital = formData.type === ResourceType.CAPITAL;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden">
-        
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !isSubmitting && onClose()}>
+      <div className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/10">
           <h2 className="text-base font-semibold text-foreground tracking-tight">Editar Recurso</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
+          <button onClick={onClose} aria-label="Fechar" className="p-3 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col p-5 space-y-4">
           {error && (
-            <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20 flex items-center gap-2">
+            <div className="p-3 text-sm text-st-critical bg-st-critical-bg rounded-md border border-st-critical-border flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" /> {error}
             </div>
           )}
 
           {hasStock && (
-             <div className="p-3 text-xs  text-primary-300  bg-primary-950/40  border-primary-800 rounded-md border font-medium">
+             <div className="p-3 text-xs text-primary bg-primary-bg border border-primary-border rounded-md font-medium">
                Este recurso possui saldo ativo no almoxarifado. A categoria e a unidade de medida foram bloqueadas para edição a fim de proteger o histórico contábil.
              </div>
           )}
@@ -140,11 +164,10 @@ export function EditResourceModal({ isOpen, onClose, orgId, orgRole, resource, o
               {isCapital ? 'Valor Unitário Padrão' : 'Custo Padrão (R$)'}
             </label>
             <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.standardCost}
-              onChange={(e) => setFormData({ ...formData, standardCost: Number(e.target.value) })}
+              type="text"
+              inputMode="decimal"
+              value={costInput}
+              onChange={(e) => setCostInput(e.target.value)}
               disabled={isCapital}
               className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:bg-muted"
             />

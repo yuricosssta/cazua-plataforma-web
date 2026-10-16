@@ -38,8 +38,8 @@
 
   /* --- Border Radius --- */
   --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-sm: var(--radius);
 
   /* --- Status & Priority Badges --- */
   --color-st-planning: var(--st-planning);
