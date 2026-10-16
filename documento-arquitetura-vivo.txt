@@ -1,3 +1,26 @@
+=== SPRINT 38 - 16/10/2026 ===
+### Resumo Técnico de Fechamento: Correção de Congelamento do VSCode ao Salvar com Docker (Dev Infra)
+
+**1. Problema Identificado**
+
+O VSCode travava (congelava a thread de UI) a cada salvamento de arquivo no ambiente Docker de dev. Causa raiz: combinação de **bind mounts** (`./BackEnd:/app`, `./FrontEnd:/app` no `docker-compose.override.yml`) com hot reload. Ao salvar, o watcher do container recompilava e o `nest start --watch` escrevia o output em `BackEnd/dist` — visível ao host — gerando rajadas de eventos de filesystem (inotify) reprocessadas pelo File Watcher do VSCode (explorer, git, search), travando a UI.
+
+**2. Correções Aplicadas**
+
+| Camada | Arquivo | Mudança |
+|---|---|---|
+| **VSCode** | `.vscode/settings.json` *(novo)* | `files.watcherExclude` para `node_modules`, `dist`, `.next`, `.git` + `search.followSymlinks: false`. O VSCode para de reagir ao churn de arquivos gerado pelo hot reload. |
+| **Dev Infra** | `docker-compose.override.yml` | Volume anônimo `/app/dist` no service `backend` (mesmo padrão já usado para `node_modules` e `.next`). O output do tsc não vaza mais para o host. |
+| **Backend CLI** | `BackEnd/nest-cli.json` | `deleteOutDir: true` → `false`. O Nest tentava `rm -rf /app/dist` no startup, falhando com `EBUSY: resource busy or locked, rmdir '/app/dist'` (ponto de montagem de volume não pode ser removido de dentro do container), causando crash-loop. |
+
+**3. Verificações**
+
+- ✅ `docker compose up -d backend` — container sobe sem EBUSY
+- ✅ Hot reload funcional: disparado recompilação via `touch src/main.ts` → "Found 0 errors. Watching for file changes" → app inicia e mapeia rotas
+- ✅ Efeito colateral esperado: com `deleteOutDir: false` e `dist` em volume anônimo, arquivos órfãos podem acumular em `dist/` durante o dev (aceitável)
+
+---
+
 === SPRINT 37 - 15/10/2026 ===
 ### Resumo Técnico de Fechamento: Correção de Contraste em Backgrounds Primários com Opacidade (FrontEnd)
 
