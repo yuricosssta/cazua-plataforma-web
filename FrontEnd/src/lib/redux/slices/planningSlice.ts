@@ -14,6 +14,7 @@ interface PlanningState {
   searchResults: SearchResponse | null;
   searchLoading: boolean;
   searchError: string | null;
+  searchStale: boolean;
 
   // Detalhe de composição
   compositionDetail: CompositionDetail | null;
@@ -35,6 +36,7 @@ const initialState: PlanningState = {
   searchResults: null,
   searchLoading: false,
   searchError: null,
+  searchStale: false,
 
   compositionDetail: null,
   compositionLoading: false,
@@ -128,6 +130,7 @@ const planningSlice = createSlice({
     clearSearchResults: (state) => {
       state.searchResults = null;
       state.searchError = null;
+      state.searchStale = true;
     },
     clearCompositionDetail: (state) => {
       state.compositionDetail = null;
@@ -148,12 +151,22 @@ const planningSlice = createSlice({
       .addCase(searchCompositions.pending, (state) => {
         state.searchLoading = true;
         state.searchError = null;
+        state.searchStale = false;
       })
       .addCase(
         searchCompositions.fulfilled,
-        (state, action: PayloadAction<SearchResponse>) => {
+        (state, action) => {
           state.searchLoading = false;
-          state.searchResults = action.payload;
+          if (state.searchStale) return;
+          const requestedPage = action.meta.arg.page || 1;
+          if (requestedPage > 1 && state.searchResults) {
+            state.searchResults = {
+              ...action.payload,
+              items: [...state.searchResults.items, ...action.payload.items],
+            };
+          } else {
+            state.searchResults = action.payload;
+          }
         }
       )
       .addCase(searchCompositions.rejected, (state, action) => {

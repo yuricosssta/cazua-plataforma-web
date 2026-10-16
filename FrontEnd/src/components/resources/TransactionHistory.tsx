@@ -27,10 +27,21 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
   const [appliedStartDate, setAppliedStartDate] = useState(yearStart);
   const [appliedEndDate, setAppliedEndDate] = useState(today);
 
-  const hasNonDefaultFilter = useMemo(
-    () => startDate !== yearStart || endDate !== today,
-    [startDate, endDate, yearStart, today],
+  const hasInputChanges = useMemo(
+    () => startDate !== appliedStartDate || endDate !== appliedEndDate,
+    [startDate, endDate, appliedStartDate, appliedEndDate],
   );
+  const hasAppliedFilter = useMemo(
+    () => appliedStartDate !== yearStart || appliedEndDate !== today,
+    [appliedStartDate, appliedEndDate, yearStart, today],
+  );
+
+  const handleClearFilter = () => {
+    setStartDate(yearStart);
+    setEndDate(today);
+    setAppliedStartDate(yearStart);
+    setAppliedEndDate(today);
+  };
 
   const currentOrg = useSelector(selectCurrentOrg);
   const orgId = typeof currentOrg?.organizationId === "object"
@@ -57,6 +68,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
   }, [orgId, refreshKey, appliedStartDate, appliedEndDate]);
 
   const formatCurrency = (value: number) => {
+    if (!Number.isFinite(value)) return "-";
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   };
 
@@ -74,8 +86,10 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
     return transactions
       .filter((tx) => !tx.isCanceled)
       .reduce((acc, tx) => {
-        if (tx.type === 'RETURN') return acc - tx.totalCost;
-        return acc + tx.totalCost;
+        const value = Number(tx.totalCost);
+        if (!Number.isFinite(value)) return acc;
+        if (tx.type === 'RETURN') return acc - value;
+        return acc + value;
       }, 0);
   }, [transactions]);
 
@@ -83,7 +97,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
   const getTransactionBadge = (type: string, isCanceled: boolean) => {
     if (isCanceled) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-destructive text-destructive-foreground text-xs font-medium border border-destructive/20">
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-st-critical text-background text-xs font-medium">
           <Ban className="w-3.5 h-3.5" /> Estornado
         </span>
       );
@@ -92,19 +106,19 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
     switch (type) {
       case "ENTRY":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-950 text-emerald-300 border-emerald-800 text-xs font-medium border">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-st-completed-bg text-st-completed text-xs font-medium border border-st-completed-border">
             <ArrowDownLeft className="w-3.5 h-3.5" /> Entrada
           </span>
         );
       case "ALLOCATION":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-950 text-red-300 text-xs font-medium border border-destructive-800">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-st-critical-bg text-st-critical text-xs font-medium border border-st-critical-border">
             <ArrowUpRight className="w-3.5 h-3.5" /> Saída (destino)
           </span>
         );
       case "RETURN":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-950 text-blue-300 border-blue-800 text-xs font-medium border">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-st-planning-bg text-st-planning text-xs font-medium border border-st-planning-border">
             <RefreshCcw className="w-3.5 h-3.5" /> Devolução
           </span>
         );
@@ -124,7 +138,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-destructive space-y-2">
+      <div className="flex flex-col items-center justify-center h-64 text-st-critical space-y-2">
         <AlertCircle className="w-8 h-8" />
         <p className="text-sm font-medium">{error}</p>
       </div>
@@ -157,6 +171,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
           <input
             type="date"
             value={endDate}
+            min={startDate}
             onChange={(e) => setEndDate(e.target.value)}
             className="px-3 py-2 rounded-md bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -170,19 +185,27 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
             )}
           </span>
         </div>
-        {hasNonDefaultFilter && (
+        {hasInputChanges && (
           <button
             onClick={() => { setAppliedStartDate(startDate); setAppliedEndDate(endDate); }}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="px-4 min-h-11 rounded-md bg-primary text-primary-foreground text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <Filter className="w-4 h-4 inline-block mr-1.5" />
             Filtrar
           </button>
         )}
+        {hasAppliedFilter && (
+          <button
+            onClick={handleClearFilter}
+            className="px-4 min-h-11 rounded-md border border-border bg-card text-foreground text-sm font-medium transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            Limpar filtro
+          </button>
+        )}
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse">
+        <table className="w-full text-left text-sm border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <th className="px-4 py-3 font-semibold text-muted-foreground">Data / Hora</th>
@@ -218,7 +241,7 @@ export function TransactionHistory({ refreshKey = 0 }: TransactionHistoryProps) 
                   ) : (
                     <span>{tx.origin || "Estoque Central"}</span>
                   )}
-                  {tx.status === 'PENDING' && <span className="ml-2 text-primary-500 dark:text-primary-400 font-medium">(Pendente)</span>}
+                  {tx.status === 'PENDING' && <span className="ml-2 text-primary font-medium">(Pendente)</span>}
                 </td>
               </tr>
             ))}

@@ -58,6 +58,8 @@ export default function ProjectDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isParecerOpen, setIsParecerOpen] = useState(false);
   const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const fetchDetails = async (showFullLoader = true) => {
     if (!orgId || !token || !projectId) return;
@@ -79,19 +81,31 @@ export default function ProjectDetailsPage() {
     fetchDetails(true);
   }, [orgId, token, projectId]);
 
+  useEffect(() => {
+    if (!isLeaveConfirmOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLeaving) setIsLeaveConfirmOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isLeaveConfirmOpen, isLeaving]);
+
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
   const isAssigned = isUserAssigned(project?.assignedMembers, currentUserId);
   const hasPermission = isOrgAdmin || isAssigned;
 
   const handleLeaveProject = async () => {
-    const confirmLeave = window.confirm("Tem certeza que deseja encerrar sua participação?");
-    if (!confirmLeave) return;
     try {
+      setIsLeaving(true);
       await apiRemoveMember(orgId, projectId, currentUserId, currentUserName);
+      setIsLeaveConfirmOpen(false);
       router.push(`/dashboard/projects`);
     } catch (error: any) {
-      toast.error(String(error.message || "Falha ao sair da demanda."));
+      console.error(error);
+      toast.error("Não foi possível encerrar sua participação. Tente novamente.");
+    } finally {
+      setIsLeaving(false);
     }
   };
 
@@ -115,16 +129,20 @@ export default function ProjectDetailsPage() {
       <div className="flex flex-col gap-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <button onClick={() => router.push("/dashboard/projects")} className="mt-1.5 p-3 rounded-full hover:bg-muted text-muted-foreground shrink-0">
+            <button onClick={() => router.push("/dashboard/projects")} className="mt-1.5 p-3 rounded-md hover:bg-muted text-muted-foreground shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               {project.referenceCode && <div className="text-sm font-mono font-bold text-primary mb-1 tracking-wider uppercase">{project.referenceCode}</div>}
               <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground mt-2 text-sm font-medium">
-                <span className="flex items-center gap-1.5 cursor-pointer hover:text-primary" onClick={(e) => { e.stopPropagation(); setMapLocationView(project.location || ""); }}>
-                  <MapPin className="w-4 h-4" /> {project.location}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMapLocationView(project.location || ""); }}
+                  className="flex items-center gap-1.5 rounded-md -mx-1 -my-1.5 px-1 py-2 text-left hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <MapPin className="w-4 h-4 shrink-0" /> {project.location}
+                </button>
                 {(project.startDate || project.endDate) && (
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
@@ -135,7 +153,7 @@ export default function ProjectDetailsPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 ml-14 md:ml-0">
+          <div className="flex flex-wrap items-center gap-2 ml-[60px] md:ml-0">
             {isOrgAdmin && (
               <button onClick={() => setIsTeamDrawerOpen(true)} className="flex items-center gap-1.5 px-3 py-2 min-h-11 bg-muted text-foreground hover:bg-accent rounded-md text-sm font-semibold border border-border">
                 <Users className="w-4 h-4" /> Equipe
@@ -144,25 +162,27 @@ export default function ProjectDetailsPage() {
             <button disabled={!hasPermission} onClick={() => setIsParecerOpen(true)} className={`flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground border-primary-border' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
               {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />} Parecer Técnico
             </button>
-            <button disabled={!hasPermission} className={`flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-md text-sm font-semibold border ${hasPermission ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white border-amber-200' : 'bg-muted text-muted-foreground/50 border-border cursor-not-allowed'}`}>
-              {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} RDO
-            </button>
+            <span title={hasPermission ? "RDO em breve" : "Sem permissão para emitir RDO"} className="inline-flex">
+              <button disabled className={`flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-md text-sm font-semibold border cursor-not-allowed opacity-70 ${hasPermission ? 'bg-st-execution-bg text-st-execution border-st-execution-border' : 'bg-muted text-muted-foreground/50 border-border'}`}>
+                {!hasPermission ? <Lock className="w-4 h-4" /> : <HardHat className="w-4 h-4" />} RDO
+              </button>
+            </span>
             {isUserAssigned(project?.assignedMembers, currentUserId) && (
-              <button onClick={handleLeaveProject} className="flex items-center gap-1.5 px-3 py-2 min-h-11 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/60 rounded-md text-sm font-semibold border border-red-200 ml-auto md:ml-0">
+              <button onClick={() => setIsLeaveConfirmOpen(true)} className="flex items-center gap-1.5 px-3 py-2 min-h-11 bg-st-critical-bg text-st-critical border border-st-critical-border hover:bg-st-critical hover:text-background rounded-md text-sm font-semibold ml-auto md:ml-0">
                 <LogOut className="w-4 h-4" /> Sair
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-md p-3 shadow-sm ml-0 md:ml-12">
+        <div className="flex flex-wrap items-center gap-3 bg-card border border-border rounded-md p-3 shadow-sm ml-0 md:ml-[60px]">
           <Badge icon={statusConfig.icon} label={statusConfig.label} color={statusConfig.color} bg={statusConfig.bg} size="md" />
           <Badge icon={priorityConfig.icon} label={priorityConfig.label} color={priorityConfig.color} bg={priorityConfig.bg} size="md" />
           {(project.status === "EXECUTION" || project.status === "COMPLETED") && (
             <div className="flex-1 min-w-[150px] flex items-center gap-3 pl-3 md:pl-6 border-l border-border">
               <span className="text-xs font-bold whitespace-nowrap">{project.progress}% Físico</span>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden max-w-[200px]">
-                <div className={`h-full rounded-full transition-all duration-500 ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${project.progress}%` }} />
+              <div className="w-full h-2 bg-muted rounded-md overflow-hidden max-w-[200px]">
+                <div className={`h-full rounded-md transition-all duration-500 ${project.progress === 100 ? 'bg-st-completed' : 'bg-primary'}`} style={{ width: `${project.progress}%` }} />
               </div>
             </div>
           )}
@@ -170,7 +190,7 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* NAVEGAÇÃO DE ABAS */}
-      <div className="flex space-x-1 border-b border-border ml-0 md:ml-12 mt-2">
+      <div className="flex space-x-1 border-b border-border ml-0 md:ml-[60px] mt-2 overflow-x-auto tab-rail">
         <button
           onClick={() => setActiveTab("TIMELINE")}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === "TIMELINE" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
@@ -193,9 +213,9 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* ÁREA DE RENDERIZAÇÃO CONDICIONAL */}
-      <div className="ml-0 md:ml-12 pt-2">
+      <div className="ml-0 md:ml-[60px] pt-2">
         {activeTab === "TIMELINE" && (
-          <div className="relative border-l-2 border-muted pb-8 pl-4 md:pl-6 ml-2 md:ml-0">
+          <div className="relative border-l-2 border-border pb-2 pl-4 md:pl-6 ml-2 md:ml-0">
             {timeline.length === 0 ? (
               <p className="text-muted-foreground text-sm">Nenhum evento registrado ainda.</p>
             ) : (
@@ -225,6 +245,43 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* MODAIS (Ocultos) */}
+      {isLeaveConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => !isLeaving && setIsLeaveConfirmOpen(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="bg-card border border-border rounded-md shadow-xl max-w-sm w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-st-critical" /> Sair da demanda
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Tem certeza que deseja encerrar sua participação neste projeto? Você perderá o acesso ao painel dele.
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIsLeaveConfirmOpen(false)}
+                disabled={isLeaving}
+                autoFocus
+                className="px-4 py-2 min-h-11 rounded-md text-sm font-semibold border border-border hover:bg-muted disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleLeaveProject}
+                disabled={isLeaving}
+                className="flex items-center gap-2 px-4 py-2 min-h-11 rounded-md text-sm font-semibold bg-st-critical text-background hover:opacity-90 disabled:opacity-50"
+              >
+                {isLeaving && <Loader2 className="w-4 h-4 animate-spin" />} Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <EmitParecerModal isOpen={isParecerOpen} onClose={() => setIsParecerOpen(false)} project={project as any} onSuccess={() => fetchDetails(false)} />
       <ManageTeamDrawer isOpen={isTeamDrawerOpen} onClose={() => setIsTeamDrawerOpen(false)} orgId={orgId} projectId={projectId} currentAssignedMembers={project.assignedMembers || []} onSuccess={() => fetchDetails(false)} />
       <MapViewerModal isOpen={!!mapLocationView} onClose={() => setMapLocationView(null)} locationString={mapLocationView || ""} />
