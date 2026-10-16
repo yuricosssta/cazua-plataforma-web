@@ -12,10 +12,12 @@ ARG NEXT_PUBLIC_INITIAL_MAP_CENTER
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_INITIAL_MAP_CENTER=$NEXT_PUBLIC_INITIAL_MAP_CENTER
 ENV CI=true
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN pnpm install
 
 # Não precisamos de COPY . . aqui se usarmos volumes no docker-compose
-
 EXPOSE 3000
 
 # Comando para rodar com Hot Reload

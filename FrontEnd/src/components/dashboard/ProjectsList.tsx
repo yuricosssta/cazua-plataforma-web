@@ -198,7 +198,6 @@ export function ProjectsList() {
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-500/10" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-600/10" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-500/10" };
-      // Nova escala Stone Escura para Paralisada
       case "ON_HOLD": return { label: "Paralisada", icon: PauseCircle, color: "text-stone-50", bg: "bg-stone-800 dark:bg-stone-700 border border-stone-900 dark:border-stone-600" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted" };
       default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };

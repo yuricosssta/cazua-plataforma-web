@@ -16,7 +16,8 @@ import { MapViewerModal } from "@/components/ui/MapViewer";
 import { ProjectResourcesTab } from "@/components/resources/ProjectResourcesTab";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle, AlertCircle, HardHat, FileText, Lock,
-  Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package
+  Flame, Activity, Clock, Loader2, Users, LogOut, Network, FolderKanban, Package,
+  PauseCircle
 } from "lucide-react";
 import { ProjectCostTab } from "@/components/resources/ProjectCostTab";
 import { toast } from 'sonner';
@@ -106,10 +107,11 @@ export default function ProjectDetailsPage() {
 
   const getStatusConfig = (status: ProjectStatus) => {
     switch (status) {
-      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary-600 dark:text-primary-400", bg: "bg-primary-100 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800" };
+      case "DEMAND": return { label: "Demanda", icon: AlertCircle, color: "text-primary", bg: "bg-primary-bg border-primary-border" };
       case "PLANNING": return { label: "Planejamento", icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" };
       case "EXECUTION": return { label: "Em Execução", icon: HardHat, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800" };
       case "COMPLETED": return { label: "Concluída", icon: CheckCircle, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800" };
+      case "ON_HOLD": return { label: "Paralisada", icon: PauseCircle, color: "text-stone-50", bg: "bg-stone-800 dark:bg-stone-700 border border-stone-900 dark:border-stone-600" };
       case "INVALID": return { label: "Inválida", icon: Lock, color: "text-muted-foreground", bg: "bg-muted/10" };
       default: return { label: "Desconhecido", icon: AlertCircle, color: "text-muted-foreground", bg: "bg-muted" };
     }
