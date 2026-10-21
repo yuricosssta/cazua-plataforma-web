@@ -55,7 +55,8 @@
     "socket.io": "4.8.3",
     "xlsx": "^0.18.5",
     "yt-dlp-wrap": "^2.3.12",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "3.25.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

@@ -18,6 +18,7 @@ import {
 } from '../schemas/organization-member.schema';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { UsersService } from '../../users/services/user.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrganizationService {
@@ -27,6 +28,7 @@ export class OrganizationService {
     @InjectModel(OrganizationMember.name)
     private memberModel: Model<OrganizationMemberDocument>,
     private usersService: UsersService,
+    private configService: ConfigService,
   ) {}
 
   // 1. CRIAÇÃO E VÍNCULO AUTOMÁTICO
@@ -97,15 +99,37 @@ export class OrganizationService {
   }
 
   // 3. BUSCAR MEMBROS DA ORGANIZAÇÃO
-  async findMembersByOrganization(orgId: string) {
-    if (!(Types.ObjectId as any).isValid(orgId)) {
+  async findMembersByOrganization(orgId: string, requester?: any) {
+    if (!Types.ObjectId.isValid(orgId)) {
       throw new BadRequestException(
         'ID da organização inválido ou não fornecido.',
       );
     }
 
+    if (requester) {
+      const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+      const isSuperAdmin =
+        requester.isSuperAdmin === true ||
+        (superAdminEmail &&
+          requester.email?.toLowerCase() === superAdminEmail.toLowerCase());
+
+      if (!isSuperAdmin) {
+        const requesterUserId = requester.sub || requester.userId || requester.id;
+        const isMember = await this.memberModel.findOne({
+          organizationId: new Types.ObjectId(orgId),
+          userId: new Types.ObjectId(String(requesterUserId)),
+        });
+
+        if (!isMember) {
+          throw new ForbiddenException(
+            'Acesso negado: Você não é membro desta organização.',
+          );
+        }
+      }
+    }
+
     const memberships = await this.memberModel
-      .find({ organizationId: new (Types.ObjectId as any)(orgId) })
+      .find({ organizationId: new Types.ObjectId(orgId) })
       .populate({
         path: 'userId',
         select: 'name email',
@@ -128,23 +152,54 @@ export class OrganizationService {
       });
   }
 
-  async addMemberToOrganization(orgId: string, userData: any) {
-    if (!(Types.ObjectId as any).isValid(orgId)) {
+  async addMemberToOrganization(orgId: string, requester: any, userData: any) {
+    if (!Types.ObjectId.isValid(orgId)) {
       throw new BadRequestException('ID da organização inválido.');
+    }
+
+    if (userData.role === 'OWNER') {
+      throw new BadRequestException(
+        'Não é permitido atribuir o cargo OWNER através desta rota.',
+      );
+    }
+
+    if (requester) {
+      const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+      const isSuperAdmin =
+        requester.isSuperAdmin === true ||
+        (superAdminEmail &&
+          requester.email?.toLowerCase() === superAdminEmail.toLowerCase());
+
+      if (!isSuperAdmin) {
+        const requesterUserId = requester.sub || requester.userId || requester.id;
+        const adminMember = await this.memberModel.findOne({
+          organizationId: new Types.ObjectId(orgId),
+          userId: new Types.ObjectId(String(requesterUserId)),
+          role: { $in: ['ADMIN', 'OWNER'] },
+        });
+
+        if (!adminMember) {
+          throw new ForbiddenException(
+            'Apenas administradores podem adicionar membros.',
+          );
+        }
+      }
     }
 
     let user;
 
-    // 1. Verifica se a Identidade Global já existe
-    user = await this.usersService.findOne(userData.email);
+    // 1. Normaliza o e-mail
+    const email = userData.email?.trim()?.toLowerCase();
 
-    // 2. Se não existir, cria a nova conta global
+    // 2. Verifica se a Identidade Global já existe
+    user = await this.usersService.findOne(email);
+
+    // 3. Se não existir, cria a nova conta global
     if (!user) {
       try {
-        // Chamamos a criação global (que apenas cria o User com name, email e password)
         user = await this.usersService.createUser({
           name: userData.name,
-          email: userData.email,
+          email,
           password: userData.password,
         });
       } catch {
@@ -152,24 +207,50 @@ export class OrganizationService {
       }
     }
 
-    // 3. Valida se o usuário já não faz parte DESTA empresa
+    // 4. Valida se o usuário já não faz parte DESTA empresa
     const existingLink = await this.memberModel.findOne({
-      organizationId: new (Types.ObjectId as any)(orgId),
-      userId: new (Types.ObjectId as any)(String(user._id || user.id)),
+      organizationId: new Types.ObjectId(orgId),
+      userId: new Types.ObjectId(String(user._id || user.id)),
     });
 
     if (existingLink) {
       throw new BadRequestException('Este usuário já é membro desta equipe.');
     }
 
-    // 4. Cria o vínculo na tabela pivô oficial
+    // 5. Cria o vínculo na tabela pivô oficial
     await this.memberModel.create({
-      organizationId: new (Types.ObjectId as any)(orgId),
-      userId: new (Types.ObjectId as any)(String(user._id || user.id)),
+      organizationId: new Types.ObjectId(orgId),
+      userId: new Types.ObjectId(String(user._id || user.id)),
       role: userData.role || 'MEMBER',
     });
 
     return { message: 'Membro adicionado com sucesso!' };
+  }
+
+  async linkUserToOrganization(
+    orgId: Types.ObjectId | string,
+    userId: Types.ObjectId | string,
+    role: string = 'MEMBER',
+  ): Promise<{ alreadyLinked: boolean }> {
+    const orgObjectId = new Types.ObjectId(String(orgId));
+    const userObjectId = new Types.ObjectId(String(userId));
+
+    const existingLink = await this.memberModel.findOne({
+      organizationId: orgObjectId,
+      userId: userObjectId,
+    });
+
+    if (existingLink) {
+      return { alreadyLinked: true };
+    }
+
+    await this.memberModel.create({
+      organizationId: orgObjectId,
+      userId: userObjectId,
+      role: role || 'MEMBER',
+    });
+
+    return { alreadyLinked: false };
   }
 
   async updateMemberRole(

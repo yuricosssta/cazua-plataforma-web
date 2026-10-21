@@ -59,6 +59,7 @@ O serviço ficará exposto na porta definida na variável `PORT` (Padrão: `3001
 | Categoria | Variáveis |
 | --- | --- |
 | **Aplicação & JWT** | `PORT`, `NODE_ENV`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL` |
+| **Documentação (Swagger)** | `SWAGGER_USER`, `SWAGGER_PASSWORD` *(Proteção HTTP Basic Auth em `/api` e `/api-json`)* |
 | **Banco de Dados** | `MONGO_URI`, `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD` |
 | **Armazenamento (R2)** | `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_DOMAIN` |
 | **Mensageria (Resend)** | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` |

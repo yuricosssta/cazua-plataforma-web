@@ -1,3 +1,38 @@
+=== SPRINT 39 - 21/10/2026 ===
+### Resumo Técnico de Fechamento: API de Autenticação/Usuários para Apps Externas, Swagger e Hardening de Segurança (BackEnd & FrontEnd)
+
+**1. Decisões de Arquitetura (Integração B2B, Segurança e Autenticação)**
+
+* **Swagger Atualizado com Zod como Fonte Única:** Introdução de `zod-to-json-schema` e utilitário `zodToOpenApi`. Todas as rotas de Auth, Users e Organizations passam a expor schemas OpenAPI completos diretamente a partir dos validadores Zod, eliminando duplicidade de classes DTO e prevenindo dessincronização entre validação e documentação.
+* **Proteção do Swagger em Produção:** Implementação de HTTP Basic Auth via `swaggerBasicAuth` nos endpoints `/api` e `/api-json`. Em produção, a documentação é desligada por padrão se `SWAGGER_USER` e `SWAGGER_PASSWORD` não estiverem configurados.
+* **Módulo de API Clients (`src/api-clients`):** Implementação de credenciais server-to-server (`x-client-id` e `x-client-secret`) com hash SHA-256 e comparação segura de tempo constante (`crypto.timingSafeEqual`). Permite que aplicações externas realizem auto-cadastro de usuários vinculados a organizações permitidas (`allowedOrgIds`).
+* **Claims JWT Padronizadas e Não Compartilhamento de Secret:** Tokens agora são emitidos com `issuer: "cazua"` e `audience: "cazua-api"`, validados rigorosamente no `AuthGuard`. Aplicações externas consomem `GET /auth/profile` e emitem suas próprias sessões em vez de assinar com o segredo do Cazuá.
+* **Hardening de Autorização e Soft Delete:**
+  - `GET /users` e `GET /users/search`: Restritos exclusivamente a Super Admin (`SuperAdminGuard`). Sanitização do termo de busca contra injeção de regex / ReDoS.
+  - `GET/PUT/DELETE /users/:userId`: Protegidos por `SelfOrSuperAdminGuard` (usuário só acessa ou edita a própria conta).
+  - Remoção de hard delete: `DELETE /users/:userId` agora realiza soft delete (`isActive: false`), mantendo integridade referencial histórica.
+  - Rotas de membros de organização: `POST /organizations/:orgId/members` agora exige cargo OWNER ou ADMIN na organização e proíbe atribuição do cargo OWNER; `GET :orgId/members` exige que o solicitante seja membro da referida organização.
+* **Normalização Universal de E-mail:** `trim().toLowerCase()` aplicado em todos os DTOs de autenticação, cadastro e recuperação de senha. Consultas no MongoDB configuradas com `collation({ locale: 'en', strength: 2 })` para garantir compatibilidade retroativa com contas legadas com caracteres maiúsculos. Script `scripts/normalize-emails.ts` adicionado com execução segura em dry-run e flag `--apply`.
+* **Recuperação de Senha Multi-tenant Dinâmica:** `POST /users/forgot-password` agora suporta identificação opcional da aplicação chamadora. Se houver `resetPasswordUrl` configurada no API Client, o link é direcionado para a aplicação parceira; caso contrário, é direcionado para a nova tela neutra do Cazuá (`/recover`).
+
+**2. Demandas Registradas para Próximas Entregas (Backlog Master Admin)**
+* **Interface de API Clients no Master Admin (FrontEnd):** Construção da interface visual em `dashboard/master-admin` para gerenciamento completo de API Clients pelo Super Admin, permitindo: criação com exibição única de segredo, seleção de `ownerUserId` (usuário único responsável pela aplicação), gerenciamento da lista `allowedOrgIds`, configuração de `resetPasswordUrl` e ação de rotação de segredo.
+
+**3. Arquivos Criados ou Alterados**
+- `BackEnd/src/shared/swagger/zod-to-openapi.ts` (novo)
+- `BackEnd/src/shared/swagger/swagger-basic-auth.middleware.ts` (novo)
+- `BackEnd/src/main.ts` (atualizado)
+- `BackEnd/src/api-clients/*` (módulo completo de API Clients)
+- `BackEnd/src/auth/*` (register endpoint, Swagger, issuer/audience, case-insensitive)
+- `BackEnd/src/users/*` (hardening, guards, Zod, soft delete)
+- `BackEnd/src/organization/*` (proteção de rotas de membros e linkUserToOrganization)
+- `BackEnd/src/shared/services/mail.service.ts` (suporte a appName)
+- `BackEnd/scripts/normalize-emails.ts` (novo script)
+- `BackEnd/docs/auth-api-integration.md` (novo guia técnico)
+- `FrontEnd/src/app/(auth)/recover/page.tsx` (nova tela neutra de recuperação)
+
+---
+
 === SPRINT 38 - 16/10/2026 ===
 ### Resumo Técnico de Fechamento: Correção de Congelamento do VSCode ao Salvar com Docker (Dev Infra)
 

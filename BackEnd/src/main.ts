@@ -29,15 +29,47 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const config = new DocumentBuilder()
-    .setTitle('Grupo Cazua')
-    .setDescription('Gestão Inteligente de Serviços')
-    .setVersion('1.0')
-    .build();
+  const swaggerUser = process.env.SWAGGER_USER;
+  const swaggerPass = process.env.SWAGGER_PASSWORD;
+  const isProd = process.env.NODE_ENV === 'production';
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  if (swaggerUser && swaggerPass) {
+    const { swaggerBasicAuth } = await import(
+      './shared/swagger/swagger-basic-auth.middleware'
+    );
+    app.use(['/api', '/api-json'], swaggerBasicAuth(swaggerUser, swaggerPass));
+  }
 
-  SwaggerModule.setup('api', app, documentFactory);
+  // Swagger is enabled in development, or in production only if protected by credentials
+  if (!isProd || (swaggerUser && swaggerPass)) {
+    const config = new DocumentBuilder()
+      .setTitle('Grupo Cazua API')
+      .setDescription(
+        'Gestão Inteligente de Serviços - API pública e integração para aplicações externas.\n\n' +
+          '• **Autenticação de Usuário**: Bearer Token JWT via `POST /auth/login`\n' +
+          '• **Aplicações Externas (API Client)**: Headers `x-client-id` e `x-client-secret` para `POST /auth/register`\n' +
+          '• **Multi-tenancy**: Header `x-org-id` nas rotas organizacionais',
+      )
+      .setVersion('1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        'jwt',
+      )
+      .addApiKey(
+        { type: 'apiKey', in: 'header', name: 'x-client-id' },
+        'client-id',
+      )
+      .addApiKey(
+        { type: 'apiKey', in: 'header', name: 'x-client-secret' },
+        'client-secret',
+      )
+      .addApiKey({ type: 'apiKey', in: 'header', name: 'x-org-id' }, 'org-id')
+      .build();
+
+    const documentFactory = () => SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, documentFactory);
+  }
+
   await app.listen(process.env.PORT || 3000);
 }
 
