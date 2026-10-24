@@ -1,3 +1,47 @@
+=== SPRINT 40 - 24/10/2026 ===
+### Resumo Técnico de Fechamento: Interface de API Clients no Master Admin, Rotas BFF e Correção de Loop de Perfil (BackEnd & FrontEnd)
+
+**1. Decisões de Arquitetura (Painel Master Admin, BFF e Segurança)**
+
+* **Gestão Completa de API Clients no Master Admin:**
+  - **Navegação por Abas:** Introdução de navegação em abas no `dashboard/master-admin`, separando "Empresas e Planos" de "API Clients (Integrações)" sem recarregar a rota ou perder contexto de sessão.
+  - **Exibição Única de Segredo (Modal Crítico):** Fluxo seguro para geração e rotação de credenciais (`clientId` e `clientSecret`). O segredo gerado em texto plano é exibido exclusivamente uma vez com botão de cópia rápida, anel de foco acessível e trava que exige confirmação explícita de armazenamento seguro antes do fechamento.
+  - **Vínculo Opcional de Responsável (`ownerUserId`):** Busca assíncrona com debounce (300ms) consumindo a nova rota BFF `/api/users/search?term=...`. Backend atualizado com `.populate('ownerUserId', 'name email')` em `findAll`, `findById` e `update`, além de suporte a desvincular passando `null`.
+  - **Associação de Organizações Permitidas (`allowedOrgIds`) e Cargo:** Multi-select com filtro dinâmico baseado na lista de empresas do Master Admin, seletor de `defaultRole` (`MEMBER` ou `VIEWER`) e agrupamento visual (*chunking* até 3 badges + contador `+N`) na tabela.
+  - **Ciclo de Vida de Aplicações:** Ações para desativação via soft delete (`DELETE /api-clients/:id`) e reativação (`PATCH /api-clients/:id` com `{ isActive: true }`), com modal interno de confirmação para prevenir ações acidentais e suporte à tecla `Escape`.
+
+* **Expansão da Camada BFF (Proxy Next.js):**
+  - Implementação de novos Route Handlers (`GET/POST /api/api-clients`, `GET/PATCH/DELETE /api/api-clients/[id]`, `POST /api/api-clients/[id]/rotate-secret` e `GET /api/users/search`), garantindo isolamento total do NestJS e propagação transparente de JWT via `getBffAuthHeader`.
+
+* **Correção de Loop Infinito e Autenticação no Perfil (`/api/users/profile`):**
+  - **Causa Raiz 1 (Auth no BFF):** O `userSlice.ts` chamava `fetch('/api/users/profile')` nativo sem o wrapper `fetchBff`. Consequentemente, o cabeçalho `Authorization: Bearer <token>` não era injetado, resultando em resposta 401 Unauthorized imediata pelo BFF.
+  - **Causa Raiz 2 (Re-render Loop no Redux):** O componente `MyProfile.tsx` utilizava a verificação `if (!profile && status !== 'loading')` em um `useEffect` dependente de `status`. Após a falha 401, o `status` transicionava para `'failed'`, disparando repetidamente o dispatch em loop infinito. Corrigido para verificar `status === 'idle'`.
+
+* **Auditoria de UX e Acessibilidade (Belezura):**
+  - **Lei de Fitts:** Alvos de toque padronizados em `h-11` (44px) nos botões de ação e inputs de perfil e tabela.
+  - **Lei de Hick:** Rebalanceamento da hierarquia visual na tabela de API Clients, mantendo "Editar" com destaque primário e "Rotacionar Segredo" com estilo de alerta (`amber`).
+  - **Lei de Jakob & Postel:** Normalização automática de URLs sem protocolo em `resetPasswordUrl` (prefixando `https://`), inputs de senha com `autoComplete` apropriado e validação preventiva com labels associados por `htmlFor`/`id`.
+
+**2. Arquivos Criados ou Alterados**
+
+- `BackEnd/src/api-clients/dto/api-client.zod.ts` (suporte a null em ownerUserId e min(1) em allowedOrgIds)
+- `BackEnd/src/api-clients/schemas/models/api-client.interface.ts` (tipagem enriquecida com IApiClientOwner)
+- `BackEnd/src/api-clients/schemas/api-client.schema.ts` (campos nullable no Mongoose)
+- `BackEnd/src/api-clients/services/api-client.service.ts` (tratamento de limpeza com null)
+- `BackEnd/src/api-clients/services/api-client.service.spec.ts` (testes de limpeza de campos e rotação)
+- `BackEnd/src/api-clients/repositories/mongoose/api-client.mongoose.repository.ts` (populate de ownerUserId)
+- `FrontEnd/src/app/api/api-clients/route.ts` (novo Route Handler BFF)
+- `FrontEnd/src/app/api/api-clients/[id]/route.ts` (novo Route Handler BFF)
+- `FrontEnd/src/app/api/api-clients/[id]/rotate-secret/route.ts` (novo Route Handler BFF)
+- `FrontEnd/src/app/api/users/search/route.ts` (novo Route Handler BFF)
+- `FrontEnd/src/components/dashboard/master-admin/ApiClientFormModal.tsx` (novo modal unificado de criação/edição)
+- `FrontEnd/src/components/dashboard/master-admin/ApiClientSecretModal.tsx` (novo modal de exibição única de segredo)
+- `FrontEnd/src/app/(main)/dashboard/master-admin/page.tsx` (aba de API Clients, tabela e modais de confirmação)
+- `FrontEnd/src/lib/redux/slices/userSlice.ts` (migração de fetch para fetchBff em fetchUserProfile e fetchUsers)
+- `FrontEnd/src/components/dashboard/MyProfile.tsx` (correção do loop no useEffect e melhorias completas de UX/acessibilidade)
+
+---
+
 === SPRINT 39 - 21/10/2026 ===
 ### Resumo Técnico de Fechamento: API de Autenticação/Usuários para Apps Externas, Swagger e Hardening de Segurança (BackEnd & FrontEnd)
 
