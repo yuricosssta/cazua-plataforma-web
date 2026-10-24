@@ -477,7 +477,11 @@ export class ResourcesService {
   }
 
   async listTransactions(orgId: string, startDate?: string, endDate?: string) {
-    return this.transactionRepo.findAllByOrganization(orgId, startDate, endDate);
+    return this.transactionRepo.findAllByOrganization(
+      orgId,
+      startDate,
+      endDate,
+    );
   }
 
   async getProjectStatement(

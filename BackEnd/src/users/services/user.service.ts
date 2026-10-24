@@ -1,5 +1,3 @@
-// src/users/services/user.service.ts
-
 import {
   BadRequestException,
   ConflictException,
@@ -7,12 +5,14 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { UsersRepository } from '../repositories/user.repository';
 import { CreateUser, UpdateUser } from '../validations/users.zod';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { IUser } from '../schemas/models/user.interface';
 import { MailService } from '../../shared/services/mail.service';
+import { IApiClient } from '../../api-clients/schemas/models/api-client.interface';
 
 @Injectable()
 export class UsersService {
@@ -22,63 +22,86 @@ export class UsersService {
   ) {}
 
   async findOne(email: string): Promise<IUser | undefined> {
-    return this.userRepository.findOneByEmail(email);
+    const normalized = email ? email.trim().toLowerCase() : '';
+    return this.userRepository.findOneByEmail(normalized);
   }
 
-  async createUser(user: CreateUser) {
+  async createUser(user: CreateUser): Promise<IUser> {
+    const normalizedEmail = user.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(user.password, 10);
     try {
       return await this.userRepository.createUser({
         ...user,
+        email: normalizedEmail,
         password: hashedPassword,
       } as Partial<IUser>);
     } catch (e: any) {
-      console.error('Erro ao criar usuário:', e);
       if (e.code === 11000) {
-        throw new ConflictException('O E-mail já está em uso');
+        throw new ConflictException('O E-mail já está em uso.');
       }
-      throw new InternalServerErrorException('Erro ao criar usuário');
+      throw new InternalServerErrorException('Erro ao criar usuário.');
     }
   }
 
-  async getAllUsers() {
+  async getAllUsers(): Promise<IUser[]> {
     return this.userRepository.getAllUsers();
   }
 
-  async searchUser(term: string) {
-    return this.userRepository.searchUser(term);
+  async searchUser(term: string): Promise<IUser[]> {
+    if (!term || term.trim().length < 2) {
+      throw new BadRequestException(
+        'O termo de busca deve conter pelo menos 2 caracteres.',
+      );
+    }
+    return this.userRepository.searchUser(term.trim());
   }
 
-  async getUser(userId: string) {
+  async getUser(userId: string): Promise<IUser> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('ID de usuário inválido.');
+    }
     const user = await this.userRepository.getUser(userId);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!user) throw new NotFoundException('Usuário não encontrado.');
     return user;
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<IUser | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
     return this.userRepository.getUser(id);
   }
 
-  async updateUser(userId: string, user: UpdateUser) {
-    const updateUser = await this.userRepository.updateUser(
+  async updateUser(userId: string, user: UpdateUser): Promise<IUser> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('ID de usuário inválido.');
+    }
+    const updatedUser = await this.userRepository.updateUser(
       userId,
       user as Partial<IUser>,
     );
-    if (!updateUser) throw new NotFoundException('Usuário não encontrado');
-    return updateUser;
+    if (!updatedUser) throw new NotFoundException('Usuário não encontrado.');
+    return updatedUser;
   }
 
-  async deleteUser(userId: string) {
+  async deleteUser(userId: string): Promise<{ message: string }> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('ID de usuário inválido.');
+    }
     const deletedUser = await this.userRepository.deleteUser(userId);
-    if (!deletedUser) throw new NotFoundException('Usuário não encontrado');
-    return { message: `Usuário com id ${userId} deletado com sucesso.` };
+    if (!deletedUser) throw new NotFoundException('Usuário não encontrado.');
+    return { message: 'Usuário desativado com sucesso.' };
   }
 
   async changeUserPassword(
     userId: string,
     currentPass: string,
     newPass: string,
-  ) {
+  ): Promise<{ message: string }> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('ID de usuário inválido.');
+    }
+
     if (!currentPass || !newPass) {
       throw new BadRequestException(
         'A senha atual e a nova senha são obrigatórias.',
@@ -86,7 +109,9 @@ export class UsersService {
     }
 
     const user = await this.userRepository.getUserWithPassword(userId);
-    if (!user) throw new NotFoundException('Usuário não encontrado.');
+    if (!user || user.isActive === false) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
 
     const passwordMatch = await bcrypt.compare(currentPass, user.password);
     if (!passwordMatch) {
@@ -102,14 +127,20 @@ export class UsersService {
     return { message: 'Senha atualizada com sucesso.' };
   }
 
-  async forgotPassword(email: string) {
-    const user = await this.userRepository.findOneByEmail(email);
+  async forgotPassword(
+    email: string,
+    apiClient?: IApiClient,
+  ): Promise<{ message: string }> {
+    const normalized = email ? email.trim().toLowerCase() : '';
+    const user = await this.userRepository.findOneByEmail(normalized);
+
     const successMessage = {
       message:
         'Se o e-mail existir em nossa base, um link de recuperação será enviado.',
     };
 
-    if (!user) {
+    // Não envia e-mail se o usuário não existe ou está inativo
+    if (!user || user.isActive === false) {
       return successMessage;
     }
 
@@ -127,13 +158,30 @@ export class UsersService {
       resetPasswordExpires: expireDate,
     } as Partial<IUser>);
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    let resetUrl: string;
+    if (apiClient) {
+      if (apiClient.resetPasswordUrl) {
+        resetUrl = `${apiClient.resetPasswordUrl}?token=${resetToken}`;
+      } else {
+        resetUrl = `${process.env.FRONTEND_URL}/recover?token=${resetToken}`;
+      }
+      await this.mailService.sendPasswordResetEmail(
+        user.email,
+        resetUrl,
+        apiClient.name,
+      );
+    } else {
+      resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+      await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    }
 
     return successMessage;
   }
 
-  async resetPassword(token: string, newPass: string) {
+  async resetPassword(
+    token: string,
+    newPass: string,
+  ): Promise<{ message: string }> {
     const resetTokenHash = crypto
       .createHash('sha256')
       .update(token)
@@ -141,9 +189,9 @@ export class UsersService {
 
     const user = await this.userRepository.findOneByResetToken(resetTokenHash);
 
-    // Validação de segurança: verificar existência do usuário e se o token expirou
     if (
       !user ||
+      user.isActive === false ||
       (user.resetPasswordExpires &&
         new Date(user.resetPasswordExpires).getTime() < Date.now())
     ) {

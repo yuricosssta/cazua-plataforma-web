@@ -18,6 +18,7 @@ import { SharedModule } from './shared/shared.module';
 import { PlanningModule } from './planning/planning.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LandingPageModule } from './landing-pages/landing-page.module';
+import { ApiClientModule } from './api-clients/api-client.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { LandingPageModule } from './landing-pages/landing-page.module';
     SharedModule,
     PlanningModule,
     LandingPageModule,
+    ApiClientModule,
   ],
   controllers: [AppController],
   providers: [AppService], // { provide: APP_GUARD, useClass: AuthGuard }],

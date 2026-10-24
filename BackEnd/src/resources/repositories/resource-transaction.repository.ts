@@ -99,8 +99,7 @@ export class ResourceTransactionRepository {
     if (startDate || endDate) {
       filter.createdAt = {};
       if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate)
-        filter.createdAt.$lte = new Date(endDate + 'T23:59:59.999Z');
+      if (endDate) filter.createdAt.$lte = new Date(endDate + 'T23:59:59.999Z');
     }
 
     return this.model

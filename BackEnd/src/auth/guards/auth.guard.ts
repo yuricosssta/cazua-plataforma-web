@@ -1,4 +1,3 @@
-//src/auth/guards/auth.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -26,6 +25,8 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
+        issuer: 'cazua',
+        audience: 'cazua-api',
       });
 
       request['user'] = payload;

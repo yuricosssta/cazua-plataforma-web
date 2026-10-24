@@ -1,6 +1,5 @@
-//src/users/repositories/mongoose/user.mongoose.repository.ts
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { UsersRepository } from '../../repositories/user.repository';
 import { IUser } from '../../schemas/models/user.interface';
 import { User } from '../../schemas/user.schema';
@@ -9,56 +8,54 @@ export class UsersMongooseRepository implements UsersRepository {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async getUsersByOrganization(orgId: string): Promise<IUser[]> {
-    console.log(`Buscando usuários para a organização com ID: ${orgId}`);
+    const orgObjectId = new Types.ObjectId(orgId);
     const users = await this.userModel
-      .find({ 'memberships.organizationId': orgId })
-      .select('-password') // Nunca retorna a senha
+      .find({
+        'memberships.organizationId': orgObjectId,
+        isActive: { $ne: false },
+      })
+      .select('-password')
       .lean()
       .exec();
-    console.log(`Usuários encontrados: ${users.length}`);
     return users as unknown as IUser[];
   }
 
   async getAllUsers(): Promise<IUser[]> {
-    console.log('Buscando todos os usuários do sistema');
     const users = await this.userModel
       .find({})
       .select('-password')
+      .sort({ createdAt: -1 })
       .lean()
       .exec();
-    console.log(`Usuários encontrados: ${users.length}`);
     return users as unknown as IUser[];
   }
 
-  async getUser(userId: string): Promise<IUser> {
-    console.log(`Buscando usuário com ID: ${userId}`);
+  async getUser(userId: string): Promise<IUser | null> {
+    const userObjectId = new Types.ObjectId(userId);
     const user = await this.userModel
-      .findById(userId)
+      .findById(userObjectId)
       .select('-password')
       .lean()
       .exec();
     if (!user) {
-      console.log(`Usuário com ID ${userId} não encontrado.`);
       return null;
     }
-    console.log(`Usuário encontrado: ${user.name} (${user.email})`);
     return user as unknown as IUser;
   }
 
-  async getUserWithPassword(userId: string): Promise<IUser> {
-    console.log(`Buscando usuário COM SENHA para validação. ID: ${userId}`);
-    const user = await this.userModel.findById(userId).lean().exec();
+  async getUserWithPassword(userId: string): Promise<IUser | null> {
+    const userObjectId = new Types.ObjectId(userId);
+    const user = await this.userModel.findById(userObjectId).lean().exec();
 
     if (!user) {
-      console.log(`Usuário com ID ${userId} não encontrado.`);
       return null;
     }
     return user as unknown as IUser;
   }
 
   async searchUser(term: string): Promise<IUser[]> {
-    const regex = new RegExp(term, 'i');
-    console.log(`Buscando usuários com termo: ${term}`);
+    const sanitizedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(sanitizedTerm, 'i');
     const users = await this.userModel
       .find({
         $or: [{ name: regex }, { email: regex }],
@@ -66,15 +63,18 @@ export class UsersMongooseRepository implements UsersRepository {
       .select('-password')
       .lean()
       .exec();
-    console.log(`Usuários encontrados para termo "${term}": ${users.length}`);
     return users as unknown as IUser[];
   }
 
   async createUser(user: Partial<IUser>): Promise<IUser> {
-    const createUser = new this.userModel(user);
-    console.log(`Criando usuário: ${user.name} (${user.email})`);
+    const normalizedEmail = user.email
+      ? user.email.trim().toLowerCase()
+      : undefined;
+    const createUser = new this.userModel({
+      ...user,
+      ...(normalizedEmail && { email: normalizedEmail }),
+    });
     const savedUser = await createUser.save();
-    console.log(`Usuário criado com ID: ${savedUser._id}`);
     return savedUser.toObject() as unknown as IUser;
   }
 
@@ -82,61 +82,71 @@ export class UsersMongooseRepository implements UsersRepository {
     userId: string,
     user: Partial<IUser>,
   ): Promise<IUser | null> {
+    const userObjectId = new Types.ObjectId(userId);
     const updateData = Object.fromEntries(
       Object.entries(user).filter(([, value]) => value !== undefined),
     );
-    console.log(`Atualizando usuário com ID: ${userId}`);
+    if (updateData.email && typeof updateData.email === 'string') {
+      updateData.email = updateData.email.trim().toLowerCase();
+    }
     const updatedUser = await this.userModel
-      .findOneAndUpdate({ _id: userId }, { $set: updateData }, { new: true })
+      .findOneAndUpdate(
+        { _id: userObjectId },
+        { $set: updateData },
+        { new: true },
+      )
       .select('-password')
       .lean()
       .exec();
     if (!updatedUser) {
-      console.log(`Usuário com ID ${userId} não encontrado para atualização.`);
       return null;
     }
-    console.log(
-      `Usuário atualizado: ${updatedUser.name} (${updatedUser.email})`,
-    );
     return updatedUser as unknown as IUser;
   }
 
   async findOneByEmail(email: string): Promise<IUser | undefined> {
-    const user = await this.userModel.findOne({ email }).lean().exec();
+    const normalized = email ? email.trim().toLowerCase() : '';
+    // Busca case-insensitive com collation para compatibilidade total
+    const user = await this.userModel
+      .findOne({ email: normalized })
+      .collation({ locale: 'en', strength: 2 })
+      .lean()
+      .exec();
+
     if (user) {
-      console.log(`Usuário encontrado por email: ${email} - ${user.name}`);
       return user as unknown as IUser;
-    } else {
-      console.log(`Nenhum usuário encontrado com email: ${email}`);
-      return undefined;
     }
+    return undefined;
   }
 
-  async findOneByResetToken(tokenHash: string) {
-    console.log(`Buscando usuário com token de reset criptografado.`);
+  async findOneByResetToken(tokenHash: string): Promise<IUser | undefined> {
     const user = await this.userModel
       .findOne({
         resetPasswordToken: tokenHash,
-        resetPasswordExpires: { $gt: new Date() }, // Verifica se o token ainda é válido
+        resetPasswordExpires: { $gt: new Date() },
+        isActive: { $ne: false },
       })
       .lean()
       .exec();
 
     if (user) {
-      console.log(`Usuário encontrado para token de reset: ${user.email}`);
       return user as unknown as IUser;
-    } else {
-      console.log(`Nenhum usuário encontrado ou token expirado.`);
-      return undefined;
     }
+    return undefined;
   }
 
   async deleteUser(userId: string): Promise<IUser | null> {
-    console.log(`Deletando usuário com ID: ${userId}`);
-    const deletedUser = await this.userModel
-      .findByIdAndDelete({ _id: userId })
+    const userObjectId = new Types.ObjectId(userId);
+    // Soft delete conforme regras inegociáveis do projeto
+    const deactivatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userObjectId,
+        { $set: { isActive: false } },
+        { new: true },
+      )
+      .select('-password')
       .lean()
       .exec();
-    return deletedUser as unknown as IUser;
+    return deactivatedUser as unknown as IUser;
   }
 }

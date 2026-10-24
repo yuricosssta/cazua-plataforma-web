@@ -27,16 +27,28 @@ export class MailService {
     });
   }
 
-  async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    resetUrl: string,
+    appName?: string,
+  ): Promise<void> {
     try {
+      const subject = appName
+        ? `Recuperação de Senha - ${appName} (Sistema Cazuá)`
+        : 'Recuperação de Senha - Sistema Cazuá';
+
+      const description = appName
+        ? `Você solicitou a redefinição de senha da sua conta de acesso utilizada no <strong>${appName}</strong>.`
+        : 'Você solicitou a redefinição de sua senha.';
+
       await this.transporter.sendMail({
         from: process.env.MAIL_FROM,
         to: email,
-        subject: 'Recuperação de Senha - Sistema Cazuá',
-        text: `Você solicitou a redefinição de senha. Acesse o link para criar uma nova senha: ${resetUrl}`,
+        subject,
+        text: `Você solicitou a redefinição de senha${appName ? ` para ${appName}` : ''}. Acesse o link para criar uma nova senha: ${resetUrl}`,
         html: `
           <h3>Sistema Cazuá</h3>
-          <p>Você solicitou a redefinição de sua senha.</p>
+          <p>${description}</p>
           <p><a href="${resetUrl}" target="_blank">Clique aqui para criar uma nova senha</a></p>
           <p><em>Este link é válido por 1 hora.</em></p>
           <p>Se você não solicitou esta alteração, ignore este e-mail. Nenhuma mudança será feita na sua conta.</p>
