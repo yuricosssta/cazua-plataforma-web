@@ -178,7 +178,10 @@ export class UsersService {
     return successMessage;
   }
 
-  async resetPassword(token: string, newPass: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPass: string,
+  ): Promise<{ message: string }> {
     const resetTokenHash = crypto
       .createHash('sha256')
       .update(token)

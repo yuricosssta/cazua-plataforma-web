@@ -30,17 +30,26 @@ describe('SuperAdminGuard', () => {
   });
 
   it('should allow if user has isSuperAdmin === true', () => {
-    const ctx = createMockContext({ email: 'other@example.com', isSuperAdmin: true });
+    const ctx = createMockContext({
+      email: 'other@example.com',
+      isSuperAdmin: true,
+    });
     expect(guard.canActivate(ctx)).toBe(true);
   });
 
   it('should allow if user email matches SUPER_ADMIN_EMAIL', () => {
-    const ctx = createMockContext({ email: 'admin@cazua.com', isSuperAdmin: false });
+    const ctx = createMockContext({
+      email: 'admin@cazua.com',
+      isSuperAdmin: false,
+    });
     expect(guard.canActivate(ctx)).toBe(true);
   });
 
   it('should throw ForbiddenException if user is neither isSuperAdmin nor super admin email', () => {
-    const ctx = createMockContext({ email: 'user@example.com', isSuperAdmin: false });
+    const ctx = createMockContext({
+      email: 'user@example.com',
+      isSuperAdmin: false,
+    });
     expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
   });
 });

@@ -1,11 +1,7 @@
 import { z } from 'zod';
 
 export const createUserSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email('E-mail inválido.'),
+  email: z.string().trim().toLowerCase().email('E-mail inválido.'),
   name: z.string().min(1, 'Nome é obrigatório.').trim(),
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
 });
@@ -22,11 +18,7 @@ export const changePasswordSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email('Formato de e-mail inválido.'),
+  email: z.string().trim().toLowerCase().email('Formato de e-mail inválido.'),
 });
 
 export const resetPasswordSchema = z.object({

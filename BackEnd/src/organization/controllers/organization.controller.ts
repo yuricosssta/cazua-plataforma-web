@@ -61,7 +61,8 @@ export class OrganizationController {
   @Get(':orgId/members')
   @ApiOperation({
     summary: 'Listar membros de uma organização',
-    description: 'Requer que o usuário seja membro da organização ou Super Admin.',
+    description:
+      'Requer que o usuário seja membro da organização ou Super Admin.',
   })
   @ApiResponse({
     status: 200,

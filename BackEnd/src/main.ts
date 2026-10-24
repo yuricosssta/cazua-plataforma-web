@@ -34,9 +34,8 @@ async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
 
   if (swaggerUser && swaggerPass) {
-    const { swaggerBasicAuth } = await import(
-      './shared/swagger/swagger-basic-auth.middleware'
-    );
+    const { swaggerBasicAuth } =
+      await import('./shared/swagger/swagger-basic-auth.middleware');
     app.use(['/api', '/api-json'], swaggerBasicAuth(swaggerUser, swaggerPass));
   }
 

@@ -10,7 +10,10 @@ export class UsersMongooseRepository implements UsersRepository {
   async getUsersByOrganization(orgId: string): Promise<IUser[]> {
     const orgObjectId = new Types.ObjectId(orgId);
     const users = await this.userModel
-      .find({ 'memberships.organizationId': orgObjectId, isActive: { $ne: false } })
+      .find({
+        'memberships.organizationId': orgObjectId,
+        isActive: { $ne: false },
+      })
       .select('-password')
       .lean()
       .exec();
@@ -64,7 +67,9 @@ export class UsersMongooseRepository implements UsersRepository {
   }
 
   async createUser(user: Partial<IUser>): Promise<IUser> {
-    const normalizedEmail = user.email ? user.email.trim().toLowerCase() : undefined;
+    const normalizedEmail = user.email
+      ? user.email.trim().toLowerCase()
+      : undefined;
     const createUser = new this.userModel({
       ...user,
       ...(normalizedEmail && { email: normalizedEmail }),
@@ -85,7 +90,11 @@ export class UsersMongooseRepository implements UsersRepository {
       updateData.email = updateData.email.trim().toLowerCase();
     }
     const updatedUser = await this.userModel
-      .findOneAndUpdate({ _id: userObjectId }, { $set: updateData }, { new: true })
+      .findOneAndUpdate(
+        { _id: userObjectId },
+        { $set: updateData },
+        { new: true },
+      )
       .select('-password')
       .lean()
       .exec();

@@ -10,10 +10,7 @@ import {
   API_CLIENT_REPOSITORY,
   IApiClientRepository,
 } from '../repositories/api-client.repository';
-import {
-  CreateApiClientDto,
-  UpdateApiClientDto,
-} from '../dto/api-client.zod';
+import { CreateApiClientDto, UpdateApiClientDto } from '../dto/api-client.zod';
 import { IApiClient } from '../schemas/models/api-client.interface';
 
 @Injectable()
@@ -34,9 +31,7 @@ export class ApiClientService {
     const clientSecret = `sec_${crypto.randomBytes(32).toString('hex')}`;
     const secretHash = this.hashSecret(clientSecret);
 
-    const allowedOrgIds = dto.allowedOrgIds.map(
-      (id) => new Types.ObjectId(id),
-    );
+    const allowedOrgIds = dto.allowedOrgIds.map((id) => new Types.ObjectId(id));
 
     const ownerUserId = dto.ownerUserId
       ? new Types.ObjectId(dto.ownerUserId)
@@ -110,11 +105,11 @@ export class ApiClientService {
     if (dto.ownerUserId !== undefined) {
       updateData.ownerUserId = dto.ownerUserId
         ? new Types.ObjectId(dto.ownerUserId)
-        : undefined;
+        : null;
     }
 
     if (dto.resetPasswordUrl !== undefined) {
-      updateData.resetPasswordUrl = dto.resetPasswordUrl || undefined;
+      updateData.resetPasswordUrl = dto.resetPasswordUrl || null;
     }
 
     if (dto.isActive !== undefined) {
@@ -164,9 +159,8 @@ export class ApiClientService {
     }
 
     const clientObjectId = new Types.ObjectId(id);
-    const deactivated = await this.apiClientRepository.deactivate(
-      clientObjectId,
-    );
+    const deactivated =
+      await this.apiClientRepository.deactivate(clientObjectId);
     if (!deactivated) {
       throw new NotFoundException('API Client não encontrado.');
     }

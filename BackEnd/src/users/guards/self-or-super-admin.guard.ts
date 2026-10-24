@@ -28,9 +28,11 @@ export class SelfOrSuperAdminGuard implements CanActivate {
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
     const isSuperAdmin =
       user.isSuperAdmin === true ||
-      (superAdminEmail && user.email?.toLowerCase() === superAdminEmail.toLowerCase());
+      (superAdminEmail &&
+        user.email?.toLowerCase() === superAdminEmail.toLowerCase());
 
-    const isSelf = String(user.sub || user.userId || user.id) === String(userId);
+    const isSelf =
+      String(user.sub || user.userId || user.id) === String(userId);
 
     if (!isSelf && !isSuperAdmin) {
       throw new ForbiddenException(

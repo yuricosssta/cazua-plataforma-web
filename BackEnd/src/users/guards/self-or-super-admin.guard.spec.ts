@@ -33,12 +33,18 @@ describe('SelfOrSuperAdminGuard', () => {
   };
 
   it('should throw BadRequestException if userId param is not a valid ObjectId', () => {
-    const ctx = createMockContext({ sub: validTargetId }, { userId: 'invalid-id' });
+    const ctx = createMockContext(
+      { sub: validTargetId },
+      { userId: 'invalid-id' },
+    );
     expect(() => guard.canActivate(ctx)).toThrow(BadRequestException);
   });
 
   it('should allow if user is modifying their own account', () => {
-    const ctx = createMockContext({ sub: validTargetId }, { userId: validTargetId });
+    const ctx = createMockContext(
+      { sub: validTargetId },
+      { userId: validTargetId },
+    );
     expect(guard.canActivate(ctx)).toBe(true);
   });
 

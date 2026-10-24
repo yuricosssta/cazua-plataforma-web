@@ -21,7 +21,8 @@ export class SuperAdminGuard implements CanActivate {
     const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
     const isSuperAdmin =
       user.isSuperAdmin === true ||
-      (superAdminEmail && user.email?.toLowerCase() === superAdminEmail.toLowerCase());
+      (superAdminEmail &&
+        user.email?.toLowerCase() === superAdminEmail.toLowerCase());
 
     if (!isSuperAdmin) {
       throw new ForbiddenException(

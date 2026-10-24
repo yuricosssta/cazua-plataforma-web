@@ -22,6 +22,8 @@ export class ApiClientMongooseRepository implements IApiClientRepository {
     const validId = new Types.ObjectId(id);
     const client = await this.clientModel
       .findById(validId)
+      .select('-secretHash')
+      .populate('ownerUserId', 'name email')
       .lean<IApiClient>()
       .exec();
     return client || null;
@@ -39,6 +41,7 @@ export class ApiClientMongooseRepository implements IApiClientRepository {
     const clients = await this.clientModel
       .find()
       .select('-secretHash')
+      .populate('ownerUserId', 'name email')
       .sort({ createdAt: -1 })
       .lean<IApiClient[]>()
       .exec();
@@ -52,6 +55,8 @@ export class ApiClientMongooseRepository implements IApiClientRepository {
     const validId = new Types.ObjectId(id);
     const updated = await this.clientModel
       .findByIdAndUpdate(validId, { $set: data }, { new: true })
+      .select('-secretHash')
+      .populate('ownerUserId', 'name email')
       .lean<IApiClient>()
       .exec();
     return updated || null;

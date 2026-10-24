@@ -242,7 +242,11 @@ describe('ResourcesController', () => {
 
     it('deve listar transações', async () => {
       await controller.listTransactions('org1', '2024-01-01', '2024-12-31');
-      expect(service.listTransactions).toHaveBeenCalledWith('org1', '2024-01-01', '2024-12-31');
+      expect(service.listTransactions).toHaveBeenCalledWith(
+        'org1',
+        '2024-01-01',
+        '2024-12-31',
+      );
     });
 
     it('deve atualizar recurso', async () => {

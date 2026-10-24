@@ -27,7 +27,9 @@ export class ApiClientGuard implements CanActivate {
     );
 
     if (!client) {
-      throw new UnauthorizedException('Credenciais de API Client inválidas ou aplicação desativada.');
+      throw new UnauthorizedException(
+        'Credenciais de API Client inválidas ou aplicação desativada.',
+      );
     }
 
     request['apiClient'] = client;

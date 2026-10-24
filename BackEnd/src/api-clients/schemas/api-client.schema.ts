@@ -20,11 +20,11 @@ export class ApiClient {
   @Prop({ required: true, default: 'MEMBER', enum: ['MEMBER', 'VIEWER'] })
   defaultRole: 'MEMBER' | 'VIEWER';
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
-  ownerUserId?: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false, default: null })
+  ownerUserId?: Types.ObjectId | null;
 
-  @Prop({ required: false })
-  resetPasswordUrl?: string;
+  @Prop({ type: String, required: false, default: null })
+  resetPasswordUrl?: string | null;
 
   @Prop({ required: true, default: true })
   isActive: boolean;

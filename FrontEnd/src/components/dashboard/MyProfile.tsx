@@ -27,7 +27,7 @@ export function MyProfile() {
   }, [profile]);
 
   useEffect(() => {
-    if (!profile && status !== 'loading') dispatch(fetchUserProfile());
+    if (!profile && status === 'idle') dispatch(fetchUserProfile());
   }, [profile, status, dispatch]);
 
   const handleUpdateName = async (e: React.FormEvent) => {

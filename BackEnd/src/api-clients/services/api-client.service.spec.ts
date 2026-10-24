@@ -12,22 +12,35 @@ describe('ApiClientService', () => {
     _id: new Types.ObjectId(),
     name: 'App Parceira',
     clientId: 'cli_12345',
-    secretHash: crypto.createHash('sha256').update('sec_valid_secret').digest('hex'),
+    secretHash: crypto
+      .createHash('sha256')
+      .update('sec_valid_secret')
+      .digest('hex'),
     allowedOrgIds: [validOrgId],
     defaultRole: 'MEMBER' as const,
     isActive: true,
   };
 
   const mockRepo = {
-    create: jest.fn().mockImplementation((data) => Promise.resolve({ ...data, _id: new Types.ObjectId() })),
+    create: jest
+      .fn()
+      .mockImplementation((data) =>
+        Promise.resolve({ ...data, _id: new Types.ObjectId() }),
+      ),
     findById: jest.fn().mockResolvedValue(mockClientInDb),
     findByClientId: jest.fn().mockImplementation((clientId) => {
       if (clientId === 'cli_12345') return Promise.resolve(mockClientInDb);
       return Promise.resolve(null);
     }),
     findAll: jest.fn().mockResolvedValue([mockClientInDb]),
-    update: jest.fn().mockImplementation((id, data) => Promise.resolve({ ...mockClientInDb, ...data })),
-    deactivate: jest.fn().mockResolvedValue({ ...mockClientInDb, isActive: false }),
+    update: jest
+      .fn()
+      .mockImplementation((id, data) =>
+        Promise.resolve({ ...mockClientInDb, ...data }),
+      ),
+    deactivate: jest
+      .fn()
+      .mockResolvedValue({ ...mockClientInDb, isActive: false }),
   };
 
   beforeEach(async () => {
@@ -55,18 +68,27 @@ describe('ApiClientService', () => {
   });
 
   it('should validate valid client credentials', async () => {
-    const client = await service.validateClientCredentials('cli_12345', 'sec_valid_secret');
+    const client = await service.validateClientCredentials(
+      'cli_12345',
+      'sec_valid_secret',
+    );
     expect(client).toBeDefined();
     expect(client?.clientId).toBe('cli_12345');
   });
 
   it('should reject invalid client secret', async () => {
-    const client = await service.validateClientCredentials('cli_12345', 'sec_wrong_secret');
+    const client = await service.validateClientCredentials(
+      'cli_12345',
+      'sec_wrong_secret',
+    );
     expect(client).toBeNull();
   });
 
   it('should reject non-existing client id', async () => {
-    const client = await service.validateClientCredentials('cli_unknown', 'sec_any');
+    const client = await service.validateClientCredentials(
+      'cli_unknown',
+      'sec_any',
+    );
     expect(client).toBeNull();
   });
 
@@ -74,5 +96,20 @@ describe('ApiClientService', () => {
     const result = await service.rotateSecret(mockClientInDb._id.toString());
     expect(result.clientSecret).toMatch(/^sec_/);
     expect(mockRepo.update).toHaveBeenCalled();
+  });
+
+  it('should allow clearing ownerUserId and resetPasswordUrl with null on update', async () => {
+    const result = await service.update(mockClientInDb._id.toString(), {
+      ownerUserId: null,
+      resetPasswordUrl: null,
+    });
+    expect(result).toBeDefined();
+    expect(mockRepo.update).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
+      expect.objectContaining({
+        ownerUserId: null,
+        resetPasswordUrl: null,
+      }),
+    );
   });
 });

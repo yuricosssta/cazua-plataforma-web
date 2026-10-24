@@ -36,7 +36,10 @@ describe('OrganizationService', () => {
       providers: [
         OrganizationService,
         { provide: getModelToken(Organization.name), useValue: mockOrgModel },
-        { provide: getModelToken(OrganizationMember.name), useValue: mockMemberModel },
+        {
+          provide: getModelToken(OrganizationMember.name),
+          useValue: mockMemberModel,
+        },
         { provide: UsersService, useValue: mockUsersService },
         { provide: ConfigService, useValue: mockConfigService },
       ],

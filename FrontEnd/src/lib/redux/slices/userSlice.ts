@@ -1,7 +1,8 @@
 //src/lib/redux/slices/userSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { IUser } from '../../../types/user';
-import { logout, sessionExpired } from './authSlice'; 
+import { logout, sessionExpired } from './authSlice';
+import { fetchBff } from '@/lib/api/fetchBff';
 
 interface UserState {
   users: IUser[] | null;
@@ -19,25 +20,27 @@ const initialState: UserState = {
 
 export const fetchUserProfile = createAsyncThunk<IUser>(
   'user/fetchProfile',
-  async () => {
-    const response = await fetch('/api/users/profile');
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || data.message || 'Falha ao buscar perfil');
+  async (_, { rejectWithValue }) => {
+    try {
+      return await fetchBff<IUser>('/api/users/profile');
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || 'Falha ao buscar perfil',
+      );
     }
-    return data;
   }
 );
 
 export const fetchUsers = createAsyncThunk<IUser[]>(
   'user/fetchUsers',
-  async () => {
-    const response = await fetch('/api/users');
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || data.message || 'Falha ao buscar usuários');
+  async (_, { rejectWithValue }) => {
+    try {
+      return await fetchBff<IUser[]>('/api/users');
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || 'Falha ao buscar usuários',
+      );
     }
-    return data;
   }
 );
 
@@ -58,7 +61,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || 'Falha ao buscar perfil.';
+        state.error = (action.payload as string) || action.error.message || 'Falha ao buscar perfil.';
       })
       .addCase(fetchUsers.pending, (state) => {
         state.status = 'loading';
@@ -69,7 +72,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || 'Falha ao buscar usuários.';
+        state.error = (action.payload as string) || action.error.message || 'Falha ao buscar usuários.';
       })
       .addCase(logout, () => {
         return initialState;

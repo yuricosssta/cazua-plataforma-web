@@ -107,14 +107,16 @@ export class OrganizationService {
     }
 
     if (requester) {
-      const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+      const superAdminEmail =
+        this.configService.get<string>('SUPER_ADMIN_EMAIL');
       const isSuperAdmin =
         requester.isSuperAdmin === true ||
         (superAdminEmail &&
           requester.email?.toLowerCase() === superAdminEmail.toLowerCase());
 
       if (!isSuperAdmin) {
-        const requesterUserId = requester.sub || requester.userId || requester.id;
+        const requesterUserId =
+          requester.sub || requester.userId || requester.id;
         const isMember = await this.memberModel.findOne({
           organizationId: new Types.ObjectId(orgId),
           userId: new Types.ObjectId(String(requesterUserId)),
@@ -164,14 +166,16 @@ export class OrganizationService {
     }
 
     if (requester) {
-      const superAdminEmail = this.configService.get<string>('SUPER_ADMIN_EMAIL');
+      const superAdminEmail =
+        this.configService.get<string>('SUPER_ADMIN_EMAIL');
       const isSuperAdmin =
         requester.isSuperAdmin === true ||
         (superAdminEmail &&
           requester.email?.toLowerCase() === superAdminEmail.toLowerCase());
 
       if (!isSuperAdmin) {
-        const requesterUserId = requester.sub || requester.userId || requester.id;
+        const requesterUserId =
+          requester.sub || requester.userId || requester.id;
         const adminMember = await this.memberModel.findOne({
           organizationId: new Types.ObjectId(orgId),
           userId: new Types.ObjectId(String(requesterUserId)),

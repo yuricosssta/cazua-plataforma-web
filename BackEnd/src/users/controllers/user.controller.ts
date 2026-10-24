@@ -95,7 +95,8 @@ export class UsersController {
   @ApiBearerAuth('jwt')
   @ApiOperation({
     summary: 'Obter dados de um usuário por ID',
-    description: 'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
+    description:
+      'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
   })
   @ApiResponse({
     status: 200,
@@ -109,7 +110,8 @@ export class UsersController {
 
   @ApiOperation({
     summary: 'Criar usuário no Cazuá (cadastro base público)',
-    description: 'Cadastro global de usuário sem vínculo automático com organizações.',
+    description:
+      'Cadastro global de usuário sem vínculo automático com organizações.',
   })
   @ApiBody({ schema: zodToOpenApi(createUserSchema) })
   @ApiResponse({
@@ -127,7 +129,8 @@ export class UsersController {
   @ApiBearerAuth('jwt')
   @ApiOperation({
     summary: 'Atualizar dados de um usuário',
-    description: 'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
+    description:
+      'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
   })
   @ApiBody({ schema: zodToOpenApi(updateUserSchema) })
   @ApiResponse({
@@ -146,7 +149,8 @@ export class UsersController {
   @ApiBearerAuth('jwt')
   @ApiOperation({
     summary: 'Desativar usuário (soft delete)',
-    description: 'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
+    description:
+      'Acessível apenas pelo próprio usuário ou pelo Super Administrador.',
   })
   @ApiResponse({
     status: 200,

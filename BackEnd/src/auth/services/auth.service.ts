@@ -121,7 +121,8 @@ export class AuthService {
     }
 
     const normalizedEmail = dto.email.trim().toLowerCase();
-    const existingUser = await this.authUsersService.findByEmail(normalizedEmail);
+    const existingUser =
+      await this.authUsersService.findByEmail(normalizedEmail);
 
     if (existingUser) {
       // Usuário já cadastrado no Cazuá: valida se a senha fornecida bate
