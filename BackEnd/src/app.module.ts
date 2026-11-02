@@ -25,7 +25,9 @@ import { ApiClientModule } from './api-clients/api-client.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRoot(process.env.MONGO_URI),
+    MongooseModule.forRoot(process.env.MONGO_URI, {
+      dbName: process.env.MONGO_DB_NAME || 'cazua_prod',
+    }),
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,

@@ -1,3 +1,45 @@
+=== SPRINT 41 - 02/11/2026 ===
+### Resumo Técnico de Fechamento: Migração Definitiva do MongoDB Atlas, Padronização de Nomenclatura e Evolução dos Backups R2 (BackEnd & Infra)
+
+**1. Contexto e Problema Identificado**
+
+O banco de dados do Sistema Cazuá operava em um cluster legado do início do projeto (`Escola Desafio` / `escoladesafio.cqzai.mongodb.net`), cuja `MONGO_URI` não especificava o nome do database após a barra (`/`). Por comportamento padrão do driver do MongoDB/Mongoose, todas as 26 coleções de produção estavam armazenadas dentro do database genérico `test`.
+
+**2. Decisões de Arquitetura (Topologia Free Tier M0, Nomenclatura e Segurança)**
+
+* **Topologia e Padronização no MongoDB Atlas (Free Tier M0):**
+  - **Projeto Dedicado:** `Grupo Cazua`
+  - **Cluster:** `cazua-main` (Tier M0 gratuito, AWS `sa-east-1` São Paulo)
+  - **Databases Padronizados:** `cazua_prod` (produção) e `cazua_dev` (reservado para isolamento de desenvolvimento no mesmo cluster M0)
+  - **Database User e AppName:** Usuário `cazua_app` e identificador `appName=cazua-backend` na string de conexão (`mongodb+srv://cazua_app:<SENHA>@cazua-main.<hash>.mongodb.net/cazua_prod?retryWrites=true&w=majority&appName=cazua-backend`).
+
+* **Trava Explícita de Database no NestJS (`AppModule`):**
+  - `MongooseModule.forRoot(process.env.MONGO_URI, { dbName: process.env.MONGO_DB_NAME || 'cazua_prod' })` configurado em `BackEnd/src/app.module.ts`, garantindo que a aplicação nunca mais recaia silenciosamente no database `test` caso o caminho seja omitido na URI.
+
+* **Backup Imediato Pré-Migração e Migração Nativa (`scripts/migrate-mongo.ts`):**
+  - Implementação de script TypeScript autônomo utilizando `mongoose` (driver nativo + `BSON.EJSON`) e `@aws-sdk/client-s3` (sem dependência de `docker` ou `mongodb-database-tools` instalados na máquina local).
+  - **Snapshot Pré-Migração:** Exportação em streaming (`EJSON` estrito preservando `ObjectId`, `Date`, `Decimal128`, etc. + definições de índices) compactada via `gzip` e enviada diretamente ao Cloudflare R2 (`s3://cazua-assets-prod/backups/mongo/cazua_pre_migration_test_20261102_145806.ejson.gz`).
+  - **Migração em Lotes Idempotente (`bulkWrite`):** Cópia de todas as 26 coleções em lotes de 2.000 documentos com `replaceOne(..., { upsert: true })` (incluindo `plannings` com 65.515 documentos, `timelineevents` com 3.662 e `resourcetransactions` com 2.944) e recriação automática de todos os índices customizados, seguida de validação estrita de contagem (`countDocuments`) entre origem e destino.
+
+* **Padronização dos Scripts de Backup/Restore e GitHub Actions:**
+  - `backup-mongo.sh`: Passa a prefixar os arquivos gerados no R2 com o nome do banco (`${MONGO_DB_NAME:-cazua_prod}_${TIMESTAMP}.tar.gz`, ex: `cazua_prod_YYYYMMDD_HHMMSS.tar.gz`) e injeta `--db` caso a URI não contenha caminho explícito.
+  - `restore-mongo.sh`: Adicionado suporte a remapeamento automático de namespace (`--nsInclude`, `--nsFrom`, `--nsTo`), permitindo restaurar backups legados da pasta `test` em `cazua_prod` ou clonar `cazua_prod` para `cazua_dev`.
+  - `.github/workflows/mongo-backup.yml`: Atualizado para propagar `MONGO_DB_NAME: "cazua_prod"` ao container de backup diário.
+
+* **Estratégia de Cutover e Quarentena:**
+  - Manutenção do cluster antigo (`Escola Desafio` / database `test`) em quarentena por 7 a 14 dias com credencial rotacionada para impedir escritas residuais antes do descomissionamento definitivo.
+
+**3. Arquivos Criados ou Alterados**
+
+- `BackEnd/src/app.module.ts` (configuração explícita de `dbName` via `MONGO_DB_NAME || 'cazua_prod'`)
+- `BackEnd/scripts/migrate-mongo.ts` (novo script de backup EJSON para R2, migração em lotes de documentos/índices e validação de integridade)
+- `BackEnd/scripts/backup-mongo.sh` (nomenclatura de arquivo baseada em `MONGO_DB_NAME` e garantia de `--db`)
+- `BackEnd/scripts/restore-mongo.sh` (suporte a migração de namespace `--nsFrom` / `--nsTo` entre bancos)
+- `.github/workflows/mongo-backup.yml` (injeção da variável `MONGO_DB_NAME: "cazua_prod"`)
+- `BackEnd/.env` (atualização local de `MONGO_URI` e adição de `MONGO_DB_NAME=cazua_prod`)
+
+---
+
 === SPRINT 40 - 24/10/2026 ===
 ### Resumo Técnico de Fechamento: Interface de API Clients no Master Admin, Rotas BFF e Correção de Loop de Perfil (BackEnd & FrontEnd)
 

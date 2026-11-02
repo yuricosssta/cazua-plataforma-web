@@ -11,14 +11,19 @@ source /app/scripts/r2-utils.sh
 : "${R2_ENDPOINT:?Variável R2_ENDPOINT é obrigatória}"
 : "${R2_BUCKET_NAME:?Variável R2_BUCKET_NAME é obrigatória}"
 
+DB_NAME="${MONGO_DB_NAME:-cazua_prod}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-ARCHIVE="mongo_${TIMESTAMP}.tar.gz"
+ARCHIVE="${DB_NAME}_${TIMESTAMP}.tar.gz"
 TMP_DIR=$(mktemp -d)
 
-echo "Iniciando backup: ${ARCHIVE}"
+echo "Iniciando backup (${DB_NAME}): ${ARCHIVE}"
 
-# 1. mongodump
-mongodump --uri="${MONGO_URI}" --out="${TMP_DIR}/dump" --gzip
+# 1. mongodump (garante DB_NAME caso não esteja explícito na URI)
+if [[ "${MONGO_URI}" =~ mongodb(\+srv)?://[^/]+/\? ]] || [[ "${MONGO_URI}" =~ mongodb(\+srv)?://[^/]+$ ]]; then
+  mongodump --uri="${MONGO_URI}" --db="${DB_NAME}" --out="${TMP_DIR}/dump" --gzip
+else
+  mongodump --uri="${MONGO_URI}" --out="${TMP_DIR}/dump" --gzip
+fi
 
 # 2. Compacta
 tar -czf "${TMP_DIR}/${ARCHIVE}" -C "${TMP_DIR}" dump
