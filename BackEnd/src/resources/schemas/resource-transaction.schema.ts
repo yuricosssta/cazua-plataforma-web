@@ -41,6 +41,9 @@ export class ResourceTransaction {
   @Prop()
   origin?: string;
 
+  @Prop()
+  notes?: string;
+
   @Prop({ type: Boolean, default: false })
   isStockNegative: boolean;
 
@@ -60,6 +63,9 @@ export class ResourceTransaction {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   canceledBy?: Types.ObjectId;
+
+  @Prop({ type: Date })
+  canceledAt?: Date;
 
   @Prop()
   cancelReason?: string;

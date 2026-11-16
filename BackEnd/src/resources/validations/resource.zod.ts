@@ -29,6 +29,7 @@ export const allocateResourceSchema = z.object({
   resourceId: z.string().min(1, 'O ID do recurso é obrigatório'),
   quantity: sanitizePositiveNumber,
   origin: z.string().optional(),
+  notes: z.string().optional(),
   attachments: z.array(z.string().url('Formato de anexo inválido')).optional(),
 });
 
@@ -42,6 +43,7 @@ export const addStockSchema = z.object({
     .optional()
     .transform((val) => (val !== undefined ? Precision.round(val, 2) : val)),
   origin: z.string().optional(),
+  notes: z.string().optional(),
   attachments: z.array(z.string().url('Formato de anexo inválido')).optional(),
 });
 
@@ -50,6 +52,7 @@ export const returnResourceSchema = z.object({
   resourceId: z.string().min(1, 'O ID do recurso é obrigatório'),
   quantity: sanitizePositiveNumber,
   origin: z.string().optional(),
+  notes: z.string().optional(),
   attachments: z.array(z.string().url('Formato de anexo inválido')).optional(),
 });
 

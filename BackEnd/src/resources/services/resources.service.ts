@@ -111,7 +111,42 @@ export class ResourcesService {
   }
 
   async findAllByOrganization(orgId: string) {
-    return this.resourceRepo.findAllByOrganization(orgId);
+    const [resources, entryTransactions] = await Promise.all([
+      this.resourceRepo.findAllByOrganization(orgId),
+      this.transactionRepo.findLatestEntriesByOrganization(orgId),
+    ]);
+
+    const lastEntryMap = new Map<string, any>();
+    const lastCanceledEntryMap = new Map<string, any>();
+
+    for (const tx of entryTransactions || []) {
+      const txObj =
+        typeof (tx as any).toObject === 'function'
+          ? (tx as any).toObject()
+          : tx;
+      const resId =
+        txObj.resourceId?._id?.toString?.() || txObj.resourceId?.toString?.();
+      if (!resId) continue;
+
+      if (!txObj.isCanceled && !lastEntryMap.has(resId)) {
+        lastEntryMap.set(resId, txObj);
+      } else if (txObj.isCanceled && !lastCanceledEntryMap.has(resId)) {
+        lastCanceledEntryMap.set(resId, txObj);
+      }
+    }
+
+    return resources.map((resource) => {
+      const resObj =
+        typeof (resource as any).toObject === 'function'
+          ? (resource as any).toObject()
+          : resource;
+      const id = resObj._id?.toString?.() || '';
+      return {
+        ...resObj,
+        lastEntry: lastEntryMap.get(id) || null,
+        lastCanceledEntry: lastCanceledEntryMap.get(id) || null,
+      };
+    });
   }
 
   async updateResource(
@@ -170,6 +205,7 @@ export class ResourcesService {
     resourceId: string;
     quantity: number;
     origin?: string;
+    notes?: string;
     attachments?: string[];
   }) {
     const resource = await this.resourceRepo.findById(data.resourceId);
@@ -189,6 +225,7 @@ export class ResourcesService {
       unitCostSnapshot: resource.standardCost,
       totalCost: 0,
       origin: data.origin,
+      notes: data.notes,
       attachments: data.attachments || [],
       isStockNegative: false,
     });
@@ -292,6 +329,7 @@ export class ResourcesService {
       resourceId: string;
       quantity: number;
       origin?: string;
+      notes?: string;
       attachments?: string[];
     },
   ) {
@@ -324,6 +362,7 @@ export class ResourcesService {
       unitCostSnapshot: resource.standardCost,
       totalCost: finalTotalCost,
       origin: data.origin,
+      notes: data.notes,
       attachments: data.attachments || [],
       isStockNegative,
     });
@@ -358,7 +397,10 @@ export class ResourcesService {
       await this.resourceRepo.updateStock(data.resourceId, data.quantity);
     }
 
-    const unitCost = data.unitCostSnapshot || resource.standardCost;
+    const unitCost =
+      data.unitCostSnapshot !== undefined
+        ? data.unitCostSnapshot
+        : resource.standardCost;
     const finalTotalCost = Precision.round(data.quantity * unitCost);
 
     return this.transactionRepo.create({
@@ -370,6 +412,7 @@ export class ResourcesService {
       unitCostSnapshot: unitCost,
       totalCost: finalTotalCost,
       origin: data.origin,
+      notes: data.notes,
       attachments: data.attachments || [],
     });
   }
@@ -403,6 +446,7 @@ export class ResourcesService {
       unitCostSnapshot: resource.standardCost,
       totalCost: finalTotalCost,
       origin: data.origin,
+      notes: data.notes,
       attachments: data.attachments || [],
     });
 
@@ -433,14 +477,21 @@ export class ResourcesService {
     await this.checkWarehousePermission(orgId, authorId, userRole);
 
     const transaction = await this.transactionRepo.findById(transactionId);
-    if (transaction.isCanceled)
-      throw new Error('Esta transação já foi estornada.');
+    if (transaction.organizationId.toString() !== orgId) {
+      throw new UnauthorizedException('Acesso negado a esta transação.');
+    }
+    if (transaction.isCanceled) {
+      throw new BadRequestException('Esta transação já foi estornada.');
+    }
 
     const resource = await this.resourceRepo.findById(
       transaction.resourceId.toString(),
     );
 
-    if (this.isStockableResource(resource.type)) {
+    if (
+      this.isStockableResource(resource.type) &&
+      (!transaction.status || transaction.status === TransactionStatus.APPROVED)
+    ) {
       if (
         transaction.type === TransactionType.ENTRY ||
         transaction.type === TransactionType.RETURN
