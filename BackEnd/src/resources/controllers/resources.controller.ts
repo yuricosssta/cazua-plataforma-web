@@ -126,6 +126,7 @@ export class ResourcesController {
       resourceId: data.resourceId,
       quantity: data.quantity,
       origin: data.origin,
+      ...(data.notes !== undefined ? { notes: data.notes } : {}),
       attachments: data.attachments,
     });
   }
@@ -179,6 +180,7 @@ export class ResourcesController {
         resourceId: data.resourceId,
         quantity: data.quantity,
         origin: data.origin,
+        ...(data.notes !== undefined ? { notes: data.notes } : {}),
         attachments: data.attachments,
       },
     );

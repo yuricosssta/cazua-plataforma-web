@@ -15,6 +15,20 @@ export enum TransactionStatus {
   REJECTED = "REJECTED",
 }
 
+export interface PopulatedUser {
+  _id: string;
+  name: string;
+  email?: string;
+}
+
+export interface PopulatedResourceSummary {
+  _id: string;
+  name: string;
+  unit: string;
+  type?: ResourceType;
+  currentStock?: number;
+}
+
 // --- INTERFACES DE RETORNO (Entidades) ---
 export interface Resource {
   _id: string;
@@ -27,24 +41,33 @@ export interface Resource {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lastEntry?: ResourceTransaction | null;
+  lastCanceledEntry?: ResourceTransaction | null;
 }
 
 export interface ResourceTransaction {
   _id: string;
   organizationId: string;
-  projectId?: string;
-  resourceId: string;
-  authorId: string;
+  projectId?: string | { _id: string; title: string };
+  resourceId: string | PopulatedResourceSummary;
+  authorId: string | PopulatedUser;
   type: string;
   status: TransactionStatus;
   quantity: number;
   unitCostSnapshot: number;
   totalCost: number;
   origin?: string;
+  notes?: string;
   isStockNegative: boolean;
   attachments: string[];
+  approvedBy?: string | PopulatedUser;
+  rejectedReason?: string;
   isCanceled: boolean;
+  canceledBy?: string | PopulatedUser;
+  canceledAt?: string;
+  cancelReason?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ProjectStatementCategory {
@@ -80,6 +103,7 @@ export interface AllocateResourceData {
   resourceId: string;
   quantity: number;
   origin?: string;
+  notes?: string;
   attachments?: string[];
 }
 
@@ -88,7 +112,16 @@ export interface AddStockData {
   quantity: number;
   unitCostSnapshot?: number;
   origin?: string;
+  notes?: string;
   attachments?: string[];
+}
+
+export interface AddStockInitialData {
+  resourceId: string;
+  quantity: number;
+  unitCostSnapshot?: number;
+  origin?: string;
+  notes?: string;
 }
 
 export interface ApproveRequestData {

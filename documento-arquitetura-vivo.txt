@@ -1,3 +1,47 @@
+=== SPRINT 42 - 16/11/2026 ===
+### Resumo Técnico de Fechamento: Rastreabilidade da Última NF no Saldo de Recursos, Correção/Estorno de Entradas e Auditoria Completa (BackEnd & FrontEnd)
+
+**1. Contexto e Necessidade**
+
+Na gestão do Almoxarifado Central (`dashboard/resources`), o catálogo em **Saldo de Recursos** exibia apenas o saldo consolidado e o custo padrão, sem expor os dados da última Nota Fiscal/entrada registrada para cada item. Além disso, embora o fluxo de devolução de obras já existisse, não havia fluxo na interface para corrigir lançamentos de entrada registrados com erro no almoxarifado central, nem visibilidade de autor, data/hora, observações e detalhes de estorno no **Extrato de Movimentações**.
+
+**2. Decisões de Arquitetura (Rastreabilidade, Estorno Contábil e UX)**
+
+* **Modelo Contábil Imutável para Correção de Entradas ("Estornar e Novo Lançamento"):**
+  - Preservada a trilha contábil imutável sem edição destrutiva ou hard delete de transações: a correção de uma entrada (`ENTRY`) ocorre mediante estorno com justificativa obrigatória (`cancelTransaction`, mínimo de 5 caracteres), revertendo o saldo central quando `status === APPROVED` e permitindo reabrir o modal `AddStockModal` já pré-preenchido com os dados da transação estornada (`initialData`) para lançamento imediato dos valores corretos.
+  - **Saldo Temporariamente Negativo:** Permitido o estorno mesmo quando parte do material já tiver sido alocada para uma obra (`currentStock - quantity < 0`), exibindo aviso visual explícito no `CancelEntryModal` com projeção de saldo antes e depois do estorno.
+  - **Proteções no BackEnd:** `cancelTransaction` passou a validar pertencimento do lançamento à organização (`UnauthorizedException`), impedir estorno duplicado (`BadRequestException`), gravar `canceledBy` (`ObjectId`) e `canceledAt` (`Date`), e condicionar a reversão de estoque a transações aprovadas. `addStock` também passou a preservar `unitCostSnapshot === 0` explícito.
+
+* **Campos de Origem/NF, Observações e Auditoria Completa:**
+  - **Schema & DTOs:** Mantido o campo livre `origin` ("Documento de Origem / NF") e adicionados `notes?: string` ("Observações", disponível em `addStockSchema`, `allocateResourceSchema` e `returnResourceSchema`) e `canceledAt?: Date` em `ResourceTransaction`.
+  - **Enriquecimento de Consultas (Repository & Service):**
+    - `findLatestEntriesByOrganization(orgId)` no `ResourceTransactionRepository` busca entradas ordenadas da mais recente para a mais antiga com `authorId` e `canceledBy` populados (`name`, `email`).
+    - `ResourcesService.findAllByOrganization(orgId)` anexa por recurso `lastEntry` (última entrada ativa) e `lastCanceledEntry` (última entrada estornada).
+    - `findAllByOrganization` de transações e `markAsCanceled` passaram a popular `authorId`, `canceledBy`, `approvedBy`, `projectId` e `resourceId` (`name`, `unit`, `type`, `currentStock`).
+
+* **Dropdown de Última NF no Saldo de Recursos e Extrato Auditável (`FrontEnd`):**
+  - **Dropdown por Item (`ResourceCatalog.tsx`):** Cada recurso exibe resumo da última entrada/estorno recente e botão `Ver NF` / `Ocultar NF` para expandir os dados da última Nota Fiscal (`origin`, quantidade, custo unitário NF, custo total, autor da ação, data/hora e observações), botão **Corrigir / Estornar Entrada**, além de bloco colapsável de auditoria da última entrada estornada (`authorId`, `createdAt`, `canceledBy`, `canceledAt`/`updatedAt`, `cancelReason` e `notes`).
+  - **Extrato de Movimentações (`TransactionHistory.tsx`):** Atualizado com coluna **Data / Hora & Autor**, exibição de observações (`notes`), bloco de auditoria em itens estornados, ação **Corrigir / Estornar** em entradas ativas, totais separados de **Entradas** e **Saídas líquidas (obras)** e barra de filtros via `<form>` sempre montada com validação de intervalo e datas em fuso local (`getLocalDateISO`).
+  - **Auditoria e Refinamentos de UX (`belezura`):** Conformidade estrita com tokens semânticos para Light/Dark mode (`globals.css`), `rounded-md` e `lucide-react`; alvos `min-h-11`/`min-w-11`; modal interno para confirmação de inativação; hierarquia de CTAs e `role="tablist"`/`role="tab"` sem flicker de permissão em `page.tsx`; inputs decimais flexíveis (`parseFlexibleDecimal`, vírgula/ponto `pt-BR`), `noValidate`, foco no primeiro campo inválido, resumo ao vivo e `toast.success` em `AddStockModal.tsx`; proteção contra descarte acidental de justificativa (`confirmDiscard`) e fluxo simplificado no rodapé de `CancelEntryModal.tsx`.
+
+**3. Arquivos Criados ou Alterados**
+
+- `BackEnd/src/resources/schemas/resource-transaction.schema.ts` (adição de `notes` e `canceledAt`)
+- `BackEnd/src/resources/validations/resource.zod.ts` (adição de `notes` opcional nos schemas de movimentação)
+- `BackEnd/src/resources/controllers/resources.controller.ts` (encaminhamento opcional de `notes` em `requestAllocation` e `allocateDirectly`)
+- `BackEnd/src/resources/repositories/resource-transaction.repository.ts` (`canceledAt`, `populate` de auditoria/estoque e `findLatestEntriesByOrganization`)
+- `BackEnd/src/resources/services/resources.service.ts` (`lastEntry`/`lastCanceledEntry` em `findAllByOrganization`, persistência de `notes`, suporte a `unitCostSnapshot === 0` e validações de `cancelTransaction`)
+- `BackEnd/src/resources/services/resources.service.spec.ts` (testes unitários com mocks para `findAllByOrganization`, `addStock` e `cancelTransaction`)
+- `FrontEnd/src/lib/services/resourceService.ts` (tipagens `PopulatedUser`, `PopulatedResourceSummary`, `AddStockInitialData`, `lastEntry`, `lastCanceledEntry` e campos de auditoria/observações)
+- `FrontEnd/src/components/resources/resourceUtils.ts` *(novo)* (formatadores `pt-BR` de moeda/quantidade/data, `parseFlexibleDecimal`, `getLocalDateISO` e extração segura de usuário/recurso populados)
+- `FrontEnd/src/components/resources/CancelEntryModal.tsx` *(novo)* (modal de estorno com resumo auditável, alerta de saldo negativo, proteção de rascunho e opção de reabertura para novo lançamento)
+- `FrontEnd/src/components/resources/AddStockModal.tsx` (campo de observações, pré-preenchimento corretivo via `initialData`, validação flexível `pt-BR` e conferência em tempo real)
+- `FrontEnd/src/components/resources/ResourceCatalog.tsx` (dropdown da última NF e auditoria de estorno por recurso, além de modal interno de inativação)
+- `FrontEnd/src/components/resources/TransactionHistory.tsx` (exibição de autor, data/hora, observações, auditoria de estorno, filtro por `<form>` e ação de estorno em entradas)
+- `FrontEnd/src/app/(main)/dashboard/resources/page.tsx` (orquestração de `hasWriteAccess`, fluxo `Estornar e Novo Lançamento` e melhorias de acessibilidade/UX)
+
+---
+
 === SPRINT 41 - 02/11/2026 ===
 ### Resumo Técnico de Fechamento: Migração Definitiva do MongoDB Atlas, Padronização de Nomenclatura e Evolução dos Backups R2 (BackEnd & Infra)
 

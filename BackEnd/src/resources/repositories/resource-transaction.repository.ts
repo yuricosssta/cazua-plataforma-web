@@ -38,11 +38,16 @@ export class ResourceTransactionRepository {
         id,
         {
           isCanceled: true,
-          canceledBy: userId,
+          canceledBy: new (Types.ObjectId as any)(userId),
+          canceledAt: new Date(),
           cancelReason: reason,
         },
         { new: true },
       )
+      .populate('authorId', 'name email')
+      .populate('canceledBy', 'name email')
+      .populate('resourceId', 'name unit type currentStock')
+      .populate('projectId', 'title')
       .exec();
 
     if (!updated) throw new Error('Erro ao cancelar a transação.');
@@ -105,8 +110,25 @@ export class ResourceTransactionRepository {
     return this.model
       .find(filter)
       .sort({ createdAt: -1 })
-      .populate('resourceId', 'name unit')
+      .populate('resourceId', 'name unit type currentStock')
       .populate('projectId', 'title')
+      .populate('authorId', 'name email')
+      .populate('canceledBy', 'name email')
+      .populate('approvedBy', 'name email')
+      .exec();
+  }
+
+  async findLatestEntriesByOrganization(
+    orgId: string,
+  ): Promise<ResourceTransaction[]> {
+    return this.model
+      .find({
+        organizationId: new (Types.ObjectId as any)(orgId),
+        type: TransactionType.ENTRY,
+      })
+      .sort({ createdAt: -1 })
+      .populate('authorId', 'name email')
+      .populate('canceledBy', 'name email')
       .exec();
   }
 
