@@ -1,7 +1,7 @@
 //src/components/resources/ResourceCatalog.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
 import {
@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { EditResourceModal } from "./EditResourceModal";
 import { CancelEntryModal } from "./CancelEntryModal";
+import { ScrollableTableContainer } from "./ScrollableTableContainer";
 import {
   formatCurrencyBR,
   formatQuantityBR,
@@ -48,6 +49,9 @@ interface ResourceCatalogProps {
   onOpenCorrectionEntry?: (initialData: AddStockInitialData) => void;
   onGlobalRefresh?: () => void;
 }
+
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function ResourceCatalog({
   refreshKey,
@@ -77,16 +81,26 @@ export function ResourceCatalog({
     resource: Resource;
   } | null>(null);
 
+  const catalogContainerRef = useRef<HTMLDivElement>(null);
+  const inactivateDialogRef = useRef<HTMLDivElement>(null);
+  const cancelInactivateBtnRef = useRef<HTMLButtonElement>(null);
+  const inactivateTriggerRef = useRef<HTMLElement | null>(null);
+
   const currentOrg = useSelector(selectCurrentOrg);
-  const orgId =
-    typeof currentOrg?.organizationId === "object"
-      ? (currentOrg.organizationId as any)._id
-      : currentOrg?.organizationId;
+  const orgId: string | undefined =
+    currentOrg?.organizationId && typeof currentOrg.organizationId === "object"
+      ? (currentOrg.organizationId as { _id?: string })._id
+      : typeof currentOrg?.organizationId === "string"
+        ? currentOrg.organizationId
+        : undefined;
   const orgRole = currentOrg?.role || "MEMBER";
 
   useEffect(() => {
     async function fetchResources() {
-      if (!orgId) return;
+      if (!orgId) {
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
         const data = await resourceService.listResources(orgId);
@@ -103,16 +117,78 @@ export function ResourceCatalog({
     fetchResources();
   }, [orgId, refreshKey, internalRefresh]);
 
+  const restoreInactivateFocus = useCallback(() => {
+    const trigger = inactivateTriggerRef.current;
+    inactivateTriggerRef.current = null;
+    if (trigger && document.body.contains(trigger)) {
+      trigger.focus();
+    } else {
+      catalogContainerRef.current?.focus();
+    }
+  }, []);
+
+  const handleCloseInactivateModal = useCallback(() => {
+    if (inactivatingId) return;
+    setInactivateTarget(null);
+    requestAnimationFrame(() => restoreInactivateFocus());
+  }, [inactivatingId, restoreInactivateFocus]);
+
+  const isInactivateOpen = Boolean(inactivateTarget);
+
   useEffect(() => {
-    if (!inactivateTarget) return;
+    if (!isInactivateOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const frameId = requestAnimationFrame(() => {
+      cancelInactivateBtnRef.current?.focus();
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !inactivatingId) {
-        setInactivateTarget(null);
+        e.preventDefault();
+        handleCloseInactivateModal();
+        return;
+      }
+
+      if (e.key === "Tab" && inactivateDialogRef.current) {
+        const focusables = Array.from(
+          inactivateDialogRef.current.querySelectorAll<HTMLElement>(
+            FOCUSABLE_SELECTOR
+          )
+        );
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+
+        if (!active || !inactivateDialogRef.current.contains(active)) {
+          e.preventDefault();
+          first.focus();
+          return;
+        }
+
+        if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [inactivateTarget, inactivatingId]);
+    return () => {
+      cancelAnimationFrame(frameId);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isInactivateOpen, inactivatingId, handleCloseInactivateModal]);
 
   const triggerLocalRefresh = () => setInternalRefresh((prev) => prev + 1);
 
@@ -127,13 +203,18 @@ export function ResourceCatalog({
     }));
   };
 
-  const handleRequestInactivate = (resource: Resource) => {
+  const handleRequestInactivate = (
+    resource: Resource,
+    triggerEl?: HTMLElement | null
+  ) => {
     if (resource.currentStock !== 0) {
       toast.warning(
         "Operação bloqueada: Zere o saldo deste recurso antes de inativá-lo para evitar furos contábeis."
       );
       return;
     }
+    inactivateTriggerRef.current =
+      triggerEl || (document.activeElement as HTMLElement | null);
     setInactivateTarget(resource);
   };
 
@@ -151,6 +232,7 @@ export function ResourceCatalog({
       setInactivateTarget(null);
       triggerLocalRefresh();
       onGlobalRefresh?.();
+      requestAnimationFrame(() => restoreInactivateFocus());
     } catch (err: any) {
       toast.error(
         String(
@@ -196,73 +278,92 @@ export function ResourceCatalog({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4 w-full">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-sm text-muted-foreground">Carregando catálogo...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-st-critical space-y-3 w-full">
-        <AlertCircle className="w-8 h-8" />
-        <p className="text-sm font-medium text-center">{error}</p>
-        <button
-          type="button"
-          onClick={triggerLocalRefresh}
-          className="inline-flex items-center gap-2 px-4 min-h-11 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
-
-  if (resources.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3 w-full text-center px-4">
-        <Box className="w-12 h-12 opacity-20" />
-        <p className="text-sm font-medium">
-          Nenhum recurso ativo no almoxarifado.
-        </p>
-        <p className="text-xs opacity-70">
-          {hasWriteAccess
-            ? 'Utilize o botão "Novo Recurso" para iniciar o catálogo.'
-            : "Solicite a um administrador ou membro do almoxarifado o cadastro inicial de recursos."}
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full text-left text-sm border-collapse min-w-[840px]">
-        <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-muted-foreground">
-              Nome do Recurso / Última NF
-            </th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground">
-              Categoria
-            </th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground">
-              Unidade
-            </th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
-              Custo Padrão
-            </th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
-              Saldo Central
-            </th>
-            <th className="px-4 py-3 font-semibold text-muted-foreground text-center">
-              Ações
-            </th>
-          </tr>
-        </thead>
+    <div
+      ref={catalogContainerRef}
+      tabIndex={-1}
+      className="w-full outline-none"
+    >
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center h-64 space-y-4 w-full">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground">Carregando catálogo...</p>
+        </div>
+      ) : error ? (
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center h-64 text-st-critical space-y-3 w-full"
+        >
+          <AlertCircle className="w-8 h-8" />
+          <p className="text-sm font-medium text-center">{error}</p>
+          <button
+            type="button"
+            onClick={triggerLocalRefresh}
+            className="inline-flex items-center gap-2 px-4 min-h-11 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Tentar novamente
+          </button>
+        </div>
+      ) : resources.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3 w-full text-center px-4">
+          <Box className="w-12 h-12 opacity-20" />
+          <p className="text-sm font-medium">
+            Nenhum recurso ativo no almoxarifado.
+          </p>
+          <p className="text-xs opacity-70">
+            {hasWriteAccess
+              ? 'Utilize o botão "Novo Recurso" para iniciar o catálogo.'
+              : "Solicite a um administrador ou membro do almoxarifado o cadastro inicial de recursos."}
+          </p>
+        </div>
+      ) : (
+        <>
+      <ScrollableTableContainer
+        className="border border-border rounded-md bg-background"
+        ariaLabel="Tabela de saldo de recursos"
+      >
+        <table className="w-full text-left text-sm border-collapse min-w-[840px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground"
+              >
+                Nome do Recurso / Última NF
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground"
+              >
+                Categoria
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground"
+              >
+                Unidade
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground text-right"
+              >
+                Custo Padrão
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground text-right"
+              >
+                Saldo Central
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 font-semibold text-muted-foreground text-center"
+              >
+                Ações
+              </th>
+            </tr>
+          </thead>
         <tbody className="divide-y divide-border">
           {resources.map((resource) => {
             const isExpanded = expandedResourceId === resource._id;
@@ -373,6 +474,7 @@ export function ResourceCatalog({
                         <>
                           <button
                             type="button"
+                            aria-haspopup="dialog"
                             onClick={() => setEditingResource(resource)}
                             className="min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-primary bg-muted/50 hover:bg-muted border border-border rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             title="Editar Recurso"
@@ -383,7 +485,10 @@ export function ResourceCatalog({
 
                           <button
                             type="button"
-                            onClick={() => handleRequestInactivate(resource)}
+                            aria-haspopup="dialog"
+                            onClick={(e) =>
+                              handleRequestInactivate(resource, e.currentTarget)
+                            }
                             disabled={isInactivatingThis}
                             className="ml-1 min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-st-critical bg-muted/50 hover:bg-st-critical-bg border border-border rounded-md transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             title="Arquivar/Inativar"
@@ -410,7 +515,7 @@ export function ResourceCatalog({
                       <div className="space-y-4">
                         {/* Bloco Principal: Última Entrada Ativa */}
                         <div className="rounded-md border border-border bg-card p-4 space-y-3">
-                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+                          <div className="flex flex-wrap items-center justify-start gap-3 border-b border-border pb-3">
                             <div className="flex items-center gap-2">
                               <Receipt className="w-4 h-4 text-primary" />
                               <h3 className="text-sm font-semibold text-foreground">
@@ -421,6 +526,7 @@ export function ResourceCatalog({
                             {lastEntry && hasWriteAccess && (
                               <button
                                 type="button"
+                                aria-haspopup="dialog"
                                 onClick={() =>
                                   setCancelingContext({
                                     transaction: lastEntry,
@@ -651,21 +757,25 @@ export function ResourceCatalog({
           })}
         </tbody>
       </table>
+      </ScrollableTableContainer>
+        </>
+      )}
 
       {/* Modal Interno de Confirmação de Inativação */}
       {inactivateTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
-          onClick={() => !inactivatingId && setInactivateTarget(null)}
+          onClick={handleCloseInactivateModal}
         >
           <div
-            className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden"
+            ref={inactivateDialogRef}
+            className="bg-card border border-border w-full max-w-md rounded-md shadow-xl flex flex-col overflow-hidden max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="inactivate-modal-title"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20 shrink-0">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-st-critical" />
                 <h2
@@ -677,7 +787,7 @@ export function ResourceCatalog({
               </div>
               <button
                 type="button"
-                onClick={() => setInactivateTarget(null)}
+                onClick={handleCloseInactivateModal}
                 disabled={Boolean(inactivatingId)}
                 aria-label="Fechar modal"
                 className="min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -686,7 +796,7 @@ export function ResourceCatalog({
               </button>
             </div>
 
-            <div className="p-5 space-y-3 text-sm text-foreground">
+            <div className="p-5 space-y-3 text-sm text-foreground overflow-y-auto flex-1">
               <p>
                 Tem certeza que deseja inativar o recurso{" "}
                 <strong>&ldquo;{inactivateTarget.name}&rdquo;</strong>?
@@ -697,10 +807,11 @@ export function ResourceCatalog({
               </p>
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 px-5 py-4 border-t border-border bg-muted/10">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 px-5 py-4 border-t border-border bg-muted/10 shrink-0">
               <button
+                ref={cancelInactivateBtnRef}
                 type="button"
-                onClick={() => setInactivateTarget(null)}
+                onClick={handleCloseInactivateModal}
                 disabled={Boolean(inactivatingId)}
                 className="px-4 min-h-11 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >

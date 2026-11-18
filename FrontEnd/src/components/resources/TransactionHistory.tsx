@@ -24,6 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { CancelEntryModal } from "./CancelEntryModal";
+import { ScrollableTableContainer } from "./ScrollableTableContainer";
 import {
   formatCurrencyBR,
   formatQuantityBR,
@@ -99,15 +100,20 @@ export function TransactionHistory({
   };
 
   const currentOrg = useSelector(selectCurrentOrg);
-  const orgId =
-    typeof currentOrg?.organizationId === "object"
-      ? (currentOrg.organizationId as any)._id
-      : currentOrg?.organizationId;
+  const orgId: string | undefined =
+    currentOrg?.organizationId && typeof currentOrg.organizationId === "object"
+      ? (currentOrg.organizationId as { _id?: string })._id
+      : typeof currentOrg?.organizationId === "string"
+        ? currentOrg.organizationId
+        : undefined;
   const orgRole = currentOrg?.role || "MEMBER";
 
   useEffect(() => {
     async function fetchHistory() {
-      if (!orgId) return;
+      if (!orgId) {
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
         const data = await resourceService.listTransactions(
@@ -206,6 +212,8 @@ export function TransactionHistory({
               value={startDate}
               max={endDate}
               disabled={isLoading}
+              aria-invalid={Boolean(filterError)}
+              aria-describedby={filterError ? "history-filter-error" : undefined}
               onChange={(e) => {
                 setStartDate(e.target.value);
                 if (filterError) setFilterError(null);
@@ -227,6 +235,8 @@ export function TransactionHistory({
               value={endDate}
               min={startDate}
               disabled={isLoading}
+              aria-invalid={Boolean(filterError)}
+              aria-describedby={filterError ? "history-filter-error" : undefined}
               onChange={(e) => {
                 setEndDate(e.target.value);
                 if (filterError) setFilterError(null);
@@ -259,7 +269,7 @@ export function TransactionHistory({
             </button>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:ml-auto">
             <div className="flex items-center gap-2 px-3 min-h-11 rounded-md bg-st-completed-bg border border-st-completed-border">
               <ArrowDownLeft className="w-4 h-4 text-st-completed shrink-0" />
               <span className="text-xs font-semibold text-st-completed">
@@ -281,7 +291,11 @@ export function TransactionHistory({
         </div>
 
         {filterError && (
-          <div className="text-xs text-st-critical flex items-center gap-1.5">
+          <div
+            id="history-filter-error"
+            role="alert"
+            className="text-xs text-st-critical flex items-center gap-1.5"
+          >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{filterError}</span>
           </div>
@@ -297,7 +311,10 @@ export function TransactionHistory({
           </p>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center h-64 text-st-critical space-y-3 w-full border border-st-critical-border rounded-md bg-st-critical-bg/40 px-4">
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center h-64 text-st-critical space-y-3 w-full border border-st-critical-border rounded-md bg-st-critical-bg/40 px-4"
+        >
           <AlertCircle className="w-8 h-8" />
           <p className="text-sm font-medium text-center">{error}</p>
           <button
@@ -317,30 +334,54 @@ export function TransactionHistory({
           </p>
         </div>
       ) : (
-        <div className="w-full overflow-x-auto border border-border rounded-md bg-background">
+        <ScrollableTableContainer
+          className="border border-border rounded-md bg-background"
+          ariaLabel="Tabela de extrato de movimentações"
+        >
           <table className="w-full text-left text-sm border-collapse min-w-[980px]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap"
+                >
                   Data / Hora &amp; Autor
                 </th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground"
+                >
                   Movimentação
                 </th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground"
+                >
                   Recurso
                 </th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground text-right"
+                >
                   Qtd.
                 </th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground text-right"
+                >
                   Custo Total
                 </th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-3 font-semibold text-muted-foreground"
+                >
                   Origem / Destino &amp; Observações
                 </th>
                 {hasWriteAccess && (
-                  <th className="px-4 py-3 font-semibold text-muted-foreground text-center">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 font-semibold text-muted-foreground text-center"
+                  >
                     Ações
                   </th>
                 )}
@@ -449,6 +490,7 @@ export function TransactionHistory({
                         {canCancelEntry ? (
                           <button
                             type="button"
+                            aria-haspopup="dialog"
                             onClick={() => setCancelingTx(tx)}
                             className="inline-flex items-center gap-1.5 px-3 min-h-11 text-xs font-medium text-st-critical bg-st-critical-bg border border-st-critical-border rounded-md hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
@@ -467,7 +509,7 @@ export function TransactionHistory({
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollableTableContainer>
       )}
 
       {orgId && (
