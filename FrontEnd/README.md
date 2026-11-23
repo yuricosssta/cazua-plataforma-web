@@ -9,6 +9,7 @@ Interface web do SaaS para gestão de obras, controle de almoxarifado, orçament
 
 * **Framework:** Next.js (App Router) + React 18
 * **Estado Global:** Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
+* **Data Fetching / Cache Dinâmico:** TanStack React Query (`@tanstack/react-query`)
 * **Estado Local/Preferências:** Web Storage API
 * **Estilização:** Tailwind CSS v4
 * **Componentes UI:** Shadcn UI
@@ -30,6 +31,20 @@ Para garantir a consistência visual, suporte automático a Dark Mode e manuteni
 2. **Geometria:** O border-radius padrão do sistema é `4px`. Utilize estritamente a classe `rounded-md` do Tailwind.
 3. **Ícones:** Permitido exclusivamente o uso da biblioteca `lucide-react`.
 4. **Padrão BFF (Backend For Frontend):** Nenhuma chamada direta à API externa deve ser feita a partir de Client Components. Toda requisição deve passar pelas rotas internas em `src/app/api`, protegendo credenciais e tokens.
+5. **Data Fetching (Server-Side + React Query):**
+* Use o servidor (Server Components) para pré-carregar e o React Query (`@tanstack/react-query`) para revalidações rápidas ou mudanças sensíveis na interface.
+* **Dados essenciais:** sempre server-side e cache Next.
+* **Dados dinâmicos:** hidrate e atualize com React Query.
+* **Core business e SEO:** nunca dependa só do client para o que move o core business ou SEO.
+* **Checklist obrigatório (React Query + Next.js App Router):**
+  * No servidor, `getQueryClient()` cria uma instância nova.
+  * No navegador, a mesma chamada devolve `browserQueryClient`.
+  * `staleTime` fica acima de zero nos dois lados.
+  * Prefetch e hook importam o mesmo `queryOptions`.
+  * O Server Component desidrata. O Client Component renderiza o dado.
+  * `shouldRedactErrors` retorna `false` no Next.js.
+  * Streaming sem `await` inclui consultas `pending` na desidratação.
+  * Persistência em storage usa só `defaultShouldDehydrateQuery`.
 
 ---
 

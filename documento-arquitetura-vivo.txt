@@ -1,3 +1,46 @@
+=== SPRINT 43 - 23/11/2026 ===
+### Resumo Técnico de Fechamento: Busca Dinâmica de Projetos no Envio Direto do Almoxarifado, Cache Compartilhado com React Query, Diretrizes de Data Fetching e Refinamentos de UX (FrontEnd & Docs)
+
+**1. Contexto e Necessidade**
+
+No modal **Saída Direta para Destino** (`AllocateDirectlyModal.tsx`) do módulo de Almoxarifado Central (`dashboard/resources`), a seleção do projeto de destino era feita por meio de um `<select>` nativo plano recarregado a cada abertura do modal, sem filtragem dinâmica por digitação. Além disso, era necessário consolidar nas instruções do projeto as regras arquiteturais de Data Fetching (Next.js Server Components + TanStack React Query) e aplicar os refinamentos apontados pelas auditorias de UX (`belezura`) nos componentes alterados.
+
+**2. Decisões de Arquitetura (Busca Dinâmica em Memória, Cache Compartilhado, Diretrizes e UX)**
+
+* **Cache Compartilhado e Pré-aquecimento de Projetos (`useOrganizationProjects.ts`):**
+  - Criação da chave compartilhada `ORGANIZATION_PROJECTS_QUERY_KEY` (`["projects", orgId]`), `getOrganizationProjectsQueryOptions` (`staleTime: 5 min`, `gcTime: 15 min`) e do hook `useOrganizationProjects(orgId, enabled)`.
+  - Pré-carregamento antecipado (`queryClient.prefetchQuery`) na página do Almoxarifado Central (`dashboard/resources/page.tsx`) para usuários com acesso de escrita, e consumo compartilhado entre `AllocateDirectlyModal.tsx` e `ProjectsList.tsx`.
+
+* **Combobox Pesquisável de Projetos (`ProjectSearchCombobox.tsx`):**
+  - **Disparo e Filtragem em Memória:** Exibição da lista de sugestões a partir de 2+ caracteres digitados (com dica orientativa quando há 1 caractere e estado explícito caso a organização não possua projetos cadastrados ou o carregamento esteja em andamento). Filtragem 100% em memória sobre os projetos em cache, usando normalização `NFD` sem acentos, case-insensitive e colapso de espaços múltiplos sobre `title` e `referenceCode` (priorizando correspondências por prefixo e desempate alfabético `pt-BR`).
+  - **Exibição e Portal:** Listagem de até `MAX_VISIBLE_RESULTS = 10` itens com contador de resultados, exibindo título e `referenceCode` truncado (`max-w-[40%]`), renderizada via `createPortal(..., document.body)` (`zIndex: 70`) com posicionamento dinâmico baseado em `visualViewport` e fechamento automático caso o input role para fora da área visível.
+  - **Acessibilidade e Comportamento de Seleção:** Atributos WAI-ARIA (`role="combobox"`, `role="listbox"`, `role="option"`, `aria-activedescendant`), proteção de clique/arraste na barra de rolagem (`onMouseDown` na `<ul>`), navegação por teclado (`ArrowDown`/`ArrowUp`/`Enter`/`Escape` sem fechar o modal), limpeza sincronizada quando zerado externamente e preservação do texto digitado no `blur` sem seleção confirmada (exibindo erro contextual no submit).
+
+* **Modal de Envio Direto (`AllocateDirectlyModal.tsx`):**
+  - Substituição do `<select>` de **Destino** pelo `ProjectSearchCombobox`, desacoplando o bloqueio do campo de projeto (liberado instantaneamente via cache) do carregamento atualizado de recursos.
+  - Foco automático no campo de projeto ao finalizar o carregamento inicial, `scrollIntoView` automático no alerta de erro de envio e agrupamento das opções de **Item / Recurso** via `<optgroup>` por categoria (`Materiais`, `Equipamentos`, `Mão de Obra`, `Financeiro`).
+  - Mantida precisão decimal de 2 casas (`toFixed(2)`) em conformidade estrita com `Precision.round(val, 2)` do schema Zod do backend (`BackEnd/src/resources/validations/resource.zod.ts`).
+
+* **Refinamentos de UX e Design System (`resources/page.tsx` e `ProjectsList.tsx`):**
+  - **`dashboard/resources/page.tsx`:** Preservação em memória das abas visitadas (`visitedTabs`), estilo unificado das abas com fade dinâmico calculado por overflow real (`showTabsRightFade`), cabeçalho mobile com `Novo Recurso` priorizado e botões secundários responsivos sem estouro horizontal, e placeholder discreto durante `isCheckingPermissions`.
+  - **`ProjectsList.tsx`:** Migração para `useOrganizationProjects(orgId)` eliminando reset para skeletons após revalidações/navegação, busca memoizada com `useDeferredValue` + normalização completa e botão limpar (`X`), carregamento incremental (`PROJECTS_PAGE_SIZE = 20`), `role="tablist"`/`role="tab"`/`role="tabpanel"` com navegação por teclado e sincronização bidirecional de `?tab=` sem sobrescrever `localStorage`, cards acessíveis via `<article>` + `<Link>` com `focus-within:border-primary/50`, `referenceCode` selecionável, botão de mapa apenas quando houver localização válida, tratamento explícito de ausência/falha de organização, clamping de progresso (`0–100`), botões de recuperação no empty state e conformidade integral com `AGENTS.md` (`rounded-md` e tokens semânticos `bg-st-completed`/`bg-st-onhold`).
+
+* **Atualização das Diretrizes de Data Fetching (`AGENTS.md` e `FrontEnd/README.md`):**
+  - Inclusão de `@tanstack/react-query` na stack do `FrontEnd` e formalização das regras inegociáveis de Data Fetching (Server Components + cache Next para dados essenciais, core business e SEO; hidratação e revalidação dinâmica com React Query) junto aos 8 itens do checklist obrigatório (`getQueryClient()`, `browserQueryClient`, `staleTime > 0`, `queryOptions` compartilhado, desidratação no Server Component, `shouldRedactErrors: false`, streaming com consultas `pending` e `defaultShouldDehydrateQuery` na persistência em storage).
+
+**3. Arquivos Criados ou Alterados**
+
+- `FrontEnd/src/lib/hooks/useOrganizationProjects.ts` *(novo)* (query key, `queryOptions` e hook compartilhado `useOrganizationProjects`)
+- `FrontEnd/src/components/resources/ProjectSearchCombobox.tsx` *(novo)* (combobox pesquisável acessível em memória com portal)
+- `FrontEnd/src/components/resources/AllocateDirectlyModal.tsx` (integração do `ProjectSearchCombobox`, cache React Query e `<optgroup>` de recursos)
+- `FrontEnd/src/app/(main)/dashboard/resources/page.tsx` (pré-aquecimento de projetos, preservação de painéis visitados e ajustes responsivos/acessibilidade)
+- `FrontEnd/src/components/dashboard/ProjectsList.tsx` (uso de `useOrganizationProjects`, paginação incremental, abas acessíveis, busca memoizada e conformidade `AGENTS.md`)
+- `AGENTS.md` (inclusão das regras inegociáveis e checklist obrigatório de Data Fetching Next.js + React Query)
+- `FrontEnd/README.md` (sincronização da stack e diretrizes de Data Fetching Server-Side + React Query)
+- `documento-arquitetura-vivo.txt` (registro do fechamento técnico da Sprint 43)
+
+---
+
 === SPRINT 42 - 16/11/2026 ===
 ### Resumo Técnico de Fechamento: Rastreabilidade da Última NF no Saldo de Recursos, Correção/Estorno de Entradas e Auditoria Completa (BackEnd & FrontEnd)
 
