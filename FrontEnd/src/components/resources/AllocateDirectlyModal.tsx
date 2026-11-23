@@ -16,7 +16,8 @@ import {
   Resource,
   ResourceType,
 } from "@/lib/services/resourceService";
-import { listProjects } from "@/lib/services/projectService";
+import { useOrganizationProjects } from "@/lib/hooks/useOrganizationProjects";
+import { ProjectSearchCombobox } from "./ProjectSearchCombobox";
 import {
   formatCurrencyBR,
   formatQuantityBR,
@@ -55,37 +56,46 @@ export function AllocateDirectlyModal({
   onSuccess,
 }: AllocateDirectlyModalProps) {
   const [resources, setResources] = useState<Resource[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isResourcesLoading, setIsResourcesLoading] = useState(false);
+  const [resourcesLoadError, setResourcesLoadError] = useState<string | null>(
+    null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<IFieldErrors>({});
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [projectSearchResetKey, setProjectSearchResetKey] = useState(0);
+
+  const projectsQuery = useOrganizationProjects(orgId, isOpen);
+  const projects = projectsQuery.data ?? [];
+  const isProjectsInitialLoading =
+    projectsQuery.isPending && projects.length === 0;
+  const projectsLoadError =
+    projectsQuery.isError && projects.length === 0
+      ? "Não foi possível carregar os projetos."
+      : null;
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const projectSelectRef = useRef<HTMLSelectElement>(null);
+  const projectInputRef = useRef<HTMLInputElement>(null);
   const resourceSelectRef = useRef<HTMLSelectElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
+  const submitErrorRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const isProjectDropdownOpenRef = useRef(false);
 
-  const loadFormData = useCallback(async () => {
+  const loadResources = useCallback(async () => {
     if (!orgId) return;
     try {
-      setIsLoading(true);
-      setLoadError(null);
-      const [resourcesData, projectsData] = await Promise.all([
-        resourceService.listResources(orgId),
-        listProjects(orgId),
-      ]);
+      setIsResourcesLoading(true);
+      setResourcesLoadError(null);
+      const resourcesData = await resourceService.listResources(orgId);
       setResources(Array.isArray(resourcesData) ? resourcesData : []);
-      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (err) {
       console.error(err);
-      setLoadError("Não foi possível carregar os projetos e recursos.");
+      setResourcesLoadError("Não foi possível carregar os recursos.");
     } finally {
-      setIsLoading(false);
+      setIsResourcesLoading(false);
     }
   }, [orgId]);
 
@@ -93,11 +103,13 @@ export function AllocateDirectlyModal({
     if (!isOpen) return;
 
     setFormData(EMPTY_FORM);
+    setProjectSearchResetKey((prev) => prev + 1);
+    isProjectDropdownOpenRef.current = false;
     setError(null);
-    setLoadError(null);
+    setResourcesLoadError(null);
     setFieldErrors({});
-    loadFormData();
-  }, [isOpen, loadFormData]);
+    loadResources();
+  }, [isOpen, loadResources]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -105,8 +117,8 @@ export function AllocateDirectlyModal({
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
     const frameId = requestAnimationFrame(() => {
-      if (projectSelectRef.current && !projectSelectRef.current.disabled) {
-        projectSelectRef.current.focus();
+      if (projectInputRef.current && !projectInputRef.current.disabled) {
+        projectInputRef.current.focus();
       } else {
         closeButtonRef.current?.focus();
       }
@@ -123,10 +135,37 @@ export function AllocateDirectlyModal({
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen || isProjectsInitialLoading || projects.length === 0 || isSubmitting) {
+      return;
+    }
+
+    const active = document.activeElement;
+    if (
+      active === closeButtonRef.current ||
+      active === dialogRef.current ||
+      active === document.body
+    ) {
+      projectInputRef.current?.focus();
+    }
+  }, [isOpen, isProjectsInitialLoading, projects.length, isSubmitting]);
+
+  useEffect(() => {
+    if (!error) return;
+    submitErrorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [error]);
+
+  useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isSubmitting) {
+      if (
+        e.key === "Escape" &&
+        !isSubmitting &&
+        !isProjectDropdownOpenRef.current
+      ) {
         e.preventDefault();
         onClose();
         return;
@@ -175,6 +214,16 @@ export function AllocateDirectlyModal({
 
   if (!isOpen) return null;
 
+  const loadError =
+    projectsLoadError && resourcesLoadError
+      ? "Não foi possível carregar os projetos e recursos."
+      : projectsLoadError || resourcesLoadError;
+  const isLoading = isProjectsInitialLoading || isResourcesLoading;
+  const isProjectFieldDisabled =
+    isProjectsInitialLoading ||
+    Boolean(projectsLoadError) ||
+    projects.length === 0 ||
+    isSubmitting;
   const isDataUnavailable =
     isLoading ||
     Boolean(loadError) ||
@@ -208,7 +257,9 @@ export function AllocateDirectlyModal({
     const nextErrors: IFieldErrors = {};
 
     if (!formData.projectId) {
-      nextErrors.projectId = "Selecione o projeto de destino.";
+      nextErrors.projectId = projectInputRef.current?.value.trim()
+        ? "Selecione um projeto da lista de sugestões."
+        : "Selecione o projeto de destino.";
     }
     if (!formData.resourceId) {
       nextErrors.resourceId = "Selecione o recurso a enviar.";
@@ -222,7 +273,7 @@ export function AllocateDirectlyModal({
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       if (nextErrors.projectId) {
-        projectSelectRef.current?.focus();
+        projectInputRef.current?.focus();
       } else if (nextErrors.resourceId) {
         resourceSelectRef.current?.focus();
       } else if (nextErrors.quantity) {
@@ -245,6 +296,7 @@ export function AllocateDirectlyModal({
       );
 
       setFormData(EMPTY_FORM);
+      setProjectSearchResetKey((prev) => prev + 1);
       setFieldErrors({});
       toast.success("Saída de recurso registrada com sucesso.");
       onSuccess();
@@ -314,7 +366,12 @@ export function AllocateDirectlyModal({
                 <button
                   type="button"
                   onClick={() => {
-                    loadFormData();
+                    if (projectsLoadError || projects.length === 0) {
+                      projectsQuery.refetch();
+                    }
+                    if (resourcesLoadError || resources.length === 0) {
+                      loadResources();
+                    }
                     requestAnimationFrame(() =>
                       closeButtonRef.current?.focus()
                     );
@@ -328,7 +385,9 @@ export function AllocateDirectlyModal({
               </div>
             )}
 
-            {!isLoading && !loadError && projects.length === 0 && (
+            {!isProjectsInitialLoading &&
+              !projectsLoadError &&
+              projects.length === 0 && (
               <div className="p-3 text-xs text-st-execution bg-st-execution-bg rounded-md border border-st-execution-border flex items-center gap-2">
                 <Info className="w-4 h-4 shrink-0" />
                 <span>
@@ -338,8 +397,8 @@ export function AllocateDirectlyModal({
               </div>
             )}
 
-            {!isLoading &&
-              !loadError &&
+            {!isResourcesLoading &&
+              !resourcesLoadError &&
               projects.length > 0 &&
               resources.length === 0 && (
                 <div className="p-3 text-xs text-st-execution bg-st-execution-bg rounded-md border border-st-execution-border flex items-center gap-2">
@@ -353,6 +412,7 @@ export function AllocateDirectlyModal({
 
             {error && (
               <div
+                ref={submitErrorRef}
                 role="alert"
                 className="p-3 text-sm text-st-critical bg-st-critical-bg rounded-md border border-st-critical-border flex items-center gap-2"
               >
@@ -368,13 +428,13 @@ export function AllocateDirectlyModal({
               >
                 Destino <span className="text-st-critical">*</span>
               </label>
-              <select
-                ref={projectSelectRef}
+              <ProjectSearchCombobox
                 id="allocate-project"
-                disabled={isFormBlocked}
-                value={formData.projectId}
-                onChange={(e) => {
-                  setFormData({ ...formData, projectId: e.target.value });
+                inputRef={projectInputRef}
+                projects={projects}
+                selectedProjectId={formData.projectId}
+                onSelectProject={(projectId) => {
+                  setFormData((prev) => ({ ...prev, projectId }));
                   if (fieldErrors.projectId) {
                     setFieldErrors((prev) => ({
                       ...prev,
@@ -382,31 +442,17 @@ export function AllocateDirectlyModal({
                     }));
                   }
                 }}
-                aria-invalid={Boolean(fieldErrors.projectId)}
-                aria-describedby={
+                onDropdownOpenChange={(open) => {
+                  isProjectDropdownOpenRef.current = open;
+                }}
+                disabled={isProjectFieldDisabled}
+                isLoading={isProjectsInitialLoading}
+                hasError={Boolean(fieldErrors.projectId)}
+                errorDescribedBy={
                   fieldErrors.projectId ? "allocate-project-error" : undefined
                 }
-                className={`w-full px-3 min-h-11 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 ${
-                  fieldErrors.projectId ? "border-st-critical" : "border-input"
-                }`}
-              >
-                <option value="" disabled>
-                  {isLoading
-                    ? "Carregando projetos..."
-                    : projects.length === 0
-                      ? "Nenhum projeto disponível"
-                      : "Selecione o projeto ou obra"}
-                </option>
-                {projects.map((proj) => {
-                  const projId = String(proj._id || proj.id || "");
-                  const title = proj.title?.trim() || "Projeto sem título";
-                  return (
-                    <option key={projId} value={projId}>
-                      {title}
-                    </option>
-                  );
-                })}
-              </select>
+                resetSignal={projectSearchResetKey}
+              />
               {fieldErrors.projectId && (
                 <p
                   id="allocate-project-error"
@@ -457,20 +503,42 @@ export function AllocateDirectlyModal({
                       ? "Nenhum recurso disponível"
                       : "Selecione o recurso a enviar"}
                 </option>
-                {resources.map((res) => {
-                  const name = res.name?.trim() || "Recurso sem nome";
-                  const stockSummary =
-                    res.type === ResourceType.LABOR
-                      ? "Mão de Obra"
-                      : res.type === ResourceType.CAPITAL
-                        ? `Atual: ${formatCurrencyBR(res.currentStock)}`
-                        : `Atual: ${formatQuantityBR(res.currentStock)} ${
-                            res.unit
-                          }`;
+                {[
+                  { key: ResourceType.MATERIAL, label: "Materiais" },
+                  { key: ResourceType.EQUIPMENT, label: "Equipamentos" },
+                  { key: ResourceType.LABOR, label: "Mão de Obra" },
+                  { key: ResourceType.CAPITAL, label: "Financeiro" },
+                  { key: "OTHER", label: "Outros" },
+                ].map((group) => {
+                  const groupItems = resources.filter((res) =>
+                    group.key === "OTHER"
+                      ? res.type !== ResourceType.MATERIAL &&
+                        res.type !== ResourceType.EQUIPMENT &&
+                        res.type !== ResourceType.LABOR &&
+                        res.type !== ResourceType.CAPITAL
+                      : res.type === group.key
+                  );
+                  if (groupItems.length === 0) return null;
+
                   return (
-                    <option key={res._id} value={res._id}>
-                      {name} ({stockSummary})
-                    </option>
+                    <optgroup key={group.key} label={group.label}>
+                      {groupItems.map((res) => {
+                        const name = res.name?.trim() || "Recurso sem nome";
+                        const stockSummary =
+                          res.type === ResourceType.LABOR
+                            ? "Mão de Obra"
+                            : res.type === ResourceType.CAPITAL
+                              ? `Atual: ${formatCurrencyBR(res.currentStock)}`
+                              : `Atual: ${formatQuantityBR(res.currentStock)} ${
+                                  res.unit
+                                }`;
+                        return (
+                          <option key={res._id} value={res._id}>
+                            {name} ({stockSummary})
+                          </option>
+                        );
+                      })}
+                    </optgroup>
                   );
                 })}
               </select>

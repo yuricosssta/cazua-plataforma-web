@@ -26,7 +26,7 @@ Monorepo "Sistema Cazuá" (PropTech SaaS B2B): `BackEnd/` (NestJS + MongoDB) e `
 - Multi-tenant: rotas protegidas exigem `Authorization: Bearer <jwt>`, `x-org-id` e `x-org-role` (`OWNER`/`ADMIN`/`MEMBER`).
 
 ## FrontEnd (`FrontEnd/`)
-- Next.js 15 (App Router), React 18, Redux Toolkit (estado global), Web Storage (preferências locais), Tailwind CSS v4, Shadcn UI.
+- Next.js 15 (App Router), React 18, Redux Toolkit (estado global), TanStack React Query (`@tanstack/react-query`), Web Storage (preferências locais), Tailwind CSS v4, Shadcn UI.
 - Comandos (em `FrontEnd/`): `pnpm run dev`, `build`, `start`, `lint` (`next lint`). Não há config/dependência de ESLint commitada, então `lint` pode exigir setup interativo.
 - **Regras inegociáveis de UI/UX (design B2B minimalista e de alto contraste):**
   - Proibido usar cores hexadecimais estáticas ou utilitários `gray`/`slate`/`zinc` para fundo e texto.
@@ -34,6 +34,20 @@ Monorepo "Sistema Cazuá" (PropTech SaaS B2B): `BackEnd/` (NestJS + MongoDB) e `
   - Border-radius fixo de 4px — usar `rounded-md` apenas.
   - Ícones exclusivamente via `lucide-react`.
   - Padrão BFF: nenhuma chamada externa de Client Components; tudo via `src/app/api/*`.
+- **Regras inegociáveis de Data Fetching (Next.js Server + React Query):**
+  - Usar o servidor (Server Components) para pré-carregar, e React Query (`@tanstack/react-query`) para revalidações rápidas ou mudanças sensíveis na interface.
+  - **Dados essenciais:** sempre server-side e cache Next.
+  - **Dados dinâmicos:** hidrate e atualize com React Query.
+  - **Core business e SEO:** nunca dependa só do client para o que move o core business ou SEO.
+  - **Checklist obrigatório (React Query + Next.js App Router):**
+    - No servidor, `getQueryClient()` cria uma instância nova.
+    - No navegador, a mesma chamada devolve `browserQueryClient`.
+    - `staleTime` fica acima de zero nos dois lados.
+    - Prefetch e hook importam o mesmo `queryOptions`.
+    - O Server Component desidrata. O Client Component renderiza o dado.
+    - `shouldRedactErrors` retorna `false` no Next.js.
+    - Streaming sem `await` inclui consultas `pending` na desidratação.
+    - Persistência em storage usa só `defaultShouldDehydrateQuery`.
 - Route groups em `src/app/`: `(auth)`, `(main)` com `account` e `dashboard/{projects,resources,planning,people,storage,marketing,master-admin}`, além de `api/` (camada BFF).
 - Env: `NEXT_PUBLIC_API_BASE_URL` (ex: http://localhost:3001), `INTERNAL_API_URL` (docker: http://backend:3001), `NEXT_PUBLIC_INITIAL_MAP_CENTER`, `NEXT_PUBLIC_ROOT_DOMAIN`.
 - `middleware.ts` reescreve subdomínios para `src/app/sites/${hostname}` (landing pages multi-tenant); `next.config.ts` usa `output: 'standalone'`.

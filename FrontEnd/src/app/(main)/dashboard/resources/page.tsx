@@ -30,6 +30,7 @@ import { PendingRequests } from "@/components/resources/PendingRequests";
 import { AllocateDirectlyModal } from "@/components/resources/AllocateDirectlyModal";
 import { ManageWarehouseTeamDrawer } from "@/components/resources/ManageWarehouseTeamDrawer";
 import { useSelector } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 import { RootState } from "@/lib/redux/store";
 import {
   selectCurrentOrg,
@@ -39,6 +40,7 @@ import {
   resourceService,
   AddStockInitialData,
 } from "@/lib/services/resourceService";
+import { getOrganizationProjectsQueryOptions } from "@/lib/hooks/useOrganizationProjects";
 
 type TabType = "catalog" | "requests" | "history";
 
@@ -64,6 +66,14 @@ function ResourcesPageContent() {
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     isValidTab(tabParam) ? tabParam : "catalog"
   );
+  const [visitedTabs, setVisitedTabs] = useState<Record<TabType, boolean>>(() => {
+    const initial = isValidTab(tabParam) ? tabParam : "catalog";
+    return {
+      catalog: initial === "catalog",
+      requests: initial === "requests",
+      history: initial === "history",
+    };
+  });
   const lastTabParamRef = useRef<string | null>(tabParam);
 
   useEffect(() => {
@@ -72,6 +82,12 @@ function ResourcesPageContent() {
       setActiveTab(isValidTab(tabParam) ? tabParam : "catalog");
     }
   }, [tabParam]);
+
+  useEffect(() => {
+    setVisitedTabs((prev) =>
+      prev[activeTab] ? prev : { ...prev, [activeTab]: true }
+    );
+  }, [activeTab]);
 
   const handleSelectTab = useCallback(
     (tab: TabType) => {
@@ -105,15 +121,28 @@ function ResourcesPageContent() {
     message: string | null;
   }>({ orgId: null, message: null });
 
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const [showTabsRightFade, setShowTabsRightFade] = useState(false);
+
   const tabRefs = useRef<Record<TabType, HTMLButtonElement | null>>({
     catalog: null,
     requests: null,
     history: null,
   });
 
+  const updateTabsFade = useCallback(() => {
+    const el = tabListRef.current;
+    if (!el) {
+      setShowTabsRightFade(false);
+      return;
+    }
+    setShowTabsRightFade(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+  }, []);
+
   const currentOrg = useSelector(selectCurrentOrg);
   const orgStatus = useSelector(selectOrgStatus);
   const user = useSelector((state: RootState) => state.auth.user);
+  const queryClient = useQueryClient();
 
   const orgId: string | undefined =
     currentOrg?.organizationId && typeof currentOrg.organizationId === "object"
@@ -190,6 +219,29 @@ function ResourcesPageContent() {
     isOrgResolving ||
     (!isAdminOrOwner && Boolean(orgId) && !teamError && isTeamLoadingOrStale);
 
+  useEffect(() => {
+    if (!orgId || !hasWriteAccess) return;
+    queryClient
+      .prefetchQuery(getOrganizationProjectsQueryOptions(orgId))
+      .catch((err) => {
+        console.error("Erro ao pré-carregar projetos da organização:", err);
+      });
+  }, [orgId, hasWriteAccess, queryClient]);
+
+  useEffect(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+
+    updateTabsFade();
+    el.addEventListener("scroll", updateTabsFade, { passive: true });
+    window.addEventListener("resize", updateTabsFade);
+
+    return () => {
+      el.removeEventListener("scroll", updateTabsFade);
+      window.removeEventListener("resize", updateTabsFade);
+    };
+  }, [orgId, activeTab, updateTabsFade]);
+
   const triggerRefresh = () => {
     setRefreshKey((prev) => prev + 1);
   };
@@ -247,21 +299,14 @@ function ResourcesPageContent() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center sm:justify-end gap-3 w-full sm:w-auto">
-            {isCheckingPermissions && (
-              <div
-                className="h-11 w-full sm:w-48 rounded-md bg-muted animate-pulse"
-                aria-hidden="true"
-              />
-            )}
-
+          <div className="flex flex-wrap items-center sm:justify-end gap-2.5 w-full sm:w-auto">
             {isAdminOrOwner && Boolean(orgId) && (
               <button
                 type="button"
                 onClick={() => setIsTeamDrawerOpen(true)}
                 disabled={isTeamLoadingOrStale || Boolean(teamError)}
                 aria-busy={isTeamLoadingOrStale}
-                className="flex-1 sm:flex-none bg-background border border-border text-muted-foreground hover:text-foreground px-4 py-2 rounded-md hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex-1 min-w-[140px] sm:flex-none sm:w-auto bg-background border border-border text-muted-foreground hover:text-foreground px-3.5 py-2 rounded-md hover:bg-muted transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {isTeamLoadingOrStale ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -277,7 +322,7 @@ function ResourcesPageContent() {
                 <button
                   type="button"
                   onClick={handleOpenAddStock}
-                  className="flex-1 sm:flex-none bg-secondary border border-border text-secondary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex-1 min-w-[140px] sm:flex-none sm:w-auto bg-secondary border border-border text-secondary-foreground px-3.5 py-2 rounded-md shadow-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ArrowDownToLine className="w-4 h-4" /> Entrada de Recurso
                 </button>
@@ -285,7 +330,7 @@ function ResourcesPageContent() {
                 <button
                   type="button"
                   onClick={() => setIsAllocateModalOpen(true)}
-                  className="flex-1 sm:flex-none bg-secondary border border-border text-secondary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex-1 min-w-[140px] sm:flex-none sm:w-auto bg-secondary border border-border text-secondary-foreground px-3.5 py-2 rounded-md shadow-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 font-medium text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Send className="w-4 h-4" /> Saída de Recurso
                 </button>
@@ -293,7 +338,7 @@ function ResourcesPageContent() {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-semibold text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="order-first sm:order-last w-full sm:w-auto bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-semibold text-sm min-h-11 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Plus className="w-4 h-4" /> Novo Recurso
                 </button>
@@ -365,6 +410,14 @@ function ResourcesPageContent() {
               </div>
             )}
 
+            {isCheckingPermissions && (
+              <div
+                role="status"
+                aria-label="Verificando permissões do Almoxarifado Central"
+                className="h-11 w-full rounded-md bg-muted/50 border border-border animate-pulse shrink-0"
+              />
+            )}
+
             {!isLoadingTeam &&
               !isTeamStale &&
               !teamError &&
@@ -383,59 +436,76 @@ function ResourcesPageContent() {
               )}
 
             {/* NAVEGAÇÃO INTERNA (TABS — NO FLUXO NORMAL, SEM FLUTUAR SOBRE O CONTEÚDO) */}
-            <div className="border-b border-border pb-2 lg:pb-0 shrink-0">
-              <div
-                className="flex flex-wrap gap-2 lg:gap-6 w-full"
-                role="tablist"
-                aria-label="Seções do Almoxarifado Central"
-              >
-                {TABS.map((tab, index) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      ref={(el) => {
-                        tabRefs.current[tab.id] = el;
-                      }}
-                      type="button"
-                      role="tab"
-                      id={`tab-${tab.id}`}
-                      tabIndex={isActive ? 0 : -1}
-                      aria-selected={isActive}
-                      aria-controls="resources-tabpanel"
-                      onClick={() => handleSelectTab(tab.id)}
-                      onKeyDown={(e) => handleTabKeyDown(e, index)}
-                      className={`relative flex items-center justify-center lg:justify-start gap-2 min-h-11 px-3 lg:px-1 py-2 lg:py-2.5 rounded-md border lg:border-0 font-medium text-sm text-center whitespace-nowrap flex-1 lg:flex-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                        isActive
-                          ? "bg-primary-bg text-primary border-primary-border lg:bg-transparent"
-                          : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted lg:bg-transparent lg:hover:bg-muted/50"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span>{tab.label}</span>
-                      {isActive && (
-                        <span
-                          aria-hidden="true"
-                          className="hidden lg:block absolute inset-x-0 bottom-0 h-0.5 bg-primary rounded-md"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+            <div className="border-b border-border shrink-0">
+              <div className="relative">
+                <div
+                  ref={tabListRef}
+                  className={`flex flex-nowrap overflow-x-auto gap-2 lg:gap-4 w-full ${
+                    showTabsRightFade ? "pr-6" : "pr-0"
+                  }`}
+                  role="tablist"
+                  aria-label="Seções do Almoxarifado Central"
+                >
+                  {TABS.map((tab, index) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        ref={(el) => {
+                          tabRefs.current[tab.id] = el;
+                        }}
+                        type="button"
+                        role="tab"
+                        id={`tab-${tab.id}`}
+                        tabIndex={isActive ? 0 : -1}
+                        aria-selected={isActive}
+                        aria-controls="resources-tabpanel"
+                        onClick={() => handleSelectTab(tab.id)}
+                        onKeyDown={(e) => handleTabKeyDown(e, index)}
+                        className={`relative shrink-0 flex items-center gap-2 min-h-11 px-3 py-2.5 rounded-md font-medium text-sm whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          isActive
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{tab.label}</span>
+                        {isActive && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-x-0 bottom-0 h-0.5 bg-primary rounded-md"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {showTabsRightFade && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent"
+                  />
+                )}
               </div>
             </div>
 
-            {/* ÁREA DE CONTEÚDO (RENDERIZAÇÃO CONDICIONAL) */}
+            {/* ÁREA DE CONTEÚDO (PAINÉIS VISITADOS PRESERVADOS EM MEMÓRIA) */}
             <div
               id="resources-tabpanel"
               role="tabpanel"
-              tabIndex={0}
               aria-labelledby={`tab-${activeTab}`}
-              className="flex-1 w-full min-w-0 rounded-md border border-border bg-card shadow-sm min-h-64 sm:min-h-[400px] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex-1 w-full min-w-0 rounded-md border border-border bg-card shadow-sm min-h-64 sm:min-h-[400px] p-4"
             >
-              {activeTab === "catalog" && (
-                <div className="flex flex-col items-center justify-start h-full w-full">
+              {visitedTabs.catalog && (
+                <div
+                  aria-hidden={activeTab !== "catalog"}
+                  className={
+                    activeTab === "catalog"
+                      ? "flex flex-col items-center justify-start h-full w-full"
+                      : "hidden"
+                  }
+                >
                   <ResourceCatalog
                     refreshKey={refreshKey}
                     hasWriteAccess={hasWriteAccess}
@@ -445,16 +515,28 @@ function ResourcesPageContent() {
                 </div>
               )}
 
-              {activeTab === "requests" && (
-                <PendingRequests
-                  refreshKey={refreshKey}
-                  hasWriteAccess={hasWriteAccess}
-                  onActionComplete={triggerRefresh}
-                />
+              {visitedTabs.requests && (
+                <div
+                  aria-hidden={activeTab !== "requests"}
+                  className={activeTab === "requests" ? "w-full" : "hidden"}
+                >
+                  <PendingRequests
+                    refreshKey={refreshKey}
+                    hasWriteAccess={hasWriteAccess}
+                    onActionComplete={triggerRefresh}
+                  />
+                </div>
               )}
 
-              {activeTab === "history" && (
-                <div className="flex flex-col items-center justify-start h-full w-full">
+              {visitedTabs.history && (
+                <div
+                  aria-hidden={activeTab !== "history"}
+                  className={
+                    activeTab === "history"
+                      ? "flex flex-col items-center justify-start h-full w-full"
+                      : "hidden"
+                  }
+                >
                   <TransactionHistory
                     refreshKey={refreshKey}
                     hasWriteAccess={hasWriteAccess}

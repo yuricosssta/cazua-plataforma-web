@@ -1,30 +1,66 @@
 //src/components/dashboard/ProjectsList.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } from "react";
+import Link from "next/link";
 import {
-  Plus, MapPin, Calendar, Clock, AlertCircle, HardHat, CheckCircle, FileText, Flame, Activity, Lock, Search, UserCircle, ArrowUpDown, ChevronDown, SlidersHorizontal, PauseCircle
+  Plus, MapPin, Calendar, Clock, AlertCircle, CheckCircle, Activity, Lock, Search, UserCircle, ArrowUpDown, ChevronDown, SlidersHorizontal, X, Loader2
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
-import { selectCurrentOrg } from "@/lib/redux/slices/organizationSlice";
+import { selectCurrentOrg, selectOrgStatus } from "@/lib/redux/slices/organizationSlice";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { EmitParecerModal } from "./EmitParecerModal";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MapViewerModal } from "../ui/MapViewer";
 import { ProjectStatus, Project, TabType } from "@/types/project";
-import { listProjects } from "@/lib/services/projectService";
+import { useOrganizationProjects } from "@/lib/hooks/useOrganizationProjects";
 import { TabPreferencesModal } from "./TabPreferencesModal";
 
 import { getStatusConfig, getPriorityConfig } from "@/lib/projectConfig";
 import { getOrgId, isUserAssigned } from "@/lib/projectHelpers";
 import { Badge } from "./Badge";
 
+const ALL_AVAILABLE_TABS: TabType[] = [
+  "MINE",
+  "ALL",
+  "DEMAND",
+  "PLANNING",
+  "EXECUTION",
+  "COMPLETED",
+  "ON_HOLD",
+  "INVALID",
+];
+
+const DEFAULT_VISIBLE_TABS: TabType[] = [
+  "MINE",
+  "ALL",
+  "DEMAND",
+  "PLANNING",
+  "EXECUTION",
+  "COMPLETED",
+];
+
+const PROJECTS_PAGE_SIZE = 20;
+
+function normalizeSearchText(value?: string | null): string {
+  if (!value) return "";
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 export function ProjectsList() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get("tab") as TabType | null;
-  const [activeTab, setActiveTab] = useState<TabType>("MINE");
+  const [activeTab, setActiveTab] = useState<TabType>(() =>
+    urlTab && ALL_AVAILABLE_TABS.includes(urlTab) ? urlTab : "MINE"
+  );
   const [searchTerm, setSearchTerm] = useState("");
 
   const [sortBy, setSortBy] = useState<"PRIORITY_DESC" | "PRIORITY_ASC" | "NEWEST" | "OLDEST">("PRIORITY_DESC");
@@ -33,38 +69,67 @@ export function ProjectsList() {
   const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
   const [projectForParecer, setProjectForParecer] = useState<Project | null>(null);
   const [mapLocationView, setMapLocationView] = useState<string | null>(null);
-  const [projects, setProjects] = useState<any[]>([]); 
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
 
-  const allAvailableTabs: TabType[] = ["MINE", "ALL", "DEMAND", "PLANNING", "EXECUTION", "COMPLETED", "ON_HOLD", "INVALID"];
-  const [visibleTabs, setVisibleTabs] = useState<string[]>(allAvailableTabs);
+  const [visibleTabs, setVisibleTabs] = useState<string[]>(DEFAULT_VISIBLE_TABS);
+  const [visibleCount, setVisibleCount] = useState(PROJECTS_PAGE_SIZE);
+  const [showTabsRightFade, setShowTabsRightFade] = useState(false);
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const lastUrlTabRef = useRef<TabType | null>(urlTab);
 
   const currentOrg = useSelector(selectCurrentOrg);
+  const orgStatus = useSelector(selectOrgStatus);
   const user = useSelector((state: RootState) => state.auth.user);
 
   const userId = user?.sub || (user as any)?._id || (user as any)?.id;
   const orgId = getOrgId(currentOrg);
+  const projectsQuery = useOrganizationProjects(orgId);
 
 
   const isOrgAdmin = currentOrg?.role === 'OWNER' || currentOrg?.role === 'ADMIN';
 
   useEffect(() => {
+    const isUrlTabValid = Boolean(urlTab && ALL_AVAILABLE_TABS.includes(urlTab));
+    let baseTabs: TabType[] = [...DEFAULT_VISIBLE_TABS];
+
     const savedPreferences = localStorage.getItem("cazua_tab_preferences");
     if (savedPreferences) {
       try {
         const parsed = JSON.parse(savedPreferences);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setVisibleTabs(parsed);
-          if (!parsed.includes(activeTab)) {
-            setActiveTab(parsed[0] as TabType);
+        if (Array.isArray(parsed)) {
+          const validSaved = parsed.filter((t): t is TabType =>
+            ALL_AVAILABLE_TABS.includes(t)
+          );
+          if (validSaved.length > 0) {
+            baseTabs = validSaved;
           }
         }
       } catch (e) {
         console.error("Erro ao carregar preferências de abas", e);
       }
     }
+
+    const mergedTabs =
+      isUrlTabValid && urlTab && !baseTabs.includes(urlTab)
+        ? [...baseTabs, urlTab]
+        : baseTabs;
+
+    setVisibleTabs(mergedTabs);
+    if (isUrlTabValid && urlTab) {
+      setActiveTab(urlTab);
+    } else if (!mergedTabs.includes(activeTab) && mergedTabs.length > 0) {
+      setActiveTab(mergedTabs[0]);
+    }
   }, []);
+
+  const handleSelectTab = (tab: TabType) => {
+    lastUrlTabRef.current = tab;
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const handleToggleTabVisibility = (tabId: string) => {
     let newPreferences;
@@ -78,72 +143,107 @@ export function ProjectsList() {
     localStorage.setItem("cazua_tab_preferences", JSON.stringify(newPreferences));
     
     if (!newPreferences.includes(activeTab) && newPreferences.length > 0) {
-      setActiveTab(newPreferences[0] as TabType);
+      handleSelectTab(newPreferences[0] as TabType);
     }
   };
 
-  const fetchProjects = async () => {
-    if (!orgId) return;
+  const projects = useMemo(() => {
+    const rawData = projectsQuery.data ?? [];
+    return rawData.map((p: any) => {
+      const formatDate = (dateString?: string) => {
+        if (!dateString) return undefined;
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return undefined;
+        return date.toLocaleDateString('pt-BR');
+      };
 
-    try {
-      setIsLoading(true);
-      setHasError(false);
+      const createdDate = p.createdAt ? new Date(p.createdAt) : new Date();
+      const createdTimestamp = Number.isNaN(createdDate.getTime())
+        ? 0
+        : createdDate.getTime();
 
-      const rawData = await listProjects(orgId);
+      const lastEventRawDate = p.lastEventId
+        ? new Date(p.lastEventId.createdAt || p.updatedAt)
+        : null;
+      const formattedLastEventDate =
+        lastEventRawDate && !Number.isNaN(lastEventRawDate.getTime())
+          ? lastEventRawDate.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '-';
 
-      const formattedProjects = rawData.map((p: any) => {
-        const formatDate = (dateString?: string) => {
-          if (!dateString) return undefined;
-          return new Date(dateString).toLocaleDateString('pt-BR');
-        };
+      return {
+        id: String(p._id || p.id || ""),
+        referenceCode: p.referenceCode,
+        title: p.title || "Projeto sem título",
+        description: p.description,
+        status: p.status as ProjectStatus,
+        progress: p.progress || 0,
+        location: p.location,
+        startDate: formatDate(p.startDate),
+        endDate: formatDate(p.endDate),
+        priorityScore: p.priorityScore || 0,
+        createdAt: p.createdAt,
+        createdTimestamp,
+        assignedMembers: p.assignedMembers || [],
+        attachments: p.attachments || [],
+        lastUpdate: p.lastEventId ? {
+          id: p.lastEventId._id,
+          date: formattedLastEventDate,
+          author: p.lastEventId.authorId?.name || "Sistema",
+          description: p.lastEventId.description,
+          type: p.lastEventId.type
+        } : undefined
+      };
+    });
+  }, [projectsQuery.data]);
 
-        return {
-          id: p._id,
-          referenceCode: p.referenceCode,
-          title: p.title,
-          description: p.description,
-          status: p.status as ProjectStatus,
-          progress: p.progress || 0,
-          location: p.location,
-          startDate: formatDate(p.startDate),
-          endDate: formatDate(p.endDate),
-          priorityScore: p.priorityScore || 0,
-          createdAt: new Date(p.createdAt || new Date()).getTime(),
-          assignedMembers: p.assignedMembers || [],
-          attachments: p.attachments || [],
-          lastUpdate: p.lastEventId ? {
-            id: p.lastEventId._id,
-            date: new Date(p.lastEventId.createdAt || p.updatedAt).toLocaleString('pt-BR', {
-              day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
-            }),
-            author: p.lastEventId.authorId?.name || "Sistema",
-            description: p.lastEventId.description,
-            type: p.lastEventId.type
-          } : null
-        };
-      });
+  const isInitialLoading =
+    (!orgId && (orgStatus === "idle" || orgStatus === "loading")) ||
+    (Boolean(orgId) && projectsQuery.isPending && !projectsQuery.data);
+  const hasError = projectsQuery.isError && !projectsQuery.data;
 
-      setProjects(formattedProjects);
-    } catch (error) {
-      console.error("Erro ao buscar projetos:", error);
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
+  const handleTabKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+    renderedTabs: Array<{ id: string }>
+  ) => {
+    if (renderedTabs.length === 0) return;
+
+    let nextIndex: number | null = null;
+    if (e.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % renderedTabs.length;
+    } else if (e.key === "ArrowLeft") {
+      nextIndex = (currentIndex - 1 + renderedTabs.length) % renderedTabs.length;
+    } else if (e.key === "Home") {
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      nextIndex = renderedTabs.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      e.preventDefault();
+      const nextTab = renderedTabs[nextIndex].id as TabType;
+      handleSelectTab(nextTab);
+      tabRefs.current[nextTab]?.focus();
     }
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, [orgId]);
+    if (urlTab === lastUrlTabRef.current) return;
+    lastUrlTabRef.current = urlTab;
 
-  useEffect(() => {
-    if (urlTab && allAvailableTabs.includes(urlTab)) {
+    if (urlTab && ALL_AVAILABLE_TABS.includes(urlTab)) {
       setActiveTab(urlTab);
-      if (!visibleTabs.includes(urlTab)) {
-        handleToggleTabVisibility(urlTab);
-      }
+      setVisibleTabs((prev) => (prev.includes(urlTab) ? prev : [...prev, urlTab]));
+    } else if (!urlTab) {
+      setActiveTab((visibleTabs[0] as TabType) || "MINE");
     }
-  }, [urlTab]);
+  }, [urlTab, visibleTabs]);
 
   const counts = {
     MINE: projects.filter(p => isUserAssigned(p.assignedMembers || [], userId)).length,
@@ -156,29 +256,35 @@ export function ProjectsList() {
     INVALID: projects.filter(p => p.status === "INVALID").length,
   };
 
-  const filteredProjects = projects.filter((p) => {
-    let matchesTab = false;
-    if (activeTab === "ALL") matchesTab = true;
-    else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || [], userId);
-    else matchesTab = p.status === activeTab;
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
-    const term = searchTerm.toLowerCase();
-    const matchesSearch = !term ||
-      (p.title && p.title.toLowerCase().includes(term)) ||
-      (p.referenceCode && p.referenceCode.toLowerCase().includes(term)) ||
-      (p.description && p.description.toLowerCase().includes(term)) ||
-      (p.location && p.location.toLowerCase().includes(term));
+  const filteredProjects = useMemo(() => {
+    const term = normalizeSearchText(deferredSearchTerm);
+    return projects
+      .filter((p) => {
+        let matchesTab = false;
+        if (activeTab === "ALL") matchesTab = true;
+        else if (activeTab === "MINE") matchesTab = isUserAssigned(p.assignedMembers || [], userId);
+        else matchesTab = p.status === activeTab;
 
-    return matchesTab && matchesSearch;
-  }).sort((a, b) => {
-    switch (sortBy) {
-      case "PRIORITY_DESC": return b.priorityScore - a.priorityScore;
-      case "PRIORITY_ASC": return a.priorityScore - b.priorityScore;  
-      case "NEWEST": return b.createdAt - a.createdAt;                
-      case "OLDEST": return a.createdAt - b.createdAt;                
-      default: return 0;
-    }
-  });
+        const matchesSearch = !term ||
+          normalizeSearchText(p.title).includes(term) ||
+          normalizeSearchText(p.referenceCode).includes(term) ||
+          normalizeSearchText(p.description).includes(term) ||
+          normalizeSearchText(p.location).includes(term);
+
+        return matchesTab && matchesSearch;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "PRIORITY_DESC": return b.priorityScore - a.priorityScore;
+          case "PRIORITY_ASC": return a.priorityScore - b.priorityScore;
+          case "NEWEST": return b.createdTimestamp - a.createdTimestamp;
+          case "OLDEST": return a.createdTimestamp - b.createdTimestamp;
+          default: return 0;
+        }
+      });
+  }, [projects, activeTab, userId, deferredSearchTerm, sortBy]);
 
   const allTabsConfig = [
     { id: "MINE", label: "Minhas", icon: UserCircle, count: counts.MINE },
@@ -192,21 +298,65 @@ export function ProjectsList() {
   ];
 
   const tabsToRender = allTabsConfig.filter(tab => visibleTabs.includes(tab.id));
+  const visibleProjects = useMemo(
+    () => filteredProjects.slice(0, visibleCount),
+    [filteredProjects, visibleCount]
+  );
+
+  useEffect(() => {
+    setVisibleCount(PROJECTS_PAGE_SIZE);
+  }, [activeTab, deferredSearchTerm, sortBy, orgId]);
+
+  const updateTabsFade = useCallback(() => {
+    const el = tabListRef.current;
+    if (!el) {
+      setShowTabsRightFade(false);
+      return;
+    }
+    setShowTabsRightFade(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+  }, []);
+
+  useEffect(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+
+    updateTabsFade();
+    el.addEventListener("scroll", updateTabsFade, { passive: true });
+    window.addEventListener("resize", updateTabsFade);
+
+    return () => {
+      el.removeEventListener("scroll", updateTabsFade);
+      window.removeEventListener("resize", updateTabsFade);
+    };
+  }, [tabsToRender.length, updateTabsFade]);
 
   return (
     <div className="max-w-6xl mx-auto w-full flex flex-col space-y-3 text-foreground pb-24 relative min-h-[calc(100vh-4rem)]">
       {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Demandas e Projetos</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">Demandas e Projetos</h1>
+            {projectsQuery.isFetching && !isInitialLoading && (
+              <span
+                role="status"
+                aria-live="polite"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Atualizando...
+              </span>
+            )}
+          </div>
           <p className="text-muted-foreground mt-1 text-sm">
             Acompanhe o ciclo de vida e a timeline das suas frentes de trabalho.
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => setIsModalOpen(true)}
-          className="hidden md:flex bg-primary text-primary-foreground px-5 py-2.5 rounded-md shadow-sm hover:bg-primary/90 transition-colors items-center justify-center gap-2 font-semibold text-sm h-10"
+          className="hidden md:flex bg-primary text-primary-foreground px-5 py-2.5 rounded-md shadow-sm hover:bg-primary/90 transition-colors items-center justify-center gap-2 font-semibold text-sm min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus className="w-4 h-4" />
           Nova Demanda
@@ -221,11 +371,24 @@ export function ProjectsList() {
           </div>
           <input
             type="text"
+            aria-label="Buscar demandas e projetos por código, título ou local"
             placeholder="Buscar por código, título ou local..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm transition-all"
+            className={`flex h-11 w-full rounded-md border border-input bg-background pl-10 ${
+              searchTerm ? "pr-11" : "pr-3"
+            } py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-sm transition-all`}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              aria-label="Limpar busca"
+              className="absolute inset-y-0 right-0 min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <div className="relative w-full md:w-auto flex items-center gap-2 ml-auto">
@@ -251,32 +414,65 @@ export function ProjectsList() {
 
       {/* NAVEGAÇÃO POR ABAS + BOTÃO DE CONFIGURAÇÃO */}
       <div className="flex items-center border-b border-border">
-        <div className="tab-rail flex space-x-1 flex-1">
-          {tabsToRender.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"
-                  }`}
-              >
-                {tab.icon && <tab.icon className="w-4 h-4" />}
-                {tab.label}
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-primary-bg text-primary" : "bg-muted text-muted-foreground"
-                  }`}>
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
+        <div className="relative flex-1 min-w-0">
+          <div
+            ref={tabListRef}
+            role="tablist"
+            aria-label="Filtrar projetos por status"
+            className={`flex space-x-1 overflow-x-auto ${
+              showTabsRightFade ? "pr-6" : "pr-0"
+            }`}
+          >
+            {tabsToRender.map((tab, index) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  ref={(el) => {
+                    tabRefs.current[tab.id] = el;
+                  }}
+                  id={`projects-tab-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls="projects-tabpanel"
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => handleSelectTab(tab.id as TabType)}
+                  onKeyDown={(e) => handleTabKeyDown(e, index, tabsToRender)}
+                  className={`relative px-4 min-h-11 py-2.5 text-sm font-semibold whitespace-nowrap rounded-md transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                >
+                  {tab.icon && <tab.icon className="w-4 h-4" />}
+                  {tab.label}
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? "bg-primary-bg text-primary" : "bg-muted text-muted-foreground"
+                    }`}>
+                    {tab.count}
+                  </span>
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-0 bottom-0 h-0.5 bg-primary rounded-md"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {showTabsRightFade && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent"
+            />
+          )}
         </div>
         
         <button
+          type="button"
           onClick={() => setIsPreferencesModalOpen(true)}
-          className="ml-2 p-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors border border-transparent hover:border-border"
+          aria-label="Configurar visibilidade das abas"
+          className="ml-2 min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors border border-transparent hover:border-border shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Configurar visibilidade das abas"
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -284,78 +480,159 @@ export function ProjectsList() {
       </div>
 
       {/* Lista de Cards */}
-      <div className="flex flex-col space-y-4">
-        {hasError ? (
+      <div
+        id="projects-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`projects-tab-${activeTab}`}
+        className="flex flex-col space-y-4"
+      >
+        {!orgId && orgStatus === "failed" ? (
+          <div
+            role="alert"
+            className="bg-st-critical-bg border border-st-critical-border text-st-critical p-4 rounded-md flex items-center gap-3 text-sm font-medium"
+          >
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>
+              Não foi possível carregar as organizações da sua conta. Recarregue
+              a página ou tente novamente mais tarde.
+            </span>
+          </div>
+        ) : !orgId && orgStatus === "succeeded" ? (
+          <div className="rounded-md border border-dashed border-border bg-card p-8 text-center space-y-2">
+            <h2 className="text-base font-semibold text-foreground">
+              Nenhuma organização selecionada
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Selecione ou crie uma organização para visualizar suas demandas e projetos.
+            </p>
+          </div>
+        ) : hasError ? (
           <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center gap-3">
             <AlertCircle className="w-10 h-10 text-destructive" />
             <p className="text-card-foreground font-semibold">Erro ao carregar projetos.</p>
             <p className="text-muted-foreground text-sm">Verifique sua conexão e tente novamente.</p>
             <button
-              onClick={fetchProjects}
-              className="bg-primary text-primary-foreground px-4 py-2.5 min-h-11 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors"
+              type="button"
+              onClick={() => projectsQuery.refetch()}
+              disabled={projectsQuery.isFetching}
+              className="bg-primary text-primary-foreground px-4 py-2.5 min-h-11 rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Tentar novamente
+              {projectsQuery.isFetching && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              {projectsQuery.isFetching ? "Tentando..." : "Tentar novamente"}
             </button>
           </div>
-        ) : isLoading ? (
+        ) : isInitialLoading ? (
           <div className="flex flex-col space-y-4" aria-busy="true">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="bg-card border border-border rounded-md p-5 shadow-sm animate-pulse space-y-3">
-                <div className="h-4 w-1/3 bg-muted rounded" />
-                <div className="h-3 w-2/3 bg-muted rounded" />
-                <div className="h-3 w-1/2 bg-muted rounded" />
+                <div className="h-4 w-1/3 bg-muted rounded-md" />
+                <div className="h-3 w-2/3 bg-muted rounded-md" />
+                <div className="h-3 w-1/2 bg-muted rounded-md" />
               </div>
             ))}
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center">
-            {activeTab === "MINE" && !searchTerm ? (
-              <>
-                <UserCircle className="w-12 h-12 text-muted-foreground/30 mb-3" />
-                <p className="text-card-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
-                <p className="text-muted-foreground text-sm mt-1">Quando um administrador te adicionar a uma equipe, a demanda aparecerá aqui.</p>
-              </>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                {searchTerm ? "Nenhum registro encontrado para sua busca." : "Nenhum registro encontrado nesta fase."}
-              </p>
-            )}
-          </div>
+          (() => {
+            const hasSearchTerm = searchTerm.trim().length > 0;
+            return (
+              <div className="text-center py-12 bg-card rounded-md border border-dashed border-border flex flex-col items-center justify-center gap-3">
+                {activeTab === "MINE" && !hasSearchTerm ? (
+                  <>
+                    <UserCircle className="w-12 h-12 text-muted-foreground/30" />
+                    <p className="text-card-foreground font-semibold">Você não está alocado em nenhuma obra.</p>
+                    <p className="text-muted-foreground text-sm">Quando um administrador te adicionar a uma equipe, a demanda aparecerá aqui.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground text-sm">
+                      {hasSearchTerm ? "Nenhum registro encontrado para sua busca." : "Nenhum registro encontrado nesta fase."}
+                    </p>
+                    {hasSearchTerm && (
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSearchTerm("")}
+                          className="px-4 min-h-11 text-sm font-medium text-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          Limpar busca
+                        </button>
+                        {activeTab !== "ALL" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVisibleTabs((prev) =>
+                                prev.includes("ALL") ? prev : [...prev, "ALL"]
+                              );
+                              handleSelectTab("ALL");
+                            }}
+                            className="px-4 min-h-11 text-sm font-semibold text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            Buscar em Todas
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()
         ) : (
-          filteredProjects.map((project) => {
+          <>
+          {visibleProjects.map((project) => {
             const statusConfig = getStatusConfig(project.status);
             const priorityConfig = getPriorityConfig(project.priorityScore);
             const hasPermission = isOrgAdmin || isUserAssigned(project.assignedMembers || [], userId);
 
             return (
-              <div
+              <article
                 key={project.id}
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                className="bg-card border border-border rounded-md p-4 shadow-sm flex flex-col gap-4 cursor-pointer hover:border-primary/50 transition-colors"
+                className="relative bg-card border border-border rounded-md p-4 shadow-sm flex flex-col gap-4 hover:border-primary/50 focus-within:border-primary/50 transition-colors"
               >
                 <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     {project.referenceCode && (
-                      <span className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
-                        {project.referenceCode}
-                      </span>
+                      <div className="mb-1">
+                        <span className="relative z-10 inline-block select-text text-xs font-mono text-muted-foreground">
+                          {project.referenceCode}
+                        </span>
+                      </div>
                     )}
-                    <h3 className="font-semibold text-base leading-tight text-card-foreground">{project.title}</h3>
+                    <h3 className="font-semibold text-base leading-tight text-card-foreground">
+                      <Link
+                        href={`/dashboard/projects/${project.id}`}
+                        className="inline-block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring after:content-[''] after:absolute after:inset-0"
+                      >
+                        {project.title}
+                      </Link>
+                    </h3>
                     {project.description && (
                       <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
                         {project.description}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-1 text-muted-foreground mt-1.5 text-xs font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMapLocationView(project.location || null);
-                      }}
-                    >
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="truncate">{project.location || 'Local não encontrado'}</span>
-                    </div>
+                    {project.location?.trim() ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMapLocationView(project.location || null);
+                        }}
+                        aria-label={`Ver localização no mapa: ${project.location}`}
+                        className="relative z-10 inline-flex items-center gap-1.5 min-h-11 px-2 -ml-2 mt-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer max-w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate underline decoration-border underline-offset-2">{project.location}</span>
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 py-1 mt-1 text-xs font-medium text-muted-foreground max-w-full">
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">Localização não informada</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -367,23 +644,26 @@ export function ProjectsList() {
                   </div>
                 </div>
 
-                {(project.status === "EXECUTION" || project.status === "COMPLETED" || project.status === "ON_HOLD") && project.progress !== undefined && (
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-medium text-foreground">
-                      <span>Avanço Físico</span>
-                      <span>{project.progress}%</span>
+                {(project.status === "EXECUTION" || project.status === "COMPLETED" || project.status === "ON_HOLD") && project.progress !== undefined && (() => {
+                  const clampedProgress = Math.min(100, Math.max(0, Number(project.progress) || 0));
+                  return (
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-medium text-foreground">
+                        <span>Avanço Físico</span>
+                        <span>{clampedProgress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-secondary rounded-md overflow-hidden border border-border/50">
+                        <div
+                          className={`h-full rounded-md transition-all duration-500 ${
+                            project.status === 'ON_HOLD' ? 'bg-st-onhold' :
+                            clampedProgress === 100 ? 'bg-st-completed' : 'bg-primary'
+                          }`}
+                          style={{ width: `${clampedProgress}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden border border-border/50">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          project.status === 'ON_HOLD' ? 'bg-stone-500' :
-                          project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'
-                        }`}
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {project.lastUpdate && (
                   <div className="bg-muted/30 rounded-md p-3 border border-border/50">
@@ -403,6 +683,7 @@ export function ProjectsList() {
                 {project.status === "DEMAND" && (
                   <div className="pt-2">
                     <button
+                      type="button"
                       disabled={!hasPermission}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -411,7 +692,7 @@ export function ProjectsList() {
                         }
                       }}
                       title={!hasPermission ? "Você não está alocado nesta demanda." : ""}
-                      className={`w-full py-2.5 min-h-11 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${hasPermission
+                      className={`relative z-10 w-full py-2.5 min-h-11 rounded-md text-sm font-semibold transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${hasPermission
                         ? 'bg-primary-bg text-primary hover:bg-primary hover:text-primary-foreground'
                         : 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
                         }`}
@@ -419,33 +700,54 @@ export function ProjectsList() {
                       {!hasPermission ? <Lock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                       Emitir Parecer
                     </button>
+                    {!hasPermission && (
+                      <p className="text-xs text-muted-foreground mt-1.5 text-center">
+                        Apenas membros alocados nesta demanda podem emitir parecer.
+                      </p>
+                    )}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                  {project.startDate && (
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Início: {project.startDate}</span>
-                    </div>
-                  )}
-                  {project.endDate && (
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Fim: {project.endDate}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                {(project.startDate || project.endDate) && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                    {project.startDate && (
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>Início: {project.startDate}</span>
+                      </div>
+                    )}
+                    {project.endDate && (
+                      <div className={`flex items-center gap-1.5 ${!project.startDate ? "ml-auto" : ""}`}>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Fim: {project.endDate}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </article>
             );
-          })
+          })}
+          {filteredProjects.length > visibleCount && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + PROJECTS_PAGE_SIZE)}
+                className="px-5 min-h-11 text-sm font-medium bg-card border border-border text-foreground rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Mostrar mais projetos (restam {filteredProjects.length - visibleCount})
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 
       <button
+        type="button"
         onClick={() => setIsModalOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform active:scale-95 flex items-center justify-center z-50"
-        title="Nova Demanda / Obra"
+        aria-label="Nova Demanda"
+        className="md:hidden fixed bottom-6 right-6 bg-primary text-primary-foreground min-w-11 min-h-11 p-3.5 rounded-md shadow-lg hover:bg-primary/90 transition-transform active:scale-95 flex items-center justify-center z-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Nova Demanda"
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -453,14 +755,14 @@ export function ProjectsList() {
       <CreateProjectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => fetchProjects()}
+        onSuccess={() => projectsQuery.refetch()}
       />
 
       <EmitParecerModal
         isOpen={!!projectForParecer}
         onClose={() => setProjectForParecer(null)}
         project={projectForParecer as any}
-        onSuccess={() => fetchProjects()}
+        onSuccess={() => projectsQuery.refetch()}
       />
 
       <MapViewerModal
