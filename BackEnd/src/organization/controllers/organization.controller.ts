@@ -9,7 +9,6 @@ import {
   Post,
   Req,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -84,10 +83,9 @@ export class OrganizationController {
     status: 201,
     schema: zodToOpenApi(z.object({ message: z.string() })),
   })
-  @UsePipes(new ZodValidationPipe(addMemberSchema))
   addMember(
     @Param('orgId') orgId: string,
-    @Body() body: AddMemberDto,
+    @Body(new ZodValidationPipe(addMemberSchema)) body: AddMemberDto,
     @Req() req: any,
   ) {
     return this.orgService.addMemberToOrganization(orgId, req.user, body);

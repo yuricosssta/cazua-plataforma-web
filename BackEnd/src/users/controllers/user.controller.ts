@@ -10,7 +10,6 @@ import {
   Req,
   UseGuards,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
