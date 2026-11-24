@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -51,8 +50,9 @@ export class ApiClientController {
     description: 'API Client criado com sucesso.',
     schema: zodToOpenApi(createApiClientResponseSchema),
   })
-  @UsePipes(new ZodValidationPipe(createApiClientSchema))
-  async create(@Body() dto: CreateApiClientDto) {
+  async create(
+    @Body(new ZodValidationPipe(createApiClientSchema)) dto: CreateApiClientDto,
+  ) {
     return this.apiClientService.create(dto);
   }
 
@@ -89,8 +89,10 @@ export class ApiClientController {
     status: 200,
     schema: zodToOpenApi(apiClientResponseSchema),
   })
-  @UsePipes(new ZodValidationPipe(updateApiClientSchema))
-  async update(@Param('id') id: string, @Body() dto: UpdateApiClientDto) {
+  async update(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateApiClientSchema)) dto: UpdateApiClientDto,
+  ) {
     return this.apiClientService.update(id, dto);
   }
 

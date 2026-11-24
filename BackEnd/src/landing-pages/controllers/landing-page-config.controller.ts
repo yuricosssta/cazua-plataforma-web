@@ -7,7 +7,6 @@ import {
   Body,
   Req,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { LandingPageConfigService } from '../services/landing-page-config.service';
@@ -38,10 +37,10 @@ export class LandingPageConfigController {
 
   @Patch('me')
   @UseGuards(LandingPageRoleGuard)
-  @UsePipes(new ZodValidationPipe(upsertLandingPageSchema))
   async upsertMyConfig(
     @Req() req: ITenantRequest,
-    @Body() body: UpsertLandingPageDTO,
+    @Body(new ZodValidationPipe(upsertLandingPageSchema))
+    body: UpsertLandingPageDTO,
   ) {
     return this.service.upsertConfig(req.organizationId, body);
   }

@@ -1,20 +1,28 @@
 // src/common/pipes/zod-validation.pipe.ts
 import { PipeTransform, BadRequestException } from '@nestjs/common';
-import { ZodSchema } from 'zod';
+import { ZodError, ZodSchema } from 'zod';
 
 export class ZodValidationPipe implements PipeTransform {
   constructor(private schema: ZodSchema) {}
 
-  transform(value: any) {
+  transform(value: unknown) {
     try {
       const parsedValue = this.schema.parse(value);
       return parsedValue;
     } catch (error) {
-      const errorMessage = error.errors
-        .map((err) => `${err.path.join('.')}: ${err.message}`)
-        .join(', ');
+      if (error instanceof ZodError) {
+        const errorMessage = error.errors
+          .map((err) =>
+            err.path.length > 0
+              ? `${err.path.join('.')}: ${err.message}`
+              : err.message,
+          )
+          .join(', ');
 
-      throw new BadRequestException(`Falha na validação: ${errorMessage}`);
+        throw new BadRequestException(`Falha na validação: ${errorMessage}`);
+      }
+
+      throw new BadRequestException('Falha na validação dos dados.');
     }
   }
 }

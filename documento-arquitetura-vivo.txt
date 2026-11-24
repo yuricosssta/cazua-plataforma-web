@@ -1,3 +1,50 @@
+=== SPRINT 44 - 24/11/2026 ===
+### Resumo Técnico de Fechamento: Correção da Validação Zod nos Cadastros Interno e Externo, Padronização de Pipes HTTP, Testes de Pipeline e Refinamentos de UX (BackEnd & FrontEnd)
+
+**1. Contexto e Problema Identificado**
+
+O cadastro interno de colaboradores dentro do Cazuá (`OrganizationPeople.tsx` → BFF `/api/organizations/[orgId]/members` → `POST /organizations/:orgId/members`) falhava com a mensagem `"Falha na validação: : Expected object, received string"`. A investigação identificou que `OrganizationController.addMember` utilizava `@UsePipes(new ZodValidationPipe(addMemberSchema))` no nível do método enquanto declarava `@Param('orgId') orgId: string` e `@Body() body: AddMemberDto`. Como o NestJS aplica pipes de método a todos os parâmetros elegíveis (`@Param`, `@Query`, `@Body`), o `ZodValidationPipe` executava `addMemberSchema.parse(orgId)` sobre a string `orgId`, gerando o erro Zod na raiz (`path = []`).
+
+Na verificação dos fluxos externos e demais controllers:
+- **Cadastro público externo (`FrontEnd/src/app/(auth)/signup/page.tsx` → `POST /api/users/signup` → `POST /users`):** `UsersController.createUser` já escopava `@Body(new ZodValidationPipe(createUserSchema))`, mas o formulário `signup/page.tsx` validava senha mínima de **6 caracteres** enquanto `createUserSchema` exigia **8 caracteres**.
+- **Cadastro externo via API Client (`POST /auth/register`) e demais endpoints:** `AuthController` (`login`, `register`), `ApiClientController` (`create`, `PATCH /api-clients/:id` — que sofria do mesmo bug com `@Param('id')`), `LandingPageConfigController` (`upsertMyConfig`) e `LeadController` (`create`) ainda usavam `@UsePipes(new ZodValidationPipe(...))` no nível do método.
+
+**2. Decisões de Arquitetura (Escopo de Pipes Zod, Validação de Cadastro, Testes HTTP e UX)**
+
+* **Escopo Explícito de Pipes em Parâmetros (`@Body(new ZodValidationPipe(...))`):**
+  - Substituído `@UsePipes(new ZodValidationPipe(...))` no nível de método por `@Body(new ZodValidationPipe(...))` diretamente no parâmetro `@Body` em `OrganizationController.addMember`, `AuthController.signIn` / `register`, `ApiClientController.create` / `update`, `LandingPageConfigController.upsertMyConfig` e `LeadController.create`, além da remoção do import não utilizado `UsePipes` em `UsersController`.
+  - Mantido o `ZodValidationPipe` agnóstico ao tipo do parâmetro para preservar os endpoints do `PlanningController` que usam `@Query(new ZodValidationPipe(searchSchema))` legitimamente.
+
+* **Endurecimento do `ZodValidationPipe` e da Criação de Membro (`OrganizationService`):**
+  - `ZodValidationPipe` passou a verificar `error instanceof ZodError`, omitir o prefixo `": "` quando `err.path` estiver vazio (erros na raiz) e retornar fallback seguro (`BadRequestException('Falha na validação dos dados.')`) para erros não-Zod.
+  - Em `OrganizationService.addMemberToOrganization`, adicionada validação explícita exigindo `password` antes de `usersService.createUser` quando o usuário ainda não existe na base global (`BadRequestException('A senha é obrigatória para cadastrar um novo usuário.')`).
+
+* **Testes de Regressão do Pipeline HTTP (`supertest`):**
+  - Como chamadas diretas de métodos de controller em testes unitários ignoram decorators/pipes do NestJS, foram adicionados testes reais via `module.createNestApplication()` + `supertest` cobrindo `POST /organizations/:orgId/members`, `POST /auth/register` e `POST /users`, validando que `@Param` não sofre parsing pelo schema do `@Body` e que payloads inválidos retornam `400` com mensagens do `ZodValidationPipe`.
+
+* **Alinhamento e Refinamentos de UX (`belezura` — 0 violações restantes nas 7 Leis de Usabilidade):**
+  - **`signup/page.tsx`:** Mínimo de senha alinhado para `8` caracteres, `noValidate` no `<form>` com validação customizada de nome/e-mail/senha/confirmação em bloco `role="alert"`, associação `htmlFor`/`id`, atributos `autoComplete`, toggle de visibilidade de senha (`Eye`/`EyeOff`), `grid-cols-1 sm:grid-cols-2`, `<fieldset disabled={isLoading}>`, `.trim()`, tratamento diferenciado de falhas 5xx/rede, alvos `min-h-[44px]`/`h-11`, anel `focus-visible:ring-1 focus-visible:ring-primary`, tokens semânticos e redirecionamento assistido na tela de sucesso com `<Spinner />` e CTA `"Ir para o Login agora"`.
+  - **`OrganizationPeople.tsx`:** Cadastro movido do card inline para modal dedicado acionado por `+ Novo Colaborador` (`grid-cols-1 md:grid-cols-2`, `noValidate`, alerta inline `createError`, senha provisória mascarada com toggle `Eye`/`EyeOff`, cargos `MEMBER`/`ADMIN`/`VIEWER`); busca por nome/e-mail, filtro por função, paginação (`PAGE_SIZE = 10`) com botão `"Limpar filtros"` e proteção contra valores nulos; tabela responsiva envolvida em `overflow-x-auto` com subtítulo de e-mail no mobile, badges `rounded-md` em português (`ROLE_LABELS`) e proteção visual/lógica contra autoedição/autoremovação; modais com `role="dialog"`, `aria-modal="true"`, `max-h-[90dvh] overflow-y-auto`, fechamento por `Escape`/backdrop e confirmação em duas etapas no modal de gestão (substituindo `window.confirm()`); aderência estrita ao Limiar de Doherty mantendo os modais abertos com spinner ativo (`isSubmitting`, `isSavingRole`, `isRemovingMember`) até `await fetchMembers(true)` finalizar antes de fechar e exibir `toast.success(...)`, e limpando `members`/modais na troca de `orgId` para exibição imediata do skeleton.
+
+**3. Arquivos Criados ou Alterados**
+
+- `BackEnd/src/organization/controllers/organization.controller.ts` (pipe escopado em `@Body` no `addMember`)
+- `BackEnd/src/organization/services/organization.service.ts` (validação explícita de senha obrigatória para novo usuário em `addMemberToOrganization`)
+- `BackEnd/src/organization/controllers/organization.controller.spec.ts` (testes HTTP `supertest` para `POST /organizations/:orgId/members`)
+- `BackEnd/src/auth/controllers/auth.controller.ts` (pipe escopado em `@Body` em `signIn` e `register`)
+- `BackEnd/src/auth/controllers/auth.controller.spec.ts` (testes HTTP `supertest` para `POST /auth/register`)
+- `BackEnd/src/users/controllers/user.controller.ts` (remoção do import não utilizado `UsePipes`)
+- `BackEnd/src/users/controllers/user.controller.spec.ts` *(novo)* (testes HTTP `supertest` para `POST /users`)
+- `BackEnd/src/api-clients/controllers/api-client.controller.ts` (pipe escopado em `@Body` em `create` e `update`)
+- `BackEnd/src/landing-pages/controllers/landing-page-config.controller.ts` (pipe escopado em `@Body` em `upsertMyConfig`)
+- `BackEnd/src/landing-pages/controllers/lead.controller.ts` (pipe escopado em `@Body` em `create`)
+- `BackEnd/src/shared/pipe/zod-validation.pipe.ts` (tratamento explícito de `ZodError`, formatação sem `": "` em path vazio e fallback seguro)
+- `FrontEnd/src/app/(auth)/signup/page.tsx` (alinhamento de senha mínima de 8 caracteres e refinamentos completos de UX/acessibilidade)
+- `FrontEnd/src/components/dashboard/OrganizationPeople.tsx` (alinhamento de senha mínima de 8 caracteres e refatoração completa de UX/acessibilidade/responsividade)
+- `documento-arquitetura-vivo.txt` (registro do fechamento técnico da Sprint 44)
+
+---
+
 === SPRINT 43 - 23/11/2026 ===
 ### Resumo Técnico de Fechamento: Busca Dinâmica de Projetos no Envio Direto do Almoxarifado, Cache Compartilhado com React Query, Diretrizes de Data Fetching e Refinamentos de UX (FrontEnd & Docs)
 

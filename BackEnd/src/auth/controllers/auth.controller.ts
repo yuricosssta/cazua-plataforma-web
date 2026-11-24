@@ -7,7 +7,6 @@ import {
   Request,
   UseGuards,
   Get,
-  UsePipes,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -54,8 +53,7 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  @UsePipes(new ZodValidationPipe(signInSchema))
-  signIn(@Body() signInDto: SignInDto) {
+  signIn(@Body(new ZodValidationPipe(signInSchema)) signInDto: SignInDto) {
     return this.authService.signIn(signInDto.email, signInDto.password);
   }
 
@@ -88,8 +86,10 @@ export class AuthController {
   @UseGuards(ApiClientGuard, ThrottlerGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
-  @UsePipes(new ZodValidationPipe(registerSchema))
-  register(@Body() registerDto: RegisterDto, @Request() req: any) {
+  register(
+    @Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto,
+    @Request() req: any,
+  ) {
     return this.authService.register(registerDto, req.apiClient);
   }
 

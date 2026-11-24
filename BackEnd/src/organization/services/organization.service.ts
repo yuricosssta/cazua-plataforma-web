@@ -200,6 +200,12 @@ export class OrganizationService {
 
     // 3. Se não existir, cria a nova conta global
     if (!user) {
+      if (!userData.password) {
+        throw new BadRequestException(
+          'A senha é obrigatória para cadastrar um novo usuário.',
+        );
+      }
+
       try {
         user = await this.usersService.createUser({
           name: userData.name,
